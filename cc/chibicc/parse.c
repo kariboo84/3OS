@@ -2035,6 +2035,15 @@ static Node *to_assign(Node *binary) {
   add_type(binary->rhs);
   Token *tok = binary->tok;
 
+  // TRI-27: `v op= B` on a plain scalar variable has no side effect in its
+  // address, so emit `v = v op B` directly (no pointer temporary).
+  if (binary->lhs->kind == ND_VAR && !binary->lhs->ty->is_atomic &&
+      binary->lhs->ty->kind != TY_VLA && binary->lhs->ty->kind != TY_ARRAY &&
+      binary->lhs->ty->kind != TY_STRUCT && binary->lhs->ty->kind != TY_UNION &&
+      !binary->lhs->var->is_tls)
+    return new_binary(ND_ASSIGN, binary->lhs,
+                      new_binary(binary->kind, binary->lhs, binary->rhs, tok), tok);
+
   // Convert `A.x op= C` to `tmp = &A, (*tmp).x = (*tmp).x op C`.
   if (binary->lhs->kind == ND_MEMBER) {
     Obj *var = new_lvar("", pointer_to(binary->lhs->lhs->ty));

@@ -3,6 +3,46 @@
 static FILE *out;
 static Obj *fn;
 static int serial;
+static void emit(char *fmt, ...);
+// Expression stack: the first NSREG temporaries live in callee-saved s1..s10,
+// deeper ones fall back to the memory stack. Saved/restored per function.
+#define NSREG 10
+static int depth, maxdepth;
+static void spush(void) {
+  if(depth<NSREG) emit("  mv s%d, a0",depth+1); else emit("  push a0");
+  depth++; if(depth>maxdepth) maxdepth=depth;
+}
+static void spop(char *r) {
+  depth--;
+  if(depth<NSREG) emit("  mv %s, s%d",r,depth+1); else emit("  pop %s",r);
+}
+static bool scalar(Type *t) {
+  return !(t->kind==TY_STRUCT||t->kind==TY_UNION||t->kind==TY_ARRAY||t->kind==TY_FUNC||t->kind==TY_VLA);
+}
+static bool fits16(long v) { return v>=-21523360L && v<=21523360L; }
+static bool const_val(Node *n, long *v) {
+  while(n->kind==ND_CAST && n->ty->size==3 && n->ty->kind!=TY_BOOL && !is_flonum(n->ty) && !is_flonum(n->lhs->ty)) n=n->lhs;
+  if(n->ty && is_flonum(n->ty)) return false;
+  long a,b;
+  switch(n->kind) {
+  case ND_NUM: *v=(long)tri_wrap(n->val,7625597484987L); return true;
+  case ND_NEG: if(!const_val(n->lhs,&a)) return false; *v=-a; return true;
+  case ND_ADD: case ND_SUB: case ND_MUL:
+    if(!n->ty || n->ty->size!=3 || !const_val(n->lhs,&a) || !const_val(n->rhs,&b)) return false;
+    if(a>21523360L||a<-21523360L||b>21523360L||b<-21523360L) return false;   // évite tout débordement hôte
+    *v = n->kind==ND_ADD ? a+b : n->kind==ND_SUB ? a-b : a*b;
+    *v=(long)tri_wrap(*v,7625597484987L); return true;
+  default: return false;
+  }
+}
+// Direct scalar variable (local non-VLA or global): returns 1 and fills the address operand.
+static bool direct_var(Node *n, char *buf) {
+  if(n->kind!=ND_VAR || !scalar(n->ty)) return false;
+  Obj *v=n->var;
+  if(v->is_local) { sprintf(buf,"%d(fp)",v->offset); return true; }
+  if(v->is_tls) return false;
+  sprintf(buf,"%s(zero)",v->name); return true;
+}
 static void expr(Node *n);
 static void stmt(Node *n);
 static void emit(char *fmt, ...) {
@@ -22,7 +62,7 @@ static void check(Type *t) {
 static void cast(Type *t) {
   if(t->kind==TY_BOOL) { emit("  seq a0, a0, zero"); emit("  seq a0, a0, zero"); }
   else if(t->kind==TY_CHAR) {
-    emit("  push a0"); emit("  ldt a0, 0(sp)"); emit("  addi sp, sp, 3");
+    emit("  stt a0, -1(sp)"); emit("  ldt a0, -1(sp)");
     if(t->is_unsigned) { int id=serial++; emit("  bgez a0, .L.uc%d",id); emit("  addi a0, a0, 19683"); emit(".L.uc%d:",id); }
   }
 }
@@ -38,7 +78,7 @@ static void addr(Node *n) {
   switch(n->kind) {
   case ND_VAR:
     if(n->var->is_local) emit("  %s a0, %s, %d",n->ty->kind==TY_VLA?"addi":"addi","fp",n->var->offset);
-    else emit("  la a0, %s",n->var->name);
+    else emit("  addi a0, zero, %s",n->var->name);
     if(n->ty->kind==TY_VLA) emit("  ldw a0, 0(a0)");
     return;
   case ND_VLA_PTR: emit("  addi a0, fp, %d",n->var->offset); return;
@@ -72,7 +112,9 @@ static void call(Node *n) {
   int count=n->ret_buffer?1:0;
   for(Node *a=n->args;a;a=a->next) count++;
   int total=MAX(count,6)*3;
-  expr(n->lhs); emit("  push a0"); emit("  addi sp, sp, -%d",total);
+  bool direct = n->lhs->kind==ND_VAR && n->lhs->var->ty->kind==TY_FUNC && !n->lhs->var->is_local;
+  if(direct) emit("  addi sp, sp, -%d",total);
+  else { expr(n->lhs); emit("  push a0"); emit("  addi sp, sp, -%d",total); }
   int i=0;
   if(n->ret_buffer) { emit("  addi a0, fp, %d",n->ret_buffer->offset); emit("  stw a0, 0(sp)"); i++; }
   for(Node *a=n->args;a;a=a->next,i++) {
@@ -82,9 +124,10 @@ static void call(Node *n) {
     }
     emit("  stw a0, %d(sp)",i*3);
   }
-  emit("  ldw t6, %d(sp)",total);
+  if(!direct) emit("  ldw t6, %d(sp)",total);
   for(i=0;i<MIN(count,6);i++) emit("  ldw a%d, %d(sp)",i,i*3);
-  emit("  jalr ra, t6, 0"); emit("  addi sp, sp, %d",total+3);
+  if(direct) { emit("  jal ra, %s",n->lhs->var->name); emit("  addi sp, sp, %d",total); }
+  else { emit("  jalr ra, t6, 0"); emit("  addi sp, sp, %d",total+3); }
   if(n->ret_buffer) emit("  addi a0, fp, %d",n->ret_buffer->offset);
   else cast(n->ty);
 }
@@ -96,19 +139,35 @@ static void expr(Node *n) {
   switch(n->kind) {
   case ND_NULL_EXPR: return;
   case ND_NUM: emit("  li a0, %ld",(long)tri_wrap(n->val,7625597484987L)); return;
+  case ND_ADD: case ND_SUB: case ND_MUL: { long cv; if(const_val(n,&cv)) { emit("  li a0, %ld",cv); return; } break; }
   case ND_NEG: expr(n->lhs); emit("  neg a0, a0"); return;
-  case ND_VAR: case ND_MEMBER: addr(n); load(n->ty); return;
+  case ND_VAR: {
+    char a[256];
+    if(direct_var(n,a)) { emit("  %s a0, %s",n->ty->size==1?"ldt":"ldw",a); if(n->ty->kind==TY_CHAR && n->ty->is_unsigned) cast(n->ty); return; }
+    addr(n); load(n->ty); return;
+  }
+  case ND_MEMBER: addr(n); load(n->ty); return;
   case ND_DEREF: expr(n->lhs); load(n->ty); return;
   case ND_ADDR: addr(n->lhs); return;
-  case ND_ASSIGN:
-    addr(n->lhs); emit("  push a0"); expr(n->rhs); emit("  pop t0");
-    if(aggregate(n->ty)) copy(n->ty->size);
-    else emit("  %s a0, 0(t0)",n->ty->size==1?"stt":"stw");
+  case ND_ASSIGN: {
+    char a[256];
+    if(!aggregate(n->ty) && direct_var(n->lhs,a)) { expr(n->rhs); emit("  %s a0, %s",n->ty->size==1?"stt":"stw",a); return; }
+    addr(n->lhs); spush(); expr(n->rhs);
+    if(aggregate(n->ty)) { spop("t0"); copy(n->ty->size); }
+    else if(depth-1<NSREG) { depth--; emit("  %s a0, 0(s%d)",n->ty->size==1?"stt":"stw",depth+1); }
+    else { spop("t0"); emit("  %s a0, 0(t0)",n->ty->size==1?"stt":"stw"); }
     return;
+  }
   case ND_COMMA: expr(n->lhs); expr(n->rhs); return;
   case ND_CAST: expr(n->lhs); cast(n->ty); return;
   case ND_STMT_EXPR: for(Node *s=n->body;s;s=s->next) stmt(s); return;
   case ND_MEMZERO:
+    if(n->var->ty->size<=30) {
+      int sz=n->var->ty->size, o=n->var->offset, k=0;
+      for(;k+3<=sz;k+=3) emit("  stw zero, %d(fp)",o+k);
+      for(;k<sz;k++) emit("  stt zero, %d(fp)",o+k);
+      return;
+    }
     emit("  addi t0, fp, %d",n->var->offset); emit("  li t1, %d",n->var->ty->size);
     emit(".L.zero%d:",id); emit("  beqz t1, .L.zend%d",id); emit("  stt zero, 0(t0)");
     emit("  addi t0, t0, 1"); emit("  addi t1, t1, -1"); emit("  j .L.zero%d",id); emit(".L.zend%d:",id); return;
@@ -127,7 +186,34 @@ static void expr(Node *n) {
   case ND_CAS: case ND_EXCH: error_tok(n->tok,"TRI27: atomics are not supported");
   default: break;
   }
-  expr(n->rhs); emit("  push a0"); expr(n->lhs); emit("  pop a1");
+  long k;
+  bool ulhs = n->lhs->ty && n->lhs->ty->is_unsigned && n->lhs->ty->kind!=TY_PTR;
+  if(const_val(n->rhs,&k) && fits16(k) && fits16(-k)) {
+    switch(n->kind) {
+    case ND_ADD: expr(n->lhs); emit("  addi a0, a0, %ld",k); return;
+    case ND_SUB: expr(n->lhs); emit("  addi a0, a0, %ld",-k); return;
+    case ND_MUL: expr(n->lhs); emit("  muli a0, a0, %ld",k); return;
+    case ND_EQ: case ND_NE:
+      expr(n->lhs); emit("  addi a0, a0, %ld",-k); emit("  seq a0, a0, zero");
+      if(n->kind==ND_NE) emit("  seq a0, a0, zero"); return;
+    case ND_LT: if(!ulhs) { expr(n->lhs); emit("  slti a0, a0, %ld",k); return; } break;
+    case ND_LE: if(!ulhs && fits16(k+1)) { expr(n->lhs); emit("  slti a0, a0, %ld",k+1); return; } break;
+    case ND_DIV: case ND_MOD:
+      if(!n->ty->is_unsigned && k!=0) { expr(n->lhs); emit("  li t0, %ld",k); emit("  %s a0, a0, t0",n->kind==ND_DIV?"div":"mod"); return; }
+      break;
+    case ND_SHL: if(k>=0 && k<=24) { expr(n->lhs); emit("  muli a0, a0, %ld",1L<<k); return; } break;
+    case ND_SHR:
+      if(!n->ty->is_unsigned && k>=0 && k<=24) {
+        int id2=serial++;
+        expr(n->lhs);
+        if(k>0) { emit("  bgez a0, .L.shr%d",id2); emit("  addi a0, a0, %ld",-((1L<<k)-1)); emit(".L.shr%d:",id2); emit("  li t0, %ld",1L<<k); emit("  div a0, a0, t0"); }
+        return;
+      }
+      break;
+    default: break;
+    }
+  }
+  expr(n->rhs); spush(); expr(n->lhs); spop("a1");
   switch(n->kind) {
   case ND_ADD: emit("  add a0, a0, a1"); return;
   case ND_SUB: emit("  sub a0, a0, a1"); return;
@@ -221,8 +307,9 @@ void codegen(Obj *prog, FILE *output) {
     for(Obj *v=fn->locals;v;v=v->next) { check(v->ty); size=align_to(size+v->ty->size,v->align); v->offset=-size; }
     arg_slots(fn->body,&size);
     fn->stack_size=align_to(size,3);
-    emit("  .align 3"); emit("%s:",fn->name); emit("  push ra"); emit("  push fp"); emit("  mv fp, sp"); emit("  addi sp, sp, -%d",fn->stack_size);
-    emit("  stw sp, %d(fp)",fn->alloca_bottom->offset);
+    FILE *real=out; char *body=NULL; size_t blen=0;
+    out=open_memstream(&body,&blen);
+    depth=0; maxdepth=0;
     // Home all six registers before copying aggregates (which clobbers a0).
     for(int i=0;i<6;i++) emit("  stw a%d, %d(fp)",i,6+3*i);
     int i=0;
@@ -234,6 +321,14 @@ void codegen(Obj *prog, FILE *output) {
     if(fn->va_area) { emit("  addi t0, fp, %d",6+3*i); emit("  stw t0, %d(fp)",fn->va_area->offset); }
     stmt(fn->body);
     if(!strcmp(fn->name,"main")) emit("  li a0, 0");
-    emit(".L.return.%s:",fn->name); emit("  mv sp, fp"); emit("  pop fp"); emit("  pop ra"); emit("  ret");
+    fclose(out); out=real;
+    int ns=MIN(maxdepth,NSREG), frame=fn->stack_size+3*ns;
+    emit("  .align 3"); emit("%s:",fn->name); emit("  push ra"); emit("  push fp"); emit("  mv fp, sp"); emit("  addi sp, sp, -%d",frame);
+    for(int r=1;r<=ns;r++) emit("  stw s%d, %d(fp)",r,-fn->stack_size-3*r);
+    emit("  stw sp, %d(fp)",fn->alloca_bottom->offset);
+    fwrite(body,1,blen,out); free(body);
+    emit(".L.return.%s:",fn->name);
+    for(int r=1;r<=ns;r++) emit("  ldw s%d, %d(fp)",r,-fn->stack_size-3*r);
+    emit("  mv sp, fp"); emit("  pop fp"); emit("  pop ra"); emit("  ret");
   }
 }

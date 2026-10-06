@@ -8,7 +8,7 @@
 //! Les entiers 64 bits sont renvoyés en f64 pour éviter les BigInt côté JS.
 
 use crate::asm;
-use crate::vm::{Vm, FB_H, FB_W};
+use crate::vm::{Vm, TRIT_H, TRIT_W};
 use std::ptr::addr_of_mut;
 
 /// 3^14 trytes de RAM.
@@ -36,7 +36,7 @@ fn st() -> &'static mut State {
             entry: 0,
             src: Vec::new(),
             err: String::new(),
-            rgba: vec![0; FB_W * FB_H * 4],
+            rgba: vec![0; TRIT_W * TRIT_H * 4],
             audio: Vec::new(),
         })
     }
@@ -48,6 +48,8 @@ fn fresh_vm(s: &mut State) {
         vm.load(0, &s.image);
     }
     vm.reset_cpu(s.entry);
+    vm.mouse_x = s.vm.mouse_x;
+    vm.mouse_y = s.vm.mouse_y;
     s.vm = vm;
     for px in s.rgba.chunks_exact_mut(4) {
         px.copy_from_slice(&[0, 0, 0, 255]);
@@ -153,12 +155,24 @@ pub extern "C" fn fb_ptr() -> *const u8 {
 
 #[no_mangle]
 pub extern "C" fn fb_width() -> i32 {
-    FB_W as i32
+    st().vm.fb_dims().0 as i32
 }
 
 #[no_mangle]
 pub extern "C" fn fb_height() -> i32 {
-    FB_H as i32
+    st().vm.fb_dims().1 as i32
+}
+
+/// Mode vidéo courant (0 = TRGB 320×200, 1 = TRIT 576×360).
+#[no_mangle]
+pub extern "C" fn vmode() -> i32 {
+    st().vm.vmode as i32
+}
+
+/// Souris : pixels du mode courant, btn = gauche + 3·droit.
+#[no_mangle]
+pub extern "C" fn set_mouse(x: i32, y: i32, btn: i32) {
+    st().vm.set_mouse(x as i64, y as i64, btn as i64);
 }
 
 /// Événement clavier : +code = appui, −code = relâche.

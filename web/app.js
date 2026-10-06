@@ -65,7 +65,16 @@ msg:    .str  "TRI-27 : bonjour depuis la VM ternaire !\nTapez du texte, il sera
 const $ = (id) => document.getElementById(id);
 const srcEl = $('src'), conEl = $('console'), statsEl = $('stats'), statusEl = $('status');
 const canvas = $('screen'), ctx = canvas.getContext('2d');
-const imgData = ctx.createImageData(320, 200);
+let imgData = ctx.createImageData(320, 200);
+let focusDone = false;
+// mode vidéo : TRGB 320x200 affiché x3, TRIT 576x360 affiché x2
+function fitCanvas(w, h) {
+  if (canvas.width === w && canvas.height === h) return;
+  canvas.width = w; canvas.height = h;
+  const k = w === 576 ? 2 : 3;
+  canvas.style.width = (w * k) + 'px'; canvas.style.height = (h * k) + 'px';
+  imgData = ctx.createImageData(w, h);
+}
 const enc = new TextEncoder(), dec = new TextDecoder();
 
 let W = null;            // exports wasm
@@ -95,8 +104,12 @@ function drainConsole() {
 
 function drawFrame() {
   const p = W.fb_render();
-  imgData.data.set(new Uint8Array(W.memory.buffer, p, 320 * 200 * 4));
+  const w = W.fb_width(), h = W.fb_height();
+  fitCanvas(w, h);
+  imgData.data.set(new Uint8Array(W.memory.buffer, p, w * h * 4));
   ctx.putImageData(imgData, 0, 0);
+  // premier affichage d'une image : le clavier va à l'écran (KEY_EVENT seulement)
+  if (!focusDone && W.frames() > 0) { focusDone = true; canvas.focus(); }
 }
 
 // ---- son TSG-3 : la VM rend des blocs f32 44,1 kHz, planifiés ~120 ms en avance ----
@@ -135,7 +148,7 @@ function assembleAndRun() {
     return false;
   }
   conText = ''; conEl.textContent = '';
-  loaded = true; running = true; lastFrames = 0; vmTime = 0; lastTs = null;
+  loaded = true; focusDone = false; running = true; lastFrames = 0; vmTime = 0; lastTs = null;
   rateWin = { t: performance.now(), c: W.cycles() }; framesWin = 0;
   drawFrame();
   setStatus('En cours', 'ok');
@@ -192,7 +205,12 @@ function tick(ts) {
 // ---- clavier : codes = KeyboardEvent.keyCode (flèches 37..40, lettres 65..90, Entrée 13, Échap 27) ----
 function onKeyDown(e) {
   if (!W) return;
-  if (!e.repeat && e.keyCode) W.push_key(e.keyCode);
+  // écran focus → KEY_EVENT seulement ; console focus → caractères seulement
+  if (e.currentTarget === canvas) {
+    if (!e.repeat && e.keyCode) W.push_key(e.keyCode);
+    e.preventDefault();
+    return;
+  }
   if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) W.push_char(e.key.codePointAt(0));
   else if (e.key === 'Enter') W.push_char(10);
   else if (e.key === 'Backspace') W.push_char(8);
@@ -202,7 +220,7 @@ function onKeyDown(e) {
 }
 function onKeyUp(e) {
   if (!W) return;
-  if (e.keyCode) W.push_key(-e.keyCode);
+  if (e.currentTarget === canvas && e.keyCode) W.push_key(-e.keyCode);
   e.preventDefault();
 }
 // l'écran ET la console acceptent le clavier (la console sert de terminal)
@@ -211,6 +229,20 @@ for (const el of [canvas, conEl]) {
   el.addEventListener('keyup', onKeyUp);
   el.addEventListener('mousedown', () => setTimeout(() => el.focus(), 0));
 }
+
+// ---- souris : pixels du mode courant ----
+function sendMouse(e) {
+  if (!W) return;
+  const r = canvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left) * canvas.width / r.width);
+  const y = Math.floor((e.clientY - r.top) * canvas.height / r.height);
+  const b = e.buttons | 0;
+  W.set_mouse(x, y, (b & 1) + 3 * ((b >> 1) & 1));
+}
+canvas.addEventListener('mousemove', sendMouse);
+canvas.addEventListener('mousedown', sendMouse);
+canvas.addEventListener('mouseup', sendMouse);
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
 $('btnRun').onclick = () => { if (W) assembleAndRun(); };
 $('btnPause').onclick = () => {
@@ -224,7 +256,7 @@ $('btnReset').onclick = () => {
   if (!loaded) return;
   W.reset();
   conText = ''; conEl.textContent = '';
-  lastFrames = 0; vmTime = 0; lastTs = null; running = true;
+  lastFrames = 0; vmTime = 0; lastTs = null; running = true; focusDone = false;
   rateWin = { t: performance.now(), c: 0 }; framesWin = 0;
   drawFrame();
   $('btnPause').textContent = 'Pause';

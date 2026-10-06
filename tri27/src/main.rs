@@ -26,10 +26,11 @@ fn load(path: &str) -> asm::Image {
 }
 
 fn save_ppm(vm: &Vm, path: &std::path::Path) {
-    let mut rgba = vec![0u8; FB_W * FB_H * 4];
+    let (fb_w, fb_h) = vm.fb_dims();
+    let mut rgba = vec![0u8; fb_w * fb_h * 4];
     vm.render_rgba(&mut rgba);
     let mut f = std::fs::File::create(path).unwrap();
-    write!(f, "P6\n{FB_W} {FB_H}\n255\n").unwrap();
+    write!(f, "P6\n{fb_w} {fb_h}\n255\n").unwrap();
     let rgb: Vec<u8> = rgba.chunks(4).flat_map(|p| [p[0], p[1], p[2]]).collect();
     f.write_all(&rgb).unwrap();
 }
@@ -67,6 +68,7 @@ fn main() {
             let path = args.get(2).unwrap_or_else(|| usage());
             let mut max = u64::MAX;
             let mut ppm: Option<String> = None;
+            let mut mouse: Option<(i64, i64, i64)> = None;
             let mut stats = false;
             let mut input = String::new();
             let mut wav: Option<String> = None;
@@ -83,6 +85,11 @@ fn main() {
                         i += 1
                     }
                     "--stats" => stats = true,
+                    "--mouse" => {
+                        let v: Vec<i64> = args[i + 1].split(',').map(|x| x.trim().parse().unwrap()).collect();
+                        mouse = Some((v[0], v[1], *v.get(2).unwrap_or(&0)));
+                        i += 1;
+                    }
                     "--wav" => {
                         wav = Some(args[i + 1].clone());
                         i += 1
@@ -105,6 +112,7 @@ fn main() {
             let mut done = 0u64;
             while !vm.halted && done < max {
                 vm.time_ms = t0.elapsed().as_millis() as i64;
+                if let Some((x, y, b)) = mouse { vm.set_mouse(x, y, b); }
                 done += vm.run((max - done).min(1 << 20));
                 if wav.is_some() {
                     let want = (vm.time_ms as f64 * tri27::sound::SR / 1000.0) as usize;

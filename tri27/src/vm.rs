@@ -21,7 +21,13 @@ pub mod mmio {
     pub const FB_PRESENT: i64 = -6;
     pub const KEY: i64 = -7;
     pub const TIME_MS: i64 = -8;
+    pub const VMODE: i64 = -9;
+    pub const MOUSE_X: i64 = -10;
+    pub const MOUSE_Y: i64 = -11;
+    pub const MOUSE_BTN: i64 = -12;
 }
+pub const TRIT_W: usize = 576;
+pub const TRIT_H: usize = 360;
 
 pub mod csr {
     pub const MODE: usize = 0;
@@ -62,6 +68,10 @@ pub struct Vm {
     pub input: VecDeque<i64>,
     pub keys: VecDeque<i64>,
     pub fb_addr: i64,
+    pub vmode: i64,
+    pub mouse_x: i64,
+    pub mouse_y: i64,
+    pub mouse_btn: i64,
     pub frames: u64,
     pub frame_ready: bool,
     pub time_ms: i64,
@@ -86,6 +96,10 @@ impl Vm {
             input: VecDeque::new(),
             keys: VecDeque::new(),
             fb_addr: 0,
+            vmode: 0,
+            mouse_x: 0,
+            mouse_y: 0,
+            mouse_btn: 0,
             frames: 0,
             frame_ready: false,
             time_ms: 0,
@@ -127,6 +141,10 @@ impl Vm {
             mmio::FB_ADDR => self.fb_addr,
             mmio::KEY => self.keys.pop_front().unwrap_or(0),
             mmio::TIME_MS => self.time_ms,
+            mmio::VMODE => self.vmode,
+            mmio::MOUSE_X => self.mouse_x,
+            mmio::MOUSE_Y => self.mouse_y,
+            mmio::MOUSE_BTN => self.mouse_btn,
             _ => 0,
         }
     }
@@ -147,6 +165,10 @@ impl Vm {
                 self.halted = true;
             }
             mmio::FB_ADDR => self.fb_addr = v,
+            mmio::VMODE => {
+                self.vmode = if v == 1 { 1 } else { 0 };
+                self.set_mouse(self.mouse_x, self.mouse_y, self.mouse_btn);
+            }
             mmio::FB_PRESENT => {
                 self.frames += 1;
                 self.frame_ready = true;
@@ -476,13 +498,49 @@ impl Vm {
         self.pc = next;
     }
 
-    /// Framebuffer → RGBA (320×200×4).
+    /// Dimensions du mode vidéo courant.
+    pub fn fb_dims(&self) -> (usize, usize) {
+        if self.vmode == 1 { (TRIT_W, TRIT_H) } else { (FB_W, FB_H) }
+    }
+
+    /// Fixe la souris (pixels du mode courant, bornés ; btn = gauche + 3·droit).
+    pub fn set_mouse(&mut self, x: i64, y: i64, btn: i64) {
+        let (w, h) = self.fb_dims();
+        self.mouse_x = x.clamp(0, w as i64 - 1);
+        self.mouse_y = y.clamp(0, h as i64 - 1);
+        self.mouse_btn = btn;
+    }
+
+    /// Framebuffer → RGBA (largeur×hauteur du mode courant ×4).
+    /// Mode 1 (TRIT) : trit −1 noir, 0 gris (170,170,170), +1 blanc.
     pub fn render_rgba(&self, buf: &mut [u8]) {
         let base = self.fb_addr;
+        let (w, h) = self.fb_dims();
+        let inmem = |a: i64| base > 0 && a >= 0 && (a as usize) < self.mem.len();
+        if self.vmode == 1 {
+            let per = w / 9;
+            for y in 0..h {
+                for tx in 0..per {
+                    let a = base + (y * per + tx) as i64;
+                    let mut t = if inmem(a) { self.mem[a as usize] as i64 } else { 0 };
+                    for k in 0..9 {
+                        let b = bal_mod(t, 3);
+                        t = (t - b) / 3;
+                        let v: u8 = match b { -1 => 0, 0 => 170, _ => 255 };
+                        let o = (y * w + tx * 9 + k) * 4;
+                        buf[o] = v;
+                        buf[o + 1] = v;
+                        buf[o + 2] = v;
+                        buf[o + 3] = 255;
+                    }
+                }
+            }
+            return;
+        }
         let lut = |c: i64| ((c + 13) * 255 / 26) as u8;
-        for p in 0..FB_W * FB_H {
+        for p in 0..w * h {
             let a = base + p as i64;
-            let t = if base > 0 && (a as usize) < self.mem.len() { self.mem[a as usize] as i64 } else { 0 };
+            let t = if inmem(a) { self.mem[a as usize] as i64 } else { 0 };
             let b = bal_mod(t, 27);
             let r1 = (t - b) / 27;
             let g = bal_mod(r1, 27);

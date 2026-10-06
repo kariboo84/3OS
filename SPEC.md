@@ -164,3 +164,29 @@ Expressions : termes (`123`, `0x1F`, `0t+-0`, `'c'`, symbole) liés par `+` / `-
 `.word` et `.trits` alignent implicitement sur 3 ; `.wordu` émet les mêmes trois trytes sans alignement implicite (données C compactées et relocations de pointeurs).
 Entrée = étiquette `start` si elle existe, sinon 0. Les instructions sont alignées sur 3 trytes.
 Pile initiale : `sp` = fin de la RAM (alignée à 3).
+
+
+## 8. Son : TSG-3 (Ternary Sound Generator)
+
+Mixage en arithmétique équilibrée : sortie = somme des voix, ramenée à un **tryte** (±9 841, symétrique,
+pas de biais : la troncature équilibrée arrondit au plus proche). Fréquence de sortie 44 100 Hz (hôte).
+
+**9 voix** (v = 0…8). Registre r de la voix v à l'adresse **−100 − 9·v − r** :
+
+| r | nom | valeur |
+|---|---|---|
+| 0 | FREQ | fréquence en **millihertz** (La 440 Hz = 440000) |
+| 1 | WAVE | 0 muet, 1 sinus, **2 TRI3** (onde 3 niveaux 120° : +1 pendant 1/3 de période, 0 pendant 1/6, −1 pendant 1/3, 0 pendant 1/6 → ni harmoniques paires ni multiples de 3), 3 carré équilibré ±1, 4 dent de scie, **5 bruit ternaire** (LFSR GF(3) de degré 9, s[n] = s[n−6]+s[n−7]+s[n−8]+2·s[n−9] mod 3, période 3⁹−1 = 19 682, sortie −1/0/+1 cadencée à FREQ) |
+| 2 | VOL | 0…9 841 |
+| 3 | ATTACK | durée de montée en ms |
+| 4 | RELEASE | durée de descente en ms |
+| 5 | GATE | > 0 : note enclenchée (montée puis maintien) ; 0 : relâchée (descente) |
+
+| Adresse | nom | |
+|---|---|---|
+| −200 | PCM_PUSH | écriture : un échantillon (tryte) dans la FIFO PCM, lue à 22 050 Hz |
+| −201 | PCM_FREE | lecture : place libre dans la FIFO (taille 16 384) |
+| −202 | MASTER | volume général 0…9 841 (défaut 9 841) |
+
+Natif : `tri27 run prog.tas --wav sortie.wav` enregistre le son (temps réel de l'hôte).
+Web : Web Audio, rendu par blocs à chaque image.

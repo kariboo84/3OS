@@ -24,10 +24,11 @@
 #define DISK_STATUS TRI27_MMIO(-23)
 #define DISK_COUNT  TRI27_MMIO(-24)
 
-/* Disposition connue de kentry.tas : r à 0, pc à 81, ubase à 84, ulimit à 87. */
+/* Disposition connue de kentry.tas : r à 0, pc à 81, ubase à 84, ulimit à 87, ioperm à 90. */
 struct proc {
   long r[27];
   long pc, ubase, ulimit;
+  long ioperm;     /* 1 = premier plan : périphériques en accès direct (CSR IOPERM) */
   long state;      /* 0 libre, 1 prêt, 2 attend un enfant */
   long parent;
   long vmode, fbaddr;
@@ -100,6 +101,20 @@ static void silence(void) {
   for (int v = 0; v < 9; v++) SND_GATE(v) = 0;
 }
 
+/* Le premier plan change : on fige l'écran du sortant (il a pu le modifier en accès
+ * direct), on coupe le son, on donne les périphériques au nouveau. */
+static void set_fg(long n) {
+  if (fg >= 0 && procs[fg].state != FREE) {
+    struct proc *o = &procs[fg];
+    o->vmode = VMODE;
+    o->fbaddr = FB_ADDR > 0 ? FB_ADDR - o->ubase : 0;
+  }
+  silence();
+  for (int i = 0; i < NPROC; i++) procs[i].ioperm = 0;
+  fg = n;
+  if (fg >= 0) { procs[fg].ioperm = 1; apply_display(); }
+}
+
 /* ---------- processus ---------- */
 static struct proc *spawn(const char *name, long parent) {
   long e = dir_find(name);
@@ -123,6 +138,7 @@ static struct proc *spawn(const char *name, long parent) {
   p->parent = parent;
   p->vmode = 0;
   p->fbaddr = 0;
+  p->ioperm = 0;
   for (int k = 0; k < 16; k++) p->name[k] = d[k];
   return p;
 }
@@ -141,12 +157,12 @@ static void boot_init(void);
 static void proc_exit(struct proc *p, long code) {
   long me = pid(p);
   p->state = FREE;
-  if (fg == me) { silence(); fg = p->parent; }
+  p->ioperm = 0;
+  if (fg == me) set_fg(p->parent);
   if (p->parent >= 0) {
     struct proc *par = &procs[p->parent];
     if (par->state == WAITING) { R(par, A0) = code; par->state = READY; }
   }
-  if (fg >= 0) apply_display();
   int alive = 0;
   for (int i = 0; i < NPROC; i++) if (procs[i].state != FREE) alive = 1;
   if (!alive) { printf("\n[3OS] plus aucun processus : relance de init\n"); boot_init(); return; }
@@ -216,9 +232,7 @@ static void syscall(long n) {
     struct proc *c = spawn(name, pid(p));
     if (!c) { R(p, A0) = -1; return; }
     p->state = WAITING;
-    fg = pid(c);
-    silence();
-    apply_display();
+    set_fg(pid(c));
     cur = c;
     set_timecmp(CYCLES + QUANTUM);
     return;
@@ -275,8 +289,8 @@ static void boot_init(void) {
   struct proc *p = spawn("system3", -1);
   if (!p) p = spawn("hello", -1);
   if (!p) { printf("[3OS] aucun programme d'init sur le disque\n"); exit(1); }
-  fg = pid(p);
-  apply_display();
+  fg = -1;
+  set_fg(pid(p));
   cur = p;
   set_timecmp(CYCLES + QUANTUM);
 }

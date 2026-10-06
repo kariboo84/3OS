@@ -1,6 +1,7 @@
 ; kentry.tas — 3OS v0.3 : démarrage et vecteur de pièges.
 ; Le contexte utilisateur est sauvé dans *cur (struct proc, kernel.c) :
-;   r[k] (registre k = -13..13) au décalage (k+13)*3, pc à 81, ubase à 84, ulimit à 87.
+;   r[k] (registre k = -13..13) au décalage (k+13)*3, pc à 81, ubase à 84, ulimit à 87,
+;   ioperm à 90.
 
 .align 3
 start:
@@ -59,6 +60,8 @@ kresume:
         csrw  t1, 10                 ; UBASE
         ldw   t1, 87(t0)
         csrw  t1, 11                 ; ULIMIT
+        ldw   t1, 90(t0)
+        csrw  t1, 12                 ; IOPERM : accès direct aux périphériques
         li    t1, 1
         csrw  t1, pmode              ; reprise en mode utilisateur
         csrw  t1, pie                ; interruptions actives

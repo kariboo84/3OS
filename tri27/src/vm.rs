@@ -32,6 +32,12 @@ pub mod mmio {
     pub const DISK_COUNT: i64 = -24;
 }
 pub const SECTOR: usize = 729;
+
+/// Registres réservés au noyau même avec IOPERM : arrêt machine et disque.
+#[inline(always)]
+pub fn mmio_privileged(a: i64) -> bool {
+    a == mmio::EXIT || (-24..=-20).contains(&a)
+}
 pub const TRIT_W: usize = 576;
 pub const TRIT_H: usize = 360;
 
@@ -49,7 +55,9 @@ pub mod csr {
     /// Mode utilisateur (+1) : adresses virtuelles [0, ULIMIT) → physiques + UBASE.
     pub const UBASE: usize = 10;
     pub const ULIMIT: usize = 11;
-    pub const COUNT: usize = 12;
+    /// ≠ 0 : le mode utilisateur accède directement aux périphériques (sauf privilégiés).
+    pub const IOPERM: usize = 12;
+    pub const COUNT: usize = 13;
 }
 
 pub mod cause {
@@ -94,6 +102,12 @@ pub struct Vm {
     pub disk_addr: i64,
     pub disk_status: i64,
     pub disk_dirty: bool,
+    #[cfg(feature = "prof")]
+    pub prof_op: [u64; 256],
+    #[cfg(feature = "prof")]
+    pub prof_user: u64,
+    #[cfg(feature = "prof")]
+    pub prof_traps: [u64; 16],
     pub present_w: usize,
     pub present_h: usize,
     pub time_ms: i64,
@@ -131,6 +145,12 @@ impl Vm {
             disk_addr: 0,
             disk_status: 0,
             disk_dirty: false,
+            #[cfg(feature = "prof")]
+            prof_op: [0; 256],
+            #[cfg(feature = "prof")]
+            prof_user: 0,
+            #[cfg(feature = "prof")]
+            prof_traps: [0; 16],
             present_w: 0,
             present_h: 0,
             time_ms: 0,
@@ -158,6 +178,25 @@ impl Vm {
         self.halted = false;
         self.error = None;
         self.exit_code = 0;
+    }
+
+    /// Espace utilisateur courant (UBASE, ULIMIT), si le CPU est en mode utilisateur isolé.
+    #[inline(always)]
+    fn user_space(&self) -> Option<(i64, i64)> {
+        if self.mode > 0 && self.csr[csr::ULIMIT] > 0 {
+            Some((self.csr[csr::UBASE], self.csr[csr::ULIMIT]))
+        } else {
+            None
+        }
+    }
+
+    /// Taille en trytes du framebuffer du mode vidéo courant.
+    fn fb_trytes(&self) -> i64 {
+        match self.vmode {
+            1 => (TRIT_W / 9 * TRIT_H) as i64,
+            2 => (TRIT_W * TRIT_H) as i64,
+            _ => 320 * 200,
+        }
     }
 
     /// Transfert synchrone d'un secteur : 1 = lire (disque → RAM), 2 = écrire.
@@ -201,7 +240,11 @@ impl Vm {
         match a {
             mmio::CONSOLE_IN => self.input.pop_front().unwrap_or(-1),
             mmio::CYCLES => wrap27(self.cycles as i64),
-            mmio::FB_ADDR => self.fb_addr,
+            mmio::FB_ADDR => match self.user_space() {
+                // vu du processus : adresse virtuelle
+                Some((ub, _)) if self.fb_addr > 0 => self.fb_addr - ub,
+                _ => self.fb_addr,
+            },
             mmio::KEY => self.keys.pop_front().unwrap_or(0),
             mmio::TIME_MS => self.time_ms,
             mmio::VMODE => self.vmode,
@@ -231,7 +274,19 @@ impl Vm {
                 self.exit_code = v;
                 self.halted = true;
             }
-            mmio::FB_ADDR => self.fb_addr = v,
+            mmio::FB_ADDR => {
+                self.fb_addr = match self.user_space() {
+                    // traduction virtuelle → physique ; refusé (0) s'il déborde de l'espace
+                    Some((ub, ul)) => {
+                        if v > 0 && v + self.fb_trytes() <= ul {
+                            v + ub
+                        } else {
+                            0
+                        }
+                    }
+                    None => v,
+                }
+            }
             mmio::DISK_SECTOR => self.disk_sector = v,
             mmio::DISK_ADDR => self.disk_addr = v,
             mmio::DISK_CMD => self.disk_cmd(v),
@@ -336,6 +391,10 @@ impl Vm {
     // ---------------- pièges ----------------
 
     fn trap(&mut self, c: i64, tval: i64) {
+        #[cfg(feature = "prof")]
+        {
+            self.prof_traps[c.clamp(0, 15) as usize] += 1;
+        }
         let tvec = self.csr[csr::TVEC];
         if tvec == 0 {
             self.halted = true;
@@ -427,6 +486,11 @@ impl Vm {
             self.cache[ci] = i;
         }
         self.cycles += 1;
+        #[cfg(feature = "prof")]
+        {
+            self.prof_op[i.op as usize] += 1;
+            if user { self.prof_user += 1; }
+        }
         let mut next = pc + 3;
         let (rd, s1, s2) = (i.rd as usize, i.rs1 as usize, i.rs2 as usize);
         macro_rules! r {
@@ -456,11 +520,14 @@ impl Vm {
             ($a:expr, $n:expr) => {{
                 let a = $a;
                 if user {
-                    if a < 0 || a + $n > ul {
+                    if a < 0 && self.csr[csr::IOPERM] != 0 && !mmio_privileged(a) {
+                        a // périphérique accordé par le noyau
+                    } else if a < 0 || a + $n > ul {
                         self.trap(cause::MEM, a);
                         return;
+                    } else {
+                        a + ub
                     }
-                    a + ub
                 } else {
                     a
                 }

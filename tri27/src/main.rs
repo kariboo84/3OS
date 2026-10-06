@@ -219,6 +219,18 @@ fn main() {
                     save_disk(d, &vm.disk);
                 }
             }
+            #[cfg(feature = "prof")]
+            {
+                let tot: u64 = vm.prof_op.iter().sum();
+                let mut v: Vec<(usize, u64)> = vm.prof_op.iter().copied().enumerate().filter(|x| x.1 > 0).collect();
+                v.sort_by(|a, b| b.1.cmp(&a.1));
+                eprintln!("[prof] {} instr, mode utilisateur {:.1}%", tot, 100.0 * vm.prof_user as f64 / tot.max(1) as f64);
+                for (o, n) in v.iter().take(22) {
+                    let name = isa::OPS.iter().find(|x| x.code as usize == *o).map(|x| x.name).unwrap_or("?");
+                    eprintln!("[prof] {:<6} {:>6.2}%", name, 100.0 * *n as f64 / tot as f64);
+                }
+                eprintln!("[prof] pièges par cause : {:?}", &vm.prof_traps[..12]);
+            }
             let dt = t0.elapsed().as_secs_f64();
             if let Some(w) = &wav {
                 save_wav(w, &audio);

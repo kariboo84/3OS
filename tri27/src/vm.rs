@@ -25,7 +25,13 @@ pub mod mmio {
     pub const MOUSE_X: i64 = -10;
     pub const MOUSE_Y: i64 = -11;
     pub const MOUSE_BTN: i64 = -12;
+    pub const DISK_SECTOR: i64 = -20;
+    pub const DISK_ADDR: i64 = -21;
+    pub const DISK_CMD: i64 = -22;
+    pub const DISK_STATUS: i64 = -23;
+    pub const DISK_COUNT: i64 = -24;
 }
+pub const SECTOR: usize = 729;
 pub const TRIT_W: usize = 576;
 pub const TRIT_H: usize = 360;
 
@@ -40,7 +46,10 @@ pub mod csr {
     pub const IE: usize = 7;
     pub const PMODE: usize = 8;
     pub const PIE: usize = 9;
-    pub const COUNT: usize = 10;
+    /// Mode utilisateur (+1) : adresses virtuelles [0, ULIMIT) → physiques + UBASE.
+    pub const UBASE: usize = 10;
+    pub const ULIMIT: usize = 11;
+    pub const COUNT: usize = 12;
 }
 
 pub mod cause {
@@ -79,6 +88,12 @@ pub struct Vm {
     pub present_rgba: Vec<u8>,
     /// Activé par le CLI (--ppm) : sans lui, FB_PRESENT ne coûte rien côté hôte.
     pub capture_present: bool,
+    /// Disque bloc : secteurs de 729 trytes.
+    pub disk: Vec<i16>,
+    pub disk_sector: i64,
+    pub disk_addr: i64,
+    pub disk_status: i64,
+    pub disk_dirty: bool,
     pub present_w: usize,
     pub present_h: usize,
     pub time_ms: i64,
@@ -111,6 +126,11 @@ impl Vm {
             frame_ready: false,
             present_rgba: Vec::new(),
             capture_present: false,
+            disk: Vec::new(),
+            disk_sector: 0,
+            disk_addr: 0,
+            disk_status: 0,
+            disk_dirty: false,
             present_w: 0,
             present_h: 0,
             time_ms: 0,
@@ -140,6 +160,38 @@ impl Vm {
         self.exit_code = 0;
     }
 
+    /// Transfert synchrone d'un secteur : 1 = lire (disque → RAM), 2 = écrire.
+    fn disk_cmd(&mut self, cmd: i64) {
+        let s = self.disk_sector;
+        let a = self.disk_addr;
+        let nsec = (self.disk.len() / SECTOR) as i64;
+        let ram_ok = a >= 0 && (a as usize) + SECTOR <= self.mem.len();
+        self.disk_status = -1;
+        if !ram_ok || s < 0 {
+            return;
+        }
+        let (d, m) = (s as usize * SECTOR, a as usize);
+        match cmd {
+            1 if s < nsec => {
+                self.mem[m..m + SECTOR].copy_from_slice(&self.disk[d..d + SECTOR]);
+                let end = ((m + SECTOR + 2) / 3).min(self.cache.len());
+                for c in &mut self.cache[m / 3..end] {
+                    *c = Inst::UNDECODED;
+                }
+                self.disk_status = 0;
+            }
+            2 => {
+                if self.disk.len() < d + SECTOR {
+                    self.disk.resize(d + SECTOR, 0);
+                }
+                self.disk[d..d + SECTOR].copy_from_slice(&self.mem[m..m + SECTOR]);
+                self.disk_dirty = true;
+                self.disk_status = 0;
+            }
+            _ => {}
+        }
+    }
+
     // ---------------- mémoire ----------------
 
     fn mmio_read(&mut self, a: i64) -> i64 {
@@ -156,6 +208,10 @@ impl Vm {
             mmio::MOUSE_X => self.mouse_x,
             mmio::MOUSE_Y => self.mouse_y,
             mmio::MOUSE_BTN => self.mouse_btn,
+            mmio::DISK_SECTOR => self.disk_sector,
+            mmio::DISK_ADDR => self.disk_addr,
+            mmio::DISK_STATUS => self.disk_status,
+            mmio::DISK_COUNT => (self.disk.len() / SECTOR) as i64,
             _ => 0,
         }
     }
@@ -176,6 +232,9 @@ impl Vm {
                 self.halted = true;
             }
             mmio::FB_ADDR => self.fb_addr = v,
+            mmio::DISK_SECTOR => self.disk_sector = v,
+            mmio::DISK_ADDR => self.disk_addr = v,
+            mmio::DISK_CMD => self.disk_cmd(v),
             mmio::VMODE => {
                 self.vmode = if v == 1 || v == 2 { v } else { 0 };
                 self.set_mouse(self.mouse_x, self.mouse_y, self.mouse_btn);
@@ -348,14 +407,22 @@ impl Vm {
     #[inline(always)]
     pub fn step(&mut self) {
         let pc = self.pc;
-        if pc < 0 || pc % 3 != 0 || (pc as usize) + 2 >= self.mem.len() {
+        // mode utilisateur avec ULIMIT > 0 : espace virtuel [0, ULIMIT) décalé de UBASE
+        let user = self.mode > 0 && self.csr[csr::ULIMIT] > 0;
+        let (ub, ul) = if user { (self.csr[csr::UBASE], self.csr[csr::ULIMIT]) } else { (0, 0) };
+        if user && (pc < 0 || pc + 3 > ul) {
+            self.trap(cause::MEM, pc);
+            return;
+        }
+        let ppc = pc + ub;
+        if ppc < 0 || ppc % 3 != 0 || (ppc as usize) + 2 >= self.mem.len() {
             self.trap(cause::ALIGN, pc);
             return;
         }
-        let ci = (pc / 3) as usize;
+        let ci = (ppc / 3) as usize;
         let mut i = self.cache[ci];
         if i.op == op::UNDECODED {
-            let w = self.peek_word(pc);
+            let w = self.peek_word(ppc);
             i = decode(w);
             self.cache[ci] = i;
         }
@@ -383,6 +450,21 @@ impl Vm {
                     }
                 }
             };
+        }
+        // adresse virtuelle → physique (mode utilisateur : bornes + décalage ; MMIO interdit)
+        macro_rules! va {
+            ($a:expr, $n:expr) => {{
+                let a = $a;
+                if user {
+                    if a < 0 || a + $n > ul {
+                        self.trap(cause::MEM, a);
+                        return;
+                    }
+                    a + ub
+                } else {
+                    a
+                }
+            }};
         }
         macro_rules! kernel {
             () => {
@@ -422,19 +504,21 @@ impl Vm {
             op::MAXI => set!(tmax(r!(s1), i.imm)),
             op::SLTI => set!((r!(s1) < i.imm) as i64),
             op::LDT => {
-                let v = mem!(self.ld_t(wrap27(r!(s1) + i.imm)));
+                let a = va!(wrap27(r!(s1) + i.imm), 1);
+                let v = mem!(self.ld_t(a));
                 set!(v)
             }
             op::LDW => {
-                let v = mem!(self.ld_w(wrap27(r!(s1) + i.imm)));
+                let a = va!(wrap27(r!(s1) + i.imm), 3);
+                let v = mem!(self.ld_w(a));
                 set!(v)
             }
             op::STT => {
-                let (a, v) = (wrap27(r!(s1) + i.imm), r!(rd));
+                let (a, v) = (va!(wrap27(r!(s1) + i.imm), 1), r!(rd));
                 mem!(self.st_t(a, v))
             }
             op::STW => {
-                let (a, v) = (wrap27(r!(s1) + i.imm), r!(rd));
+                let (a, v) = (va!(wrap27(r!(s1) + i.imm), 3), r!(rd));
                 mem!(self.st_w(a, v))
             }
             op::BEQ => {

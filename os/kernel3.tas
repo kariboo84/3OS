@@ -1,0 +1,8317 @@
+; kentry.tas — 3OS v0.3 : démarrage et vecteur de pièges.
+; Le contexte utilisateur est sauvé dans *cur (struct proc, kernel.c) :
+;   r[k] (registre k = -13..13) au décalage (k+13)*3, pc à 81, ubase à 84, ulimit à 87.
+
+.align 3
+start:
+        stw   sp, ram_size(zero)     ; la VM place sp en fin de RAM
+        la    sp, kstack_top
+        la    t0, __trap
+        csrw  t0, tvec
+        addi  sp, sp, -18
+        call  kmain
+        halt
+
+; ---------- entrée de piège ----------
+__trap:
+        csrw  t0, scratch
+        ldw   t0, cur(zero)
+        stw   s10, 0(t0)
+        stw   s9, 3(t0)
+        stw   s8, 6(t0)
+        stw   s7, 9(t0)
+        stw   s6, 12(t0)
+        stw   s5, 15(t0)
+        stw   s4, 18(t0)
+        stw   s3, 21(t0)
+        stw   s2, 24(t0)
+        stw   s1, 27(t0)
+        stw   fp, 30(t0)
+        stw   ra, 33(t0)
+        stw   sp, 36(t0)
+        stw   a0, 42(t0)
+        stw   a1, 45(t0)
+        stw   a2, 48(t0)
+        stw   a3, 51(t0)
+        stw   a4, 54(t0)
+        stw   a5, 57(t0)
+        stw   t1, 63(t0)
+        stw   t2, 66(t0)
+        stw   t3, 69(t0)
+        stw   t4, 72(t0)
+        stw   t5, 75(t0)
+        stw   t6, 78(t0)
+        csrr  t1, scratch
+        stw   t1, 60(t0)
+        csrr  t1, epc
+        stw   t1, 81(t0)
+        la    sp, kstack_top
+        addi  sp, sp, -18
+        call  ktrap
+        ; retombe dans kresume
+
+; ---------- reprise du processus *cur (ne revient pas) ----------
+kresume:
+        ldw   t0, cur(zero)
+        ldw   t1, 81(t0)
+        csrw  t1, epc
+        ldw   t1, 84(t0)
+        csrw  t1, 10                 ; UBASE
+        ldw   t1, 87(t0)
+        csrw  t1, 11                 ; ULIMIT
+        li    t1, 1
+        csrw  t1, pmode              ; reprise en mode utilisateur
+        csrw  t1, pie                ; interruptions actives
+        ldw   s10, 0(t0)
+        ldw   s9, 3(t0)
+        ldw   s8, 6(t0)
+        ldw   s7, 9(t0)
+        ldw   s6, 12(t0)
+        ldw   s5, 15(t0)
+        ldw   s4, 18(t0)
+        ldw   s3, 21(t0)
+        ldw   s2, 24(t0)
+        ldw   s1, 27(t0)
+        ldw   fp, 30(t0)
+        ldw   ra, 33(t0)
+        ldw   sp, 36(t0)
+        ldw   a0, 42(t0)
+        ldw   a1, 45(t0)
+        ldw   a2, 48(t0)
+        ldw   a3, 51(t0)
+        ldw   a4, 54(t0)
+        ldw   a5, 57(t0)
+        ldw   t1, 63(t0)
+        ldw   t2, 66(t0)
+        ldw   t3, 69(t0)
+        ldw   t4, 72(t0)
+        ldw   t5, 75(t0)
+        ldw   t6, 78(t0)
+        ldw   t0, 60(t0)
+        eret
+
+; ---------- accès CSR pour le C ----------
+csr_cause:
+        csrr  a0, cause
+        ret
+csr_tval:
+        csrr  a0, tval
+        ret
+set_timecmp:
+        csrw  a0, timecmp
+        ret
+
+        .align 3
+ram_size:    .word 0
+             .space 30000
+kstack_top:  .space 3
+
+  .align 1
+__tu1.L..96:
+  .tryte 100
+  .tryte 111
+  .tryte 110
+  .tryte 110
+  .tryte 101
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..95:
+  .tryte 112
+  .tryte 114
+  .tryte 111
+  .tryte 103
+  .tryte 114
+  .tryte 97
+  .tryte 109
+  .tryte 109
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..94:
+  .tryte 32
+  .tryte 32
+  .tryte 37
+  .tryte 45
+  .tryte 49
+  .tryte 53
+  .tryte 115
+  .tryte 32
+  .tryte 37
+  .tryte 55
+  .tryte 108
+  .tryte 100
+  .tryte 32
+  .tryte 116
+  .tryte 114
+  .tryte 121
+  .tryte 116
+  .tryte 101
+  .tryte 115
+  .tryte 32
+  .tryte 32
+  .tryte 37
+  .tryte 115
+  .tryte 10
+  .tryte 0
+  .align 1
+__tu1.L..91:
+  .tryte 100
+  .tryte 105
+  .tryte 115
+  .tryte 113
+  .tryte 117
+  .tryte 101
+  .tryte 32
+  .tryte 58
+  .tryte 32
+  .tryte 37
+  .tryte 108
+  .tryte 100
+  .tryte 32
+  .tryte 115
+  .tryte 101
+  .tryte 99
+  .tryte 116
+  .tryte 101
+  .tryte 117
+  .tryte 114
+  .tryte 115
+  .tryte 44
+  .tryte 32
+  .tryte 37
+  .tryte 108
+  .tryte 100
+  .tryte 32
+  .tryte 102
+  .tryte 105
+  .tryte 99
+  .tryte 104
+  .tryte 105
+  .tryte 101
+  .tryte 114
+  .tryte 115
+  .tryte 10
+  .tryte 0
+  .align 1
+__tu1.L..90:
+  .tryte 91
+  .tryte 51
+  .tryte 79
+  .tryte 83
+  .tryte 93
+  .tryte 32
+  .tryte 112
+  .tryte 97
+  .tryte 115
+  .tryte 32
+  .tryte 100
+  .tryte 101
+  .tryte 32
+  .tryte 100
+  .tryte 105
+  .tryte 115
+  .tryte 113
+  .tryte 117
+  .tryte 101
+  .tryte 10
+  .tryte 0
+  .align 1
+__tu1.L..89:
+  .tryte 82
+  .tryte 65
+  .tryte 77
+  .tryte 32
+  .tryte 37
+  .tryte 108
+  .tryte 100
+  .tryte 32
+  .tryte 116
+  .tryte 114
+  .tryte 121
+  .tryte 116
+  .tryte 101
+  .tryte 115
+  .tryte 44
+  .tryte 32
+  .tryte 37
+  .tryte 108
+  .tryte 100
+  .tryte 32
+  .tryte 101
+  .tryte 109
+  .tryte 112
+  .tryte 108
+  .tryte 97
+  .tryte 99
+  .tryte 101
+  .tryte 109
+  .tryte 101
+  .tryte 110
+  .tryte 116
+  .tryte 115
+  .tryte 32
+  .tryte 100
+  .tryte 101
+  .tryte 32
+  .tryte 112
+  .tryte 114
+  .tryte 111
+  .tryte 99
+  .tryte 101
+  .tryte 115
+  .tryte 115
+  .tryte 117
+  .tryte 115
+  .tryte 10
+  .tryte 0
+  .align 1
+__tu1.L..88:
+  .tryte 51
+  .tryte 79
+  .tryte 83
+  .tryte 32
+  .tryte 118
+  .tryte 48
+  .tryte 46
+  .tryte 51
+  .tryte 32
+  .tryte 45
+  .tryte 32
+  .tryte 110
+  .tryte 111
+  .tryte 121
+  .tryte 97
+  .tryte 117
+  .tryte 32
+  .tryte 116
+  .tryte 101
+  .tryte 114
+  .tryte 110
+  .tryte 97
+  .tryte 105
+  .tryte 114
+  .tryte 101
+  .tryte 32
+  .tryte 84
+  .tryte 82
+  .tryte 73
+  .tryte 45
+  .tryte 50
+  .tryte 55
+  .tryte 10
+  .tryte 0
+  .align 1
+__tu1.L..87:
+  .tryte 107
+  .tryte 109
+  .tryte 97
+  .tryte 105
+  .tryte 110
+  .tryte 0
+  .align 1
+__tu1.L..86:
+  .tryte 107
+  .tryte 109
+  .tryte 97
+  .tryte 105
+  .tryte 110
+  .tryte 0
+  .align 1
+__tu1.L..85:
+  .tryte 91
+  .tryte 51
+  .tryte 79
+  .tryte 83
+  .tryte 93
+  .tryte 32
+  .tryte 97
+  .tryte 117
+  .tryte 99
+  .tryte 117
+  .tryte 110
+  .tryte 32
+  .tryte 112
+  .tryte 114
+  .tryte 111
+  .tryte 103
+  .tryte 114
+  .tryte 97
+  .tryte 109
+  .tryte 109
+  .tryte 101
+  .tryte 32
+  .tryte 100
+  .tryte 39
+  .tryte 105
+  .tryte 110
+  .tryte 105
+  .tryte 116
+  .tryte 32
+  .tryte 115
+  .tryte 117
+  .tryte 114
+  .tryte 32
+  .tryte 108
+  .tryte 101
+  .tryte 32
+  .tryte 100
+  .tryte 105
+  .tryte 115
+  .tryte 113
+  .tryte 117
+  .tryte 101
+  .tryte 10
+  .tryte 0
+  .align 1
+__tu1.L..84:
+  .tryte 104
+  .tryte 101
+  .tryte 108
+  .tryte 108
+  .tryte 111
+  .tryte 0
+  .align 1
+__tu1.L..83:
+  .tryte 115
+  .tryte 121
+  .tryte 115
+  .tryte 116
+  .tryte 101
+  .tryte 109
+  .tryte 51
+  .tryte 0
+  .align 1
+__tu1.L..82:
+  .tryte 98
+  .tryte 111
+  .tryte 111
+  .tryte 116
+  .tryte 95
+  .tryte 105
+  .tryte 110
+  .tryte 105
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu1.L..81:
+  .tryte 98
+  .tryte 111
+  .tryte 111
+  .tryte 116
+  .tryte 95
+  .tryte 105
+  .tryte 110
+  .tryte 105
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu1.L..80:
+  .tryte 112
+  .tryte 105
+  .tryte 101
+  .tryte 103
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..79:
+  .tryte 105
+  .tryte 110
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 117
+  .tryte 99
+  .tryte 116
+  .tryte 105
+  .tryte 111
+  .tryte 110
+  .tryte 32
+  .tryte 105
+  .tryte 108
+  .tryte 108
+  .tryte 101
+  .tryte 103
+  .tryte 97
+  .tryte 108
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..78:
+  .tryte 100
+  .tryte 105
+  .tryte 118
+  .tryte 105
+  .tryte 115
+  .tryte 105
+  .tryte 111
+  .tryte 110
+  .tryte 32
+  .tryte 112
+  .tryte 97
+  .tryte 114
+  .tryte 32
+  .tryte 122
+  .tryte 101
+  .tryte 114
+  .tryte 111
+  .tryte 0
+  .align 1
+__tu1.L..77:
+  .tryte 102
+  .tryte 97
+  .tryte 117
+  .tryte 116
+  .tryte 101
+  .tryte 32
+  .tryte 109
+  .tryte 101
+  .tryte 109
+  .tryte 111
+  .tryte 105
+  .tryte 114
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..76:
+  .tryte 107
+  .tryte 116
+  .tryte 114
+  .tryte 97
+  .tryte 112
+  .tryte 0
+  .align 1
+__tu1.L..75:
+  .tryte 107
+  .tryte 116
+  .tryte 114
+  .tryte 97
+  .tryte 112
+  .tryte 0
+  .align 1
+__tu1.L..74:
+  .tryte 97
+  .tryte 112
+  .tryte 112
+  .tryte 101
+  .tryte 108
+  .tryte 32
+  .tryte 115
+  .tryte 121
+  .tryte 115
+  .tryte 116
+  .tryte 101
+  .tryte 109
+  .tryte 101
+  .tryte 32
+  .tryte 105
+  .tryte 110
+  .tryte 99
+  .tryte 111
+  .tryte 110
+  .tryte 110
+  .tryte 117
+  .tryte 0
+  .align 1
+__tu1.L..67:
+  .space 729
+  .align 1
+__tu1.L..60:
+  .tryte 37
+  .tryte 108
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu1.L..59:
+  .tryte 115
+  .tryte 121
+  .tryte 115
+  .tryte 99
+  .tryte 97
+  .tryte 108
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu1.L..58:
+  .tryte 115
+  .tryte 121
+  .tryte 115
+  .tryte 99
+  .tryte 97
+  .tryte 108
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu1.L..57:
+  .tryte 97
+  .tryte 99
+  .tryte 99
+  .tryte 101
+  .tryte 115
+  .tryte 32
+  .tryte 109
+  .tryte 101
+  .tryte 109
+  .tryte 111
+  .tryte 105
+  .tryte 114
+  .tryte 101
+  .tryte 32
+  .tryte 105
+  .tryte 110
+  .tryte 118
+  .tryte 97
+  .tryte 108
+  .tryte 105
+  .tryte 100
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..56:
+  .tryte 112
+  .tryte 99
+  .tryte 32
+  .tryte 104
+  .tryte 111
+  .tryte 114
+  .tryte 115
+  .tryte 32
+  .tryte 101
+  .tryte 115
+  .tryte 112
+  .tryte 97
+  .tryte 99
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..55:
+  .tryte 101
+  .tryte 109
+  .tryte 117
+  .tryte 108
+  .tryte 97
+  .tryte 116
+  .tryte 101
+  .tryte 95
+  .tryte 109
+  .tryte 109
+  .tryte 105
+  .tryte 111
+  .tryte 0
+  .align 1
+__tu1.L..54:
+  .tryte 101
+  .tryte 109
+  .tryte 117
+  .tryte 108
+  .tryte 97
+  .tryte 116
+  .tryte 101
+  .tryte 95
+  .tryte 109
+  .tryte 109
+  .tryte 105
+  .tryte 111
+  .tryte 0
+  .align 1
+__tu1.L..53:
+  .tryte 100
+  .tryte 101
+  .tryte 118
+  .tryte 95
+  .tryte 119
+  .tryte 114
+  .tryte 105
+  .tryte 116
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..52:
+  .tryte 100
+  .tryte 101
+  .tryte 118
+  .tryte 95
+  .tryte 119
+  .tryte 114
+  .tryte 105
+  .tryte 116
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..51:
+  .tryte 100
+  .tryte 101
+  .tryte 118
+  .tryte 95
+  .tryte 114
+  .tryte 101
+  .tryte 97
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu1.L..50:
+  .tryte 100
+  .tryte 101
+  .tryte 118
+  .tryte 95
+  .tryte 114
+  .tryte 101
+  .tryte 97
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu1.L..49:
+  .tryte 10
+  .tryte 91
+  .tryte 51
+  .tryte 79
+  .tryte 83
+  .tryte 93
+  .tryte 32
+  .tryte 37
+  .tryte 115
+  .tryte 32
+  .tryte 116
+  .tryte 117
+  .tryte 101
+  .tryte 32
+  .tryte 58
+  .tryte 32
+  .tryte 37
+  .tryte 115
+  .tryte 32
+  .tryte 40
+  .tryte 37
+  .tryte 108
+  .tryte 100
+  .tryte 41
+  .tryte 32
+  .tryte 112
+  .tryte 99
+  .tryte 61
+  .tryte 37
+  .tryte 108
+  .tryte 100
+  .tryte 10
+  .tryte 0
+  .align 1
+__tu1.L..48:
+  .tryte 107
+  .tryte 105
+  .tryte 108
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu1.L..47:
+  .tryte 107
+  .tryte 105
+  .tryte 108
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu1.L..46:
+  .tryte 10
+  .tryte 91
+  .tryte 51
+  .tryte 79
+  .tryte 83
+  .tryte 93
+  .tryte 32
+  .tryte 112
+  .tryte 108
+  .tryte 117
+  .tryte 115
+  .tryte 32
+  .tryte 97
+  .tryte 117
+  .tryte 99
+  .tryte 117
+  .tryte 110
+  .tryte 32
+  .tryte 112
+  .tryte 114
+  .tryte 111
+  .tryte 99
+  .tryte 101
+  .tryte 115
+  .tryte 115
+  .tryte 117
+  .tryte 115
+  .tryte 32
+  .tryte 58
+  .tryte 32
+  .tryte 114
+  .tryte 101
+  .tryte 108
+  .tryte 97
+  .tryte 110
+  .tryte 99
+  .tryte 101
+  .tryte 32
+  .tryte 100
+  .tryte 101
+  .tryte 32
+  .tryte 105
+  .tryte 110
+  .tryte 105
+  .tryte 116
+  .tryte 10
+  .tryte 0
+  .align 1
+__tu1.L..43:
+  .tryte 112
+  .tryte 114
+  .tryte 111
+  .tryte 99
+  .tryte 95
+  .tryte 101
+  .tryte 120
+  .tryte 105
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu1.L..42:
+  .tryte 112
+  .tryte 114
+  .tryte 111
+  .tryte 99
+  .tryte 95
+  .tryte 101
+  .tryte 120
+  .tryte 105
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu1.L..39:
+  .tryte 115
+  .tryte 99
+  .tryte 104
+  .tryte 101
+  .tryte 100
+  .tryte 117
+  .tryte 108
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..38:
+  .tryte 115
+  .tryte 99
+  .tryte 104
+  .tryte 101
+  .tryte 100
+  .tryte 117
+  .tryte 108
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..29:
+  .tryte 115
+  .tryte 112
+  .tryte 97
+  .tryte 119
+  .tryte 110
+  .tryte 0
+  .align 1
+__tu1.L..28:
+  .tryte 115
+  .tryte 112
+  .tryte 97
+  .tryte 119
+  .tryte 110
+  .tryte 0
+  .align 1
+__tu1.L..25:
+  .tryte 115
+  .tryte 105
+  .tryte 108
+  .tryte 101
+  .tryte 110
+  .tryte 99
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..24:
+  .tryte 115
+  .tryte 105
+  .tryte 108
+  .tryte 101
+  .tryte 110
+  .tryte 99
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..23:
+  .tryte 97
+  .tryte 112
+  .tryte 112
+  .tryte 108
+  .tryte 121
+  .tryte 95
+  .tryte 100
+  .tryte 105
+  .tryte 115
+  .tryte 112
+  .tryte 108
+  .tryte 97
+  .tryte 121
+  .tryte 0
+  .align 1
+__tu1.L..22:
+  .tryte 97
+  .tryte 112
+  .tryte 112
+  .tryte 108
+  .tryte 121
+  .tryte 95
+  .tryte 100
+  .tryte 105
+  .tryte 115
+  .tryte 112
+  .tryte 108
+  .tryte 97
+  .tryte 121
+  .tryte 0
+  .align 1
+__tu1.L..19:
+  .tryte 100
+  .tryte 105
+  .tryte 114
+  .tryte 95
+  .tryte 102
+  .tryte 105
+  .tryte 110
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu1.L..18:
+  .tryte 100
+  .tryte 105
+  .tryte 114
+  .tryte 95
+  .tryte 102
+  .tryte 105
+  .tryte 110
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu1.L..15:
+  .tryte 110
+  .tryte 97
+  .tryte 109
+  .tryte 101
+  .tryte 95
+  .tryte 101
+  .tryte 113
+  .tryte 0
+  .align 1
+__tu1.L..14:
+  .tryte 110
+  .tryte 97
+  .tryte 109
+  .tryte 101
+  .tryte 95
+  .tryte 101
+  .tryte 113
+  .tryte 0
+  .align 1
+__tu1.L..13:
+  .tryte 100
+  .tryte 105
+  .tryte 114
+  .tryte 95
+  .tryte 101
+  .tryte 110
+  .tryte 116
+  .tryte 114
+  .tryte 121
+  .tryte 0
+  .align 1
+__tu1.L..12:
+  .tryte 100
+  .tryte 105
+  .tryte 114
+  .tryte 95
+  .tryte 101
+  .tryte 110
+  .tryte 116
+  .tryte 114
+  .tryte 121
+  .tryte 0
+  .align 1
+__tu1.L..11:
+  .tryte 100
+  .tryte 105
+  .tryte 114
+  .tryte 95
+  .tryte 99
+  .tryte 111
+  .tryte 117
+  .tryte 110
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu1.L..10:
+  .tryte 100
+  .tryte 105
+  .tryte 114
+  .tryte 95
+  .tryte 99
+  .tryte 111
+  .tryte 117
+  .tryte 110
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu1.L..9:
+  .tryte 100
+  .tryte 105
+  .tryte 115
+  .tryte 107
+  .tryte 95
+  .tryte 114
+  .tryte 101
+  .tryte 97
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu1.L..8:
+  .tryte 100
+  .tryte 105
+  .tryte 115
+  .tryte 107
+  .tryte 95
+  .tryte 114
+  .tryte 101
+  .tryte 97
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu1.L..7:
+  .tryte 117
+  .tryte 112
+  .tryte 116
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu1.L..6:
+  .tryte 117
+  .tryte 112
+  .tryte 116
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu1.L..5:
+  .tryte 112
+  .tryte 105
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu1.L..4:
+  .tryte 112
+  .tryte 105
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu1.L..3:
+  .tryte 119
+  .tryte 111
+  .tryte 114
+  .tryte 100
+  .tryte 95
+  .tryte 97
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu1.L..2:
+  .tryte 119
+  .tryte 111
+  .tryte 114
+  .tryte 100
+  .tryte 95
+  .tryte 97
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu1.L..1:
+  .tryte 98
+  .tryte 97
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu1.L..0:
+  .tryte 98
+  .tryte 97
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu1.L.static.dir:
+  .space 729
+  .align 3
+__tu1.L.static.fg:
+  .tryte -1
+  .tryte 0
+  .tryte 0
+  .align 3
+__tu1.L.static.nslots:
+  .space 3
+; COMMON cur 3 3
+; COMMON procs 2880 3
+  .align 3
+kmain:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -15
+  stw s1, -15(fp)
+  stw sp, -12(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, ram_size(zero)
+  addi a0, a0, -1062882
+  li t0, 531441
+  div a0, a0, t0
+  stw a0, __tu1.L.static.nslots(zero)
+  mv a1, a0
+  li a0, 24
+  slt a0, a0, a1
+  beqz a0, __tu1.L.else9
+  li a0, 24
+  stw a0, __tu1.L.static.nslots(zero)
+  j __tu1.L.end9
+__tu1.L.else9:
+__tu1.L.end9:
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L..88
+  stw a0, 0(sp)
+  jal ra, printf
+  addi sp, sp, 18
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L..89
+  stw a0, 0(sp)
+  ldw a0, ram_size(zero)
+  stw a0, 3(sp)
+  ldw a0, __tu1.L.static.nslots(zero)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, printf
+  addi sp, sp, 18
+  li a0, 24
+  neg a0, a0
+  ldw a0, 0(a0)
+  slti a0, a0, 1
+  beqz a0, __tu1.L.else29
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L..90
+  stw a0, 0(sp)
+  jal ra, printf
+  addi sp, sp, 18
+  addi sp, sp, -18
+  li a0, 1
+  stw a0, 0(sp)
+  jal ra, exit
+  addi sp, sp, 18
+  j __tu1.L.end29
+__tu1.L.else29:
+__tu1.L.end29:
+  addi sp, sp, -18
+  stw zero, 0(sp)
+  addi a0, zero, __tu1.L.static.dir
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.disk_read
+  addi sp, sp, 18
+  stw zero, -9(fp)
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.dir_count
+  addi sp, sp, 18
+  stw a0, -9(fp)
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L..91
+  stw a0, 0(sp)
+  li a0, 24
+  neg a0, a0
+  ldw a0, 0(a0)
+  stw a0, 3(sp)
+  ldw a0, -9(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, printf
+  addi sp, sp, 18
+  stw zero, -6(fp)
+  li a0, 0
+  stw a0, -6(fp)
+__tu1.L.begin75:
+  ldw a1, -9(fp)
+  ldw a0, -6(fp)
+  slt a0, a0, a1
+  beqz a0, __tu1.L..92
+  stw zero, -3(fp)
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.dir_entry
+  addi sp, sp, 18
+  stw a0, -3(fp)
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L..94
+  stw a0, 0(sp)
+  ldw a0, -3(fp)
+  stw a0, 3(sp)
+  addi sp, sp, -18
+  ldw a0, -3(fp)
+  addi a0, a0, 19
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  stw a0, 6(sp)
+  addi sp, sp, -18
+  ldw a0, -3(fp)
+  addi a0, a0, 22
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  mv a1, a0
+  li a0, 0
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else114
+  addi a0, zero, __tu1.L..95
+  j __tu1.L.end114
+__tu1.L.else114:
+  addi a0, zero, __tu1.L..96
+__tu1.L.end114:
+  stw a0, 9(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  ldw a3, 9(sp)
+  jal ra, printf
+  addi sp, sp, 18
+__tu1.L..93:
+  ldw a0, -6(fp)
+  addi a0, a0, 1
+  stw a0, -6(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin75
+__tu1.L..92:
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.boot_init
+  addi sp, sp, 18
+  addi sp, sp, -18
+  jal ra, kresume
+  addi sp, sp, 18
+  li a0, 0
+  j __tu1.L.return.kmain
+__tu1.L.return.kmain:
+  ldw s1, -15(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+ktrap:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -9
+  stw sp, -9(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  stw zero, -6(fp)
+  addi sp, sp, -18
+  jal ra, csr_cause
+  addi sp, sp, 18
+  stw a0, -6(fp)
+  stw zero, -3(fp)
+  addi sp, sp, -18
+  jal ra, csr_tval
+  addi sp, sp, 18
+  stw a0, -3(fp)
+  ldw a0, -6(fp)
+  addi a0, a0, -9
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else161
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.schedule
+  addi sp, sp, 18
+  j __tu1.L.end161
+__tu1.L.else161:
+  ldw a0, -6(fp)
+  addi a0, a0, -8
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else167
+  addi sp, sp, -18
+  ldw a0, -3(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.syscall
+  addi sp, sp, 18
+  j __tu1.L.end167
+__tu1.L.else167:
+  ldw a0, -6(fp)
+  addi a0, a0, -3
+  seq a0, a0, zero
+  beqz a0, __tu1.L.logic176
+  ldw a0, -3(fp)
+  slti a0, a0, 0
+  beqz a0, __tu1.L.logic176
+  li a0, 1
+  j __tu1.L.end176
+__tu1.L.logic176:
+  li a0, 0
+__tu1.L.end176:
+  beqz a0, __tu1.L.else175
+  addi sp, sp, -18
+  ldw a0, -3(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.emulate_mmio
+  addi sp, sp, 18
+  j __tu1.L.end175
+__tu1.L.else175:
+  ldw a0, -6(fp)
+  addi a0, a0, -3
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else187
+  addi sp, sp, -18
+  ldw a0, cur(zero)
+  stw a0, 0(sp)
+  addi a0, zero, __tu1.L..77
+  stw a0, 3(sp)
+  ldw a0, -3(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.kill
+  addi sp, sp, 18
+  j __tu1.L.end187
+__tu1.L.else187:
+  ldw a0, -6(fp)
+  addi a0, a0, -4
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else199
+  addi sp, sp, -18
+  ldw a0, cur(zero)
+  stw a0, 0(sp)
+  addi a0, zero, __tu1.L..78
+  stw a0, 3(sp)
+  stw zero, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.kill
+  addi sp, sp, 18
+  j __tu1.L.end199
+__tu1.L.else199:
+  ldw a0, -6(fp)
+  addi a0, a0, -1
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else211
+  addi sp, sp, -18
+  ldw a0, cur(zero)
+  stw a0, 0(sp)
+  addi a0, zero, __tu1.L..79
+  stw a0, 3(sp)
+  ldw a0, -3(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.kill
+  addi sp, sp, 18
+  j __tu1.L.end211
+__tu1.L.else211:
+  addi sp, sp, -18
+  ldw a0, cur(zero)
+  stw a0, 0(sp)
+  addi a0, zero, __tu1.L..80
+  stw a0, 3(sp)
+  ldw a0, -6(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.kill
+  addi sp, sp, 18
+__tu1.L.end211:
+__tu1.L.end199:
+__tu1.L.end187:
+__tu1.L.end175:
+__tu1.L.end167:
+__tu1.L.end161:
+__tu1.L.return.ktrap:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.syscall:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -114
+  stw s1, -111(fp)
+  stw s2, -114(fp)
+  stw sp, -105(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -108(fp)
+  stw zero, -102(fp)
+  ldw a0, cur(zero)
+  stw a0, -102(fp)
+  stw zero, -99(fp)
+  ldw a0, -102(fp)
+  addi a0, a0, 42
+  ldw a0, 0(a0)
+  stw a0, -99(fp)
+  stw zero, -96(fp)
+  ldw a0, -102(fp)
+  addi a0, a0, 45
+  ldw a0, 0(a0)
+  stw a0, -96(fp)
+  stw zero, -93(fp)
+  ldw a0, -102(fp)
+  addi a0, a0, 48
+  ldw a0, 0(a0)
+  stw a0, -93(fp)
+  ldw a0, -102(fp)
+  stw a0, -90(fp)
+  addi a0, a0, 81
+  mv s1, a0
+  ldw a0, -90(fp)
+  addi a0, a0, 81
+  ldw a0, 0(a0)
+  addi a0, a0, 3
+  stw a0, 0(s1)
+  ldw a0, -108(fp)
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else293
+  addi sp, sp, -18
+  ldw a0, -102(fp)
+  stw a0, 0(sp)
+  ldw a0, -99(fp)
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.proc_exit
+  addi sp, sp, 18
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end293
+__tu1.L.else293:
+__tu1.L.end293:
+  ldw a0, -108(fp)
+  addi a0, a0, -1
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else305
+  li a0, 1
+  neg a0, a0
+  mv s1, a0
+  ldw a0, -99(fp)
+  stw a0, 0(s1)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end305
+__tu1.L.else305:
+__tu1.L.end305:
+  ldw a0, -108(fp)
+  addi a0, a0, -2
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else320
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L..60
+  stw a0, 0(sp)
+  ldw a0, -99(fp)
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, printf
+  addi sp, sp, 18
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end320
+__tu1.L.else320:
+__tu1.L.end320:
+  ldw a0, -108(fp)
+  addi a0, a0, -10
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else331
+  stw zero, -87(fp)
+  addi sp, sp, -18
+  ldw a0, -102(fp)
+  stw a0, 0(sp)
+  ldw a0, -99(fp)
+  stw a0, 3(sp)
+  li a0, 16
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.uptr
+  addi sp, sp, 18
+  stw a0, -87(fp)
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else357
+  ldw a0, -102(fp)
+  addi a0, a0, 42
+  mv s1, a0
+  li a0, 1
+  neg a0, a0
+  stw a0, 0(s1)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end357
+__tu1.L.else357:
+__tu1.L.end357:
+  stw zero, -66(fp)
+  li a0, 0
+  stw a0, -66(fp)
+__tu1.L.begin372:
+  ldw a0, -66(fp)
+  slti a0, a0, 16
+  beqz a0, __tu1.L..61
+  ldw a1, -66(fp)
+  addi a0, fp, -82
+  add a0, a0, a1
+  mv s1, a0
+  ldw a1, -66(fp)
+  ldw a0, -87(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+__tu1.L..62:
+  ldw a0, -66(fp)
+  addi a0, a0, 1
+  stw a0, -66(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin372
+__tu1.L..61:
+  addi a0, fp, -82
+  addi a0, a0, 15
+  mv s1, a0
+  stt zero, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+  stw zero, -63(fp)
+  addi sp, sp, -18
+  addi a0, fp, -82
+  stw a0, 0(sp)
+  addi sp, sp, -18
+  ldw a0, -102(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.pid
+  addi sp, sp, 18
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.spawn
+  addi sp, sp, 18
+  stw a0, -63(fp)
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else435
+  ldw a0, -102(fp)
+  addi a0, a0, 42
+  mv s1, a0
+  li a0, 1
+  neg a0, a0
+  stw a0, 0(s1)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end435
+__tu1.L.else435:
+__tu1.L.end435:
+  ldw a0, -102(fp)
+  addi a0, a0, 90
+  mv s1, a0
+  li a0, 2
+  stw a0, 0(s1)
+  addi sp, sp, -18
+  ldw a0, -63(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.pid
+  addi sp, sp, 18
+  stw a0, __tu1.L.static.fg(zero)
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.silence
+  addi sp, sp, 18
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.apply_display
+  addi sp, sp, 18
+  ldw a0, -63(fp)
+  stw a0, cur(zero)
+  addi sp, sp, -18
+  li a0, 4
+  neg a0, a0
+  ldw a0, 0(a0)
+  addi a0, a0, 60000
+  stw a0, 0(sp)
+  jal ra, set_timecmp
+  addi sp, sp, 18
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end331
+__tu1.L.else331:
+__tu1.L.end331:
+  ldw a0, -108(fp)
+  addi a0, a0, -11
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else481
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.schedule
+  addi sp, sp, 18
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end481
+__tu1.L.else481:
+__tu1.L.end481:
+  ldw a0, -108(fp)
+  addi a0, a0, -12
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else489
+  stw zero, -60(fp)
+  addi sp, sp, -18
+  ldw a0, -102(fp)
+  stw a0, 0(sp)
+  ldw a0, -96(fp)
+  stw a0, 3(sp)
+  li a0, 16
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.uptr
+  addi sp, sp, 18
+  stw a0, -60(fp)
+  ldw a0, -99(fp)
+  slti a0, a0, 0
+  bnez a0, __tu1.L.logic513
+  ldw a0, -99(fp)
+  mv s1, a0
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.dir_count
+  addi sp, sp, 18
+  slt a0, s1, a0
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic513
+  li a0, 0
+  j __tu1.L.end513
+__tu1.L.logic513:
+  li a0, 1
+__tu1.L.end513:
+  bnez a0, __tu1.L.logic512
+  ldw a0, -60(fp)
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic512
+  li a0, 0
+  j __tu1.L.end512
+__tu1.L.logic512:
+  li a0, 1
+__tu1.L.end512:
+  beqz a0, __tu1.L.else511
+  ldw a0, -102(fp)
+  addi a0, a0, 42
+  mv s1, a0
+  li a0, 0
+  stw a0, 0(s1)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end511
+__tu1.L.else511:
+__tu1.L.end511:
+  stw zero, -57(fp)
+  addi sp, sp, -18
+  ldw a0, -99(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.dir_entry
+  addi sp, sp, 18
+  stw a0, -57(fp)
+  stw zero, -54(fp)
+  li a0, 0
+  stw a0, -54(fp)
+__tu1.L.begin547:
+  ldw a0, -54(fp)
+  slti a0, a0, 16
+  beqz a0, __tu1.L..63
+  ldw a1, -54(fp)
+  ldw a0, -60(fp)
+  add a0, a0, a1
+  mv s1, a0
+  ldw a1, -54(fp)
+  ldw a0, -57(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+__tu1.L..64:
+  ldw a0, -54(fp)
+  addi a0, a0, 1
+  stw a0, -54(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin547
+__tu1.L..63:
+  ldw a0, -102(fp)
+  addi a0, a0, 42
+  mv s1, a0
+  addi sp, sp, -18
+  ldw a0, -57(fp)
+  addi a0, a0, 22
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  mv a1, a0
+  li a0, 0
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else593
+  li a0, 1
+  j __tu1.L.end593
+__tu1.L.else593:
+  li a0, 2
+__tu1.L.end593:
+  stw a0, 0(s1)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end489
+__tu1.L.else489:
+__tu1.L.end489:
+  ldw a0, -108(fp)
+  addi a0, a0, -13
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else608
+  stw zero, -51(fp)
+  addi sp, sp, -18
+  ldw a0, -102(fp)
+  stw a0, 0(sp)
+  ldw a0, -99(fp)
+  stw a0, 3(sp)
+  li a0, 16
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.uptr
+  addi sp, sp, 18
+  stw a0, -51(fp)
+  stw zero, -48(fp)
+  addi sp, sp, -18
+  ldw a0, -102(fp)
+  stw a0, 0(sp)
+  ldw a0, -96(fp)
+  stw a0, 3(sp)
+  ldw a0, -93(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.uptr
+  addi sp, sp, 18
+  stw a0, -48(fp)
+  ldw a0, -51(fp)
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic654
+  ldw a0, -48(fp)
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic654
+  li a0, 0
+  j __tu1.L.end654
+__tu1.L.logic654:
+  li a0, 1
+__tu1.L.end654:
+  beqz a0, __tu1.L.else653
+  ldw a0, -102(fp)
+  addi a0, a0, 42
+  mv s1, a0
+  li a0, 1
+  neg a0, a0
+  stw a0, 0(s1)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end653
+__tu1.L.else653:
+__tu1.L.end653:
+  stw zero, -24(fp)
+  li a0, 0
+  stw a0, -24(fp)
+__tu1.L.begin671:
+  ldw a0, -24(fp)
+  slti a0, a0, 16
+  beqz a0, __tu1.L..65
+  ldw a1, -24(fp)
+  addi a0, fp, -43
+  add a0, a0, a1
+  mv s1, a0
+  ldw a1, -24(fp)
+  ldw a0, -51(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+__tu1.L..66:
+  ldw a0, -24(fp)
+  addi a0, a0, 1
+  stw a0, -24(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin671
+__tu1.L..65:
+  addi a0, fp, -43
+  addi a0, a0, 15
+  mv s1, a0
+  stt zero, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+  addi sp, sp, -18
+  addi a0, fp, -43
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.dir_find
+  addi sp, sp, 18
+  stw a0, -27(fp)
+  slti a0, a0, 0
+  beqz a0, __tu1.L.else717
+  ldw a0, -102(fp)
+  addi a0, a0, 42
+  mv s1, a0
+  li a0, 1
+  neg a0, a0
+  stw a0, 0(s1)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end717
+__tu1.L.else717:
+__tu1.L.end717:
+  stw zero, -21(fp)
+  addi sp, sp, -18
+  ldw a0, -27(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.dir_entry
+  addi sp, sp, 18
+  stw a0, -21(fp)
+  stw zero, -18(fp)
+  addi sp, sp, -18
+  ldw a0, -21(fp)
+  addi a0, a0, 16
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  stw a0, -18(fp)
+  stw zero, -15(fp)
+  addi sp, sp, -18
+  ldw a0, -21(fp)
+  addi a0, a0, 19
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  stw a0, -15(fp)
+  mv a1, a0
+  ldw a0, -93(fp)
+  slt a0, a0, a1
+  beqz a0, __tu1.L.else775
+  ldw a0, -93(fp)
+  stw a0, -15(fp)
+  j __tu1.L.end775
+__tu1.L.else775:
+__tu1.L.end775:
+  stw zero, -12(fp)
+  li a0, 0
+  stw a0, -12(fp)
+__tu1.L.begin786:
+  ldw a0, -15(fp)
+  mv s1, a0
+  ldw a0, -12(fp)
+  muli a0, a0, 729
+  slt a0, a0, s1
+  beqz a0, __tu1.L..68
+  addi sp, sp, -18
+  ldw a1, -12(fp)
+  ldw a0, -18(fp)
+  add a0, a0, a1
+  stw a0, 0(sp)
+  addi a0, zero, __tu1.L..67
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.disk_read
+  addi sp, sp, 18
+  stw zero, -9(fp)
+  li a0, 0
+  stw a0, -9(fp)
+__tu1.L.begin815:
+  ldw a0, -9(fp)
+  slti a0, a0, 729
+  beqz a0, __tu1.L.logic825
+  ldw a0, -15(fp)
+  mv s1, a0
+  ldw a0, -9(fp)
+  mv s2, a0
+  ldw a0, -12(fp)
+  muli a0, a0, 729
+  add a0, a0, s2
+  slt a0, a0, s1
+  beqz a0, __tu1.L.logic825
+  li a0, 1
+  j __tu1.L.end825
+__tu1.L.logic825:
+  li a0, 0
+__tu1.L.end825:
+  beqz a0, __tu1.L..70
+  ldw a0, -9(fp)
+  mv s1, a0
+  ldw a0, -12(fp)
+  muli a0, a0, 729
+  add a0, a0, s1
+  mv a1, a0
+  ldw a0, -48(fp)
+  add a0, a0, a1
+  mv s1, a0
+  ldw a1, -9(fp)
+  addi a0, zero, __tu1.L..67
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+__tu1.L..71:
+  ldw a0, -9(fp)
+  addi a0, a0, 1
+  stw a0, -9(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin815
+__tu1.L..70:
+__tu1.L..69:
+  ldw a0, -12(fp)
+  addi a0, a0, 1
+  stw a0, -12(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin786
+__tu1.L..68:
+  ldw a0, -102(fp)
+  addi a0, a0, 42
+  mv s1, a0
+  ldw a0, -15(fp)
+  stw a0, 0(s1)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end608
+__tu1.L.else608:
+__tu1.L.end608:
+  ldw a0, -108(fp)
+  addi a0, a0, -14
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else889
+  stw zero, -6(fp)
+  li a0, 0
+  stw a0, -6(fp)
+  stw zero, -3(fp)
+  li a0, 0
+  stw a0, -3(fp)
+__tu1.L.begin903:
+  ldw a0, -3(fp)
+  slti a0, a0, 24
+  beqz a0, __tu1.L..72
+  ldw a0, -3(fp)
+  muli a0, a0, 120
+  mv a1, a0
+  addi a0, zero, procs
+  add a0, a0, a1
+  addi a0, a0, 90
+  ldw a0, 0(a0)
+  seq a0, a0, zero
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else916
+  ldw a0, -6(fp)
+  addi a0, a0, 1
+  stw a0, -6(fp)
+  addi a0, a0, -1
+  j __tu1.L.end916
+__tu1.L.else916:
+__tu1.L.end916:
+__tu1.L..73:
+  ldw a0, -3(fp)
+  addi a0, a0, 1
+  stw a0, -3(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin903
+__tu1.L..72:
+  ldw a0, -102(fp)
+  addi a0, a0, 42
+  mv s1, a0
+  ldw a0, -6(fp)
+  stw a0, 0(s1)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end889
+__tu1.L.else889:
+__tu1.L.end889:
+  addi sp, sp, -18
+  ldw a0, -102(fp)
+  stw a0, 0(sp)
+  addi a0, zero, __tu1.L..74
+  stw a0, 3(sp)
+  ldw a0, -108(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.kill
+  addi sp, sp, 18
+__tu1.L.return..L.static.syscall:
+  ldw s1, -111(fp)
+  ldw s2, -114(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.emulate_mmio:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -33
+  stw s1, -33(fp)
+  stw sp, -27(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -30(fp)
+  stw zero, -24(fp)
+  addi sp, sp, -18
+  ldw a0, cur(zero)
+  stw a0, 0(sp)
+  ldw a0, cur(zero)
+  addi a0, a0, 81
+  ldw a0, 0(a0)
+  stw a0, 3(sp)
+  li a0, 3
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.uptr
+  addi sp, sp, 18
+  stw a0, -24(fp)
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else980
+  addi sp, sp, -18
+  ldw a0, cur(zero)
+  stw a0, 0(sp)
+  addi a0, zero, __tu1.L..56
+  stw a0, 3(sp)
+  ldw a0, cur(zero)
+  addi a0, a0, 81
+  ldw a0, 0(a0)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.kill
+  addi sp, sp, 18
+  j __tu1.L.return..L.static.emulate_mmio
+  j __tu1.L.end980
+__tu1.L.else980:
+__tu1.L.end980:
+  stw zero, -21(fp)
+  addi sp, sp, -18
+  ldw a0, -24(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  stw a0, -21(fp)
+  stw zero, -18(fp)
+  addi sp, sp, -18
+  ldw a0, -21(fp)
+  stw a0, 0(sp)
+  li a0, 243
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.bal
+  addi sp, sp, 18
+  stw a0, -18(fp)
+  mv a1, a0
+  ldw a0, -21(fp)
+  sub a0, a0, a1
+  li t0, 243
+  div a0, a0, t0
+  stw a0, -21(fp)
+  stw zero, -15(fp)
+  addi sp, sp, -18
+  ldw a0, -21(fp)
+  stw a0, 0(sp)
+  li a0, 27
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.bal
+  addi sp, sp, 18
+  stw a0, -15(fp)
+  stw zero, -12(fp)
+  ldw a0, cur(zero)
+  stw a0, -12(fp)
+  stw a0, -9(fp)
+  addi a0, a0, 81
+  mv s1, a0
+  ldw a0, -9(fp)
+  addi a0, a0, 81
+  ldw a0, 0(a0)
+  addi a0, a0, 3
+  stw a0, 0(s1)
+  ldw a0, -18(fp)
+  addi a0, a0, -23
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic1066
+  ldw a0, -18(fp)
+  addi a0, a0, -24
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic1066
+  li a0, 0
+  j __tu1.L.end1066
+__tu1.L.logic1066:
+  li a0, 1
+__tu1.L.end1066:
+  beqz a0, __tu1.L.else1065
+  stw zero, -6(fp)
+  addi sp, sp, -18
+  ldw a0, -30(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.dev_read
+  addi sp, sp, 18
+  stw a0, -6(fp)
+  ldw a0, -18(fp)
+  addi a0, a0, -23
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1085
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  li a0, 19683
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.bal
+  addi sp, sp, 18
+  stw a0, -6(fp)
+  j __tu1.L.end1085
+__tu1.L.else1085:
+__tu1.L.end1085:
+  ldw a0, -15(fp)
+  seq a0, a0, zero
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1097
+  ldw a0, -15(fp)
+  addi a0, a0, 13
+  muli a0, a0, 3
+  mv s1, a0
+  ldw a0, -12(fp)
+  add a0, a0, s1
+  mv s1, a0
+  ldw a0, -6(fp)
+  stw a0, 0(s1)
+  j __tu1.L.end1097
+__tu1.L.else1097:
+__tu1.L.end1097:
+  j __tu1.L.end1065
+__tu1.L.else1065:
+  ldw a0, -18(fp)
+  addi a0, a0, -25
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic1116
+  ldw a0, -18(fp)
+  addi a0, a0, -26
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic1116
+  li a0, 0
+  j __tu1.L.end1116
+__tu1.L.logic1116:
+  li a0, 1
+__tu1.L.end1116:
+  beqz a0, __tu1.L.else1115
+  addi sp, sp, -18
+  ldw a0, -30(fp)
+  stw a0, 0(sp)
+  ldw a0, -15(fp)
+  addi a0, a0, 13
+  muli a0, a0, 3
+  mv s1, a0
+  ldw a0, -12(fp)
+  add a0, a0, s1
+  ldw a0, 0(a0)
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.dev_write
+  addi sp, sp, 18
+  j __tu1.L.end1115
+__tu1.L.else1115:
+  ldw a0, -12(fp)
+  stw a0, -3(fp)
+  addi a0, a0, 81
+  mv s1, a0
+  ldw a0, -3(fp)
+  addi a0, a0, 81
+  ldw a0, 0(a0)
+  addi a0, a0, -3
+  stw a0, 0(s1)
+  addi sp, sp, -18
+  ldw a0, -12(fp)
+  stw a0, 0(sp)
+  addi a0, zero, __tu1.L..57
+  stw a0, 3(sp)
+  ldw a0, -30(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.kill
+  addi sp, sp, 18
+__tu1.L.end1115:
+__tu1.L.end1065:
+__tu1.L.return..L.static.emulate_mmio:
+  ldw s1, -33(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.dev_write:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -15
+  stw s1, -15(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  ldw a0, 9(fp)
+  stw a0, -12(fp)
+  stw zero, -3(fp)
+  ldw a0, __tu1.L.static.fg(zero)
+  mv s1, a0
+  addi sp, sp, -18
+  ldw a0, cur(zero)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.pid
+  addi sp, sp, 18
+  seq a0, a0, s1
+  stw a0, -3(fp)
+  ldw a0, -9(fp)
+  addi a0, a0, 1
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1178
+  li a0, 1
+  neg a0, a0
+  mv s1, a0
+  ldw a0, -12(fp)
+  stw a0, 0(s1)
+  j __tu1.L.return..L.static.dev_write
+  j __tu1.L.end1178
+__tu1.L.else1178:
+__tu1.L.end1178:
+  ldw a0, -9(fp)
+  addi a0, a0, 3
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1193
+  addi sp, sp, -18
+  ldw a0, cur(zero)
+  stw a0, 0(sp)
+  ldw a0, -12(fp)
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.proc_exit
+  addi sp, sp, 18
+  j __tu1.L.return..L.static.dev_write
+  j __tu1.L.end1193
+__tu1.L.else1193:
+__tu1.L.end1193:
+  ldw a0, -9(fp)
+  addi a0, a0, 5
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1205
+  ldw a0, cur(zero)
+  addi a0, a0, 99
+  mv s1, a0
+  ldw a0, -12(fp)
+  stw a0, 0(s1)
+  ldw a0, -3(fp)
+  beqz a0, __tu1.L.else1215
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.apply_display
+  addi sp, sp, 18
+  j __tu1.L.end1215
+__tu1.L.else1215:
+__tu1.L.end1215:
+  j __tu1.L.return..L.static.dev_write
+  j __tu1.L.end1205
+__tu1.L.else1205:
+__tu1.L.end1205:
+  ldw a0, -9(fp)
+  addi a0, a0, 9
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1220
+  ldw a0, cur(zero)
+  addi a0, a0, 96
+  mv s1, a0
+  ldw a0, -12(fp)
+  stw a0, 0(s1)
+  ldw a0, -3(fp)
+  beqz a0, __tu1.L.else1230
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.apply_display
+  addi sp, sp, 18
+  j __tu1.L.end1230
+__tu1.L.else1230:
+__tu1.L.end1230:
+  j __tu1.L.return..L.static.dev_write
+  j __tu1.L.end1220
+__tu1.L.else1220:
+__tu1.L.end1220:
+  ldw a0, -9(fp)
+  addi a0, a0, 6
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1235
+  ldw a0, -3(fp)
+  beqz a0, __tu1.L.else1240
+  li a0, 6
+  neg a0, a0
+  mv s1, a0
+  li a0, 0
+  stw a0, 0(s1)
+  j __tu1.L.end1240
+__tu1.L.else1240:
+__tu1.L.end1240:
+  j __tu1.L.return..L.static.dev_write
+  j __tu1.L.end1235
+__tu1.L.else1235:
+__tu1.L.end1235:
+  ldw a0, -9(fp)
+  slti a0, a0, -99
+  beqz a0, __tu1.L.logic1253
+  ldw a0, -9(fp)
+  mv s1, a0
+  li a0, 202
+  neg a0, a0
+  slt a0, s1, a0
+  seq a0, a0, zero
+  beqz a0, __tu1.L.logic1253
+  li a0, 1
+  j __tu1.L.end1253
+__tu1.L.logic1253:
+  li a0, 0
+__tu1.L.end1253:
+  beqz a0, __tu1.L.else1252
+  ldw a0, -3(fp)
+  beqz a0, __tu1.L.else1265
+  ldw a0, -9(fp)
+  mv s1, a0
+  ldw a0, -12(fp)
+  stw a0, 0(s1)
+  j __tu1.L.end1265
+__tu1.L.else1265:
+__tu1.L.end1265:
+  j __tu1.L.return..L.static.dev_write
+  j __tu1.L.end1252
+__tu1.L.else1252:
+__tu1.L.end1252:
+__tu1.L.return..L.static.dev_write:
+  ldw s1, -15(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.dev_read:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw s1, -12(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  stw zero, -3(fp)
+  ldw a0, __tu1.L.static.fg(zero)
+  mv s1, a0
+  addi sp, sp, -18
+  ldw a0, cur(zero)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.pid
+  addi sp, sp, 18
+  seq a0, a0, s1
+  stw a0, -3(fp)
+  ldw a0, -9(fp)
+  addi a0, a0, 2
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic1292
+  ldw a0, -9(fp)
+  addi a0, a0, 7
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic1292
+  li a0, 0
+  j __tu1.L.end1292
+__tu1.L.logic1292:
+  li a0, 1
+__tu1.L.end1292:
+  beqz a0, __tu1.L.else1291
+  ldw a0, -3(fp)
+  beqz a0, __tu1.L.else1301
+  ldw a0, -9(fp)
+  ldw a0, 0(a0)
+  j __tu1.L.end1301
+__tu1.L.else1301:
+  ldw a0, -9(fp)
+  addi a0, a0, 2
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1309
+  li a0, 1
+  neg a0, a0
+  j __tu1.L.end1309
+__tu1.L.else1309:
+  li a0, 0
+__tu1.L.end1309:
+__tu1.L.end1301:
+  j __tu1.L.return..L.static.dev_read
+  j __tu1.L.end1291
+__tu1.L.else1291:
+__tu1.L.end1291:
+  ldw a0, -9(fp)
+  addi a0, a0, 10
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic1321
+  ldw a0, -9(fp)
+  addi a0, a0, 11
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic1321
+  li a0, 0
+  j __tu1.L.end1321
+__tu1.L.logic1321:
+  li a0, 1
+__tu1.L.end1321:
+  bnez a0, __tu1.L.logic1320
+  ldw a0, -9(fp)
+  addi a0, a0, 12
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic1320
+  li a0, 0
+  j __tu1.L.end1320
+__tu1.L.logic1320:
+  li a0, 1
+__tu1.L.end1320:
+  beqz a0, __tu1.L.else1319
+  ldw a0, -3(fp)
+  beqz a0, __tu1.L.else1333
+  ldw a0, -9(fp)
+  ldw a0, 0(a0)
+  j __tu1.L.end1333
+__tu1.L.else1333:
+  li a0, 0
+__tu1.L.end1333:
+  j __tu1.L.return..L.static.dev_read
+  j __tu1.L.end1319
+__tu1.L.else1319:
+__tu1.L.end1319:
+  ldw a0, -9(fp)
+  addi a0, a0, 4
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic1343
+  ldw a0, -9(fp)
+  addi a0, a0, 8
+  seq a0, a0, zero
+  bnez a0, __tu1.L.logic1343
+  li a0, 0
+  j __tu1.L.end1343
+__tu1.L.logic1343:
+  li a0, 1
+__tu1.L.end1343:
+  beqz a0, __tu1.L.else1342
+  ldw a0, -9(fp)
+  ldw a0, 0(a0)
+  j __tu1.L.return..L.static.dev_read
+  j __tu1.L.end1342
+__tu1.L.else1342:
+__tu1.L.end1342:
+  ldw a0, -9(fp)
+  addi a0, a0, 5
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1356
+  ldw a0, cur(zero)
+  addi a0, a0, 99
+  ldw a0, 0(a0)
+  j __tu1.L.return..L.static.dev_read
+  j __tu1.L.end1356
+__tu1.L.else1356:
+__tu1.L.end1356:
+  ldw a0, -9(fp)
+  addi a0, a0, 9
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1364
+  ldw a0, cur(zero)
+  addi a0, a0, 96
+  ldw a0, 0(a0)
+  j __tu1.L.return..L.static.dev_read
+  j __tu1.L.end1364
+__tu1.L.else1364:
+__tu1.L.end1364:
+  ldw a0, -9(fp)
+  slti a0, a0, -99
+  beqz a0, __tu1.L.logic1373
+  ldw a0, -9(fp)
+  mv s1, a0
+  li a0, 202
+  neg a0, a0
+  slt a0, s1, a0
+  seq a0, a0, zero
+  beqz a0, __tu1.L.logic1373
+  li a0, 1
+  j __tu1.L.end1373
+__tu1.L.logic1373:
+  li a0, 0
+__tu1.L.end1373:
+  beqz a0, __tu1.L.else1372
+  ldw a0, -9(fp)
+  ldw a0, 0(a0)
+  j __tu1.L.return..L.static.dev_read
+  j __tu1.L.end1372
+__tu1.L.else1372:
+__tu1.L.end1372:
+  li a0, 0
+  j __tu1.L.return..L.static.dev_read
+__tu1.L.return..L.static.dev_read:
+  ldw s1, -12(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.kill:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+  ldw a0, 12(fp)
+  stw a0, -12(fp)
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L..49
+  stw a0, 0(sp)
+  ldw a0, -6(fp)
+  addi a0, a0, 102
+  stw a0, 3(sp)
+  ldw a0, -9(fp)
+  stw a0, 6(sp)
+  ldw a0, -12(fp)
+  stw a0, 9(sp)
+  ldw a0, -6(fp)
+  addi a0, a0, 81
+  ldw a0, 0(a0)
+  stw a0, 12(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  ldw a3, 9(sp)
+  ldw a4, 12(sp)
+  jal ra, printf
+  addi sp, sp, 18
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  li a0, 1
+  neg a0, a0
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.proc_exit
+  addi sp, sp, 18
+__tu1.L.return..L.static.kill:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.proc_exit:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -24
+  stw s1, -24(fp)
+  stw sp, -15(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -18(fp)
+  ldw a0, 9(fp)
+  stw a0, -21(fp)
+  stw zero, -12(fp)
+  addi sp, sp, -18
+  ldw a0, -18(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.pid
+  addi sp, sp, 18
+  stw a0, -12(fp)
+  ldw a0, -18(fp)
+  addi a0, a0, 90
+  mv s1, a0
+  stw zero, 0(s1)
+  ldw a1, -12(fp)
+  ldw a0, __tu1.L.static.fg(zero)
+  seq a0, a0, a1
+  beqz a0, __tu1.L.else1429
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.silence
+  addi sp, sp, 18
+  ldw a0, -18(fp)
+  addi a0, a0, 93
+  ldw a0, 0(a0)
+  stw a0, __tu1.L.static.fg(zero)
+  j __tu1.L.end1429
+__tu1.L.else1429:
+__tu1.L.end1429:
+  ldw a0, -18(fp)
+  addi a0, a0, 93
+  ldw a1, 0(a0)
+  li a0, 0
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1443
+  stw zero, -9(fp)
+  ldw a0, -18(fp)
+  addi a0, a0, 93
+  ldw a0, 0(a0)
+  muli a0, a0, 120
+  mv a1, a0
+  addi a0, zero, procs
+  add a0, a0, a1
+  stw a0, -9(fp)
+  addi a0, a0, 90
+  ldw a0, 0(a0)
+  addi a0, a0, -2
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1470
+  ldw a0, -9(fp)
+  addi a0, a0, 42
+  mv s1, a0
+  ldw a0, -21(fp)
+  stw a0, 0(s1)
+  ldw a0, -9(fp)
+  addi a0, a0, 90
+  mv s1, a0
+  li a0, 1
+  stw a0, 0(s1)
+  j __tu1.L.end1470
+__tu1.L.else1470:
+__tu1.L.end1470:
+  j __tu1.L.end1443
+__tu1.L.else1443:
+__tu1.L.end1443:
+  ldw a1, __tu1.L.static.fg(zero)
+  li a0, 0
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1489
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.apply_display
+  addi sp, sp, 18
+  j __tu1.L.end1489
+__tu1.L.else1489:
+__tu1.L.end1489:
+  stw zero, -6(fp)
+  li a0, 0
+  stw a0, -6(fp)
+  stw zero, -3(fp)
+  li a0, 0
+  stw a0, -3(fp)
+__tu1.L.begin1506:
+  ldw a0, -3(fp)
+  slti a0, a0, 24
+  beqz a0, __tu1.L..44
+  ldw a0, -3(fp)
+  muli a0, a0, 120
+  mv a1, a0
+  addi a0, zero, procs
+  add a0, a0, a1
+  addi a0, a0, 90
+  ldw a0, 0(a0)
+  seq a0, a0, zero
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1519
+  li a0, 1
+  stw a0, -6(fp)
+  j __tu1.L.end1519
+__tu1.L.else1519:
+__tu1.L.end1519:
+__tu1.L..45:
+  ldw a0, -3(fp)
+  addi a0, a0, 1
+  stw a0, -3(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin1506
+__tu1.L..44:
+  ldw a0, -6(fp)
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1542
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L..46
+  stw a0, 0(sp)
+  jal ra, printf
+  addi sp, sp, 18
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.boot_init
+  addi sp, sp, 18
+  j __tu1.L.return..L.static.proc_exit
+  j __tu1.L.end1542
+__tu1.L.else1542:
+__tu1.L.end1542:
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.schedule
+  addi sp, sp, 18
+__tu1.L.return..L.static.proc_exit:
+  ldw s1, -24(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.boot_init:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -6
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  stw zero, -3(fp)
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L..83
+  stw a0, 0(sp)
+  li a0, 1
+  neg a0, a0
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.spawn
+  addi sp, sp, 18
+  stw a0, -3(fp)
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1573
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L..84
+  stw a0, 0(sp)
+  li a0, 1
+  neg a0, a0
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.spawn
+  addi sp, sp, 18
+  stw a0, -3(fp)
+  j __tu1.L.end1573
+__tu1.L.else1573:
+__tu1.L.end1573:
+  ldw a0, -3(fp)
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1586
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L..85
+  stw a0, 0(sp)
+  jal ra, printf
+  addi sp, sp, 18
+  addi sp, sp, -18
+  li a0, 1
+  stw a0, 0(sp)
+  jal ra, exit
+  addi sp, sp, 18
+  j __tu1.L.end1586
+__tu1.L.else1586:
+__tu1.L.end1586:
+  addi sp, sp, -18
+  ldw a0, -3(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.pid
+  addi sp, sp, 18
+  stw a0, __tu1.L.static.fg(zero)
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.apply_display
+  addi sp, sp, 18
+  ldw a0, -3(fp)
+  stw a0, cur(zero)
+  addi sp, sp, -18
+  li a0, 4
+  neg a0, a0
+  ldw a0, 0(a0)
+  addi a0, a0, 60000
+  stw a0, 0(sp)
+  jal ra, set_timecmp
+  addi sp, sp, 18
+__tu1.L.return..L.static.boot_init:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.schedule:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -15
+  stw s1, -15(fp)
+  stw sp, -12(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  stw zero, -9(fp)
+  addi sp, sp, -18
+  ldw a0, cur(zero)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.pid
+  addi sp, sp, 18
+  stw a0, -9(fp)
+  stw zero, -6(fp)
+  li a0, 1
+  stw a0, -6(fp)
+__tu1.L.begin1633:
+  ldw a0, -6(fp)
+  slti a0, a0, 25
+  beqz a0, __tu1.L..40
+  stw zero, -3(fp)
+  ldw a1, -6(fp)
+  ldw a0, -9(fp)
+  add a0, a0, a1
+  li t0, 24
+  mod a0, a0, t0
+  muli a0, a0, 120
+  mv a1, a0
+  addi a0, zero, procs
+  add a0, a0, a1
+  stw a0, -3(fp)
+  addi a0, a0, 90
+  ldw a0, 0(a0)
+  addi a0, a0, -1
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1671
+  ldw a0, -3(fp)
+  stw a0, cur(zero)
+  j __tu1.L..40
+  j __tu1.L.end1671
+__tu1.L.else1671:
+__tu1.L.end1671:
+__tu1.L..41:
+  ldw a0, -6(fp)
+  addi a0, a0, 1
+  stw a0, -6(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin1633
+__tu1.L..40:
+  addi sp, sp, -18
+  li a0, 4
+  neg a0, a0
+  ldw a0, 0(a0)
+  addi a0, a0, 60000
+  stw a0, 0(sp)
+  jal ra, set_timecmp
+  addi sp, sp, 18
+__tu1.L.return..L.static.schedule:
+  ldw s1, -15(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.spawn:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -48
+  stw s1, -45(fp)
+  stw s2, -48(fp)
+  stw sp, -36(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -39(fp)
+  ldw a0, 9(fp)
+  stw a0, -42(fp)
+  stw zero, -33(fp)
+  addi sp, sp, -18
+  ldw a0, -39(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.dir_find
+  addi sp, sp, 18
+  stw a0, -33(fp)
+  slti a0, a0, 0
+  beqz a0, __tu1.L.else1713
+  li a0, 0
+  j __tu1.L.return..L.static.spawn
+  j __tu1.L.end1713
+__tu1.L.else1713:
+__tu1.L.end1713:
+  stw zero, -30(fp)
+  addi sp, sp, -18
+  ldw a0, -33(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.dir_entry
+  addi sp, sp, 18
+  stw a0, -30(fp)
+  stw zero, -27(fp)
+  addi sp, sp, -18
+  ldw a0, -30(fp)
+  addi a0, a0, 16
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  stw a0, -27(fp)
+  stw zero, -24(fp)
+  addi sp, sp, -18
+  ldw a0, -30(fp)
+  addi a0, a0, 19
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  stw a0, -24(fp)
+  stw zero, -21(fp)
+  addi sp, sp, -18
+  ldw a0, -30(fp)
+  addi a0, a0, 22
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  stw a0, -21(fp)
+  slti a0, a0, 0
+  bnez a0, __tu1.L.logic1771
+  ldw a1, -24(fp)
+  li a0, 528441
+  slt a0, a0, a1
+  bnez a0, __tu1.L.logic1771
+  li a0, 0
+  j __tu1.L.end1771
+__tu1.L.logic1771:
+  li a0, 1
+__tu1.L.end1771:
+  beqz a0, __tu1.L.else1770
+  li a0, 0
+  j __tu1.L.return..L.static.spawn
+  j __tu1.L.end1770
+__tu1.L.else1770:
+__tu1.L.end1770:
+  stw zero, -18(fp)
+  li a0, 0
+  stw a0, -18(fp)
+  stw zero, -15(fp)
+  li a0, 0
+  stw a0, -15(fp)
+__tu1.L.begin1794:
+  ldw a0, -15(fp)
+  slti a0, a0, 24
+  beqz a0, __tu1.L.logic1804
+  ldw a1, __tu1.L.static.nslots(zero)
+  ldw a0, -15(fp)
+  slt a0, a0, a1
+  beqz a0, __tu1.L.logic1804
+  li a0, 1
+  j __tu1.L.end1804
+__tu1.L.logic1804:
+  li a0, 0
+__tu1.L.end1804:
+  beqz a0, __tu1.L..30
+  ldw a0, -15(fp)
+  muli a0, a0, 120
+  mv a1, a0
+  addi a0, zero, procs
+  add a0, a0, a1
+  addi a0, a0, 90
+  ldw a0, 0(a0)
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1813
+  ldw a0, -15(fp)
+  muli a0, a0, 120
+  mv a1, a0
+  addi a0, zero, procs
+  add a0, a0, a1
+  stw a0, -18(fp)
+  j __tu1.L..30
+  j __tu1.L.end1813
+__tu1.L.else1813:
+__tu1.L.end1813:
+__tu1.L..31:
+  ldw a0, -15(fp)
+  addi a0, a0, 1
+  stw a0, -15(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin1794
+__tu1.L..30:
+  ldw a0, -18(fp)
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else1845
+  li a0, 0
+  j __tu1.L.return..L.static.spawn
+  j __tu1.L.end1845
+__tu1.L.else1845:
+__tu1.L.end1845:
+  stw zero, -12(fp)
+  addi sp, sp, -18
+  ldw a0, -18(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.pid
+  addi sp, sp, 18
+  muli a0, a0, 531441
+  mv a1, a0
+  li a0, 1062882
+  add a0, a0, a1
+  stw a0, -12(fp)
+  stw zero, -9(fp)
+  li a0, 0
+  stw a0, -9(fp)
+__tu1.L.begin1868:
+  ldw a0, -24(fp)
+  mv s1, a0
+  ldw a0, -9(fp)
+  muli a0, a0, 729
+  slt a0, a0, s1
+  beqz a0, __tu1.L..32
+  addi sp, sp, -18
+  ldw a1, -9(fp)
+  ldw a0, -27(fp)
+  add a0, a0, a1
+  stw a0, 0(sp)
+  ldw a0, -9(fp)
+  muli a0, a0, 729
+  mv a1, a0
+  ldw a0, -12(fp)
+  add a0, a0, a1
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.disk_read
+  addi sp, sp, 18
+__tu1.L..33:
+  ldw a0, -9(fp)
+  addi a0, a0, 1
+  stw a0, -9(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin1868
+__tu1.L..32:
+  stw zero, -6(fp)
+  li a0, 0
+  stw a0, -6(fp)
+__tu1.L.begin1909:
+  ldw a0, -6(fp)
+  slti a0, a0, 27
+  beqz a0, __tu1.L..34
+  ldw a0, -6(fp)
+  muli a0, a0, 3
+  mv s1, a0
+  ldw a0, -18(fp)
+  add a0, a0, s1
+  mv s1, a0
+  li a0, 0
+  stw a0, 0(s1)
+__tu1.L..35:
+  ldw a0, -6(fp)
+  addi a0, a0, 1
+  stw a0, -6(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin1909
+__tu1.L..34:
+  ldw a0, -18(fp)
+  addi a0, a0, 36
+  mv s1, a0
+  li a0, 531441
+  stw a0, 0(s1)
+  ldw a0, -18(fp)
+  addi a0, a0, 81
+  mv s1, a0
+  ldw a0, -21(fp)
+  stw a0, 0(s1)
+  ldw a0, -18(fp)
+  addi a0, a0, 84
+  mv s1, a0
+  ldw a0, -12(fp)
+  stw a0, 0(s1)
+  ldw a0, -18(fp)
+  addi a0, a0, 87
+  mv s1, a0
+  li a0, 531441
+  stw a0, 0(s1)
+  ldw a0, -18(fp)
+  addi a0, a0, 90
+  mv s1, a0
+  li a0, 1
+  stw a0, 0(s1)
+  ldw a0, -18(fp)
+  addi a0, a0, 93
+  mv s1, a0
+  ldw a0, -42(fp)
+  stw a0, 0(s1)
+  ldw a0, -18(fp)
+  addi a0, a0, 96
+  mv s1, a0
+  stw zero, 0(s1)
+  ldw a0, -18(fp)
+  addi a0, a0, 99
+  mv s1, a0
+  li a0, 0
+  stw a0, 0(s1)
+  stw zero, -3(fp)
+  li a0, 0
+  stw a0, -3(fp)
+__tu1.L.begin1985:
+  ldw a0, -3(fp)
+  slti a0, a0, 16
+  beqz a0, __tu1.L..36
+  ldw a0, -3(fp)
+  mv s1, a0
+  ldw a0, -18(fp)
+  addi a0, a0, 102
+  add a0, a0, s1
+  mv s1, a0
+  ldw a1, -3(fp)
+  ldw a0, -30(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+__tu1.L..37:
+  ldw a0, -3(fp)
+  addi a0, a0, 1
+  stw a0, -3(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin1985
+__tu1.L..36:
+  ldw a0, -18(fp)
+  j __tu1.L.return..L.static.spawn
+__tu1.L.return..L.static.spawn:
+  ldw s1, -45(fp)
+  ldw s2, -48(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.silence:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -9
+  stw s1, -9(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  stw zero, -3(fp)
+  li a0, 0
+  stw a0, -3(fp)
+__tu1.L.begin2029:
+  ldw a0, -3(fp)
+  slti a0, a0, 9
+  beqz a0, __tu1.L..26
+  ldw a1, -3(fp)
+  li a0, 9
+  mul a0, a0, a1
+  mv s1, a0
+  li a0, 100
+  neg a0, a0
+  sub a0, a0, s1
+  addi a0, a0, -5
+  mv s1, a0
+  li a0, 0
+  stw a0, 0(s1)
+__tu1.L..27:
+  ldw a0, -3(fp)
+  addi a0, a0, 1
+  stw a0, -3(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin2029
+__tu1.L..26:
+__tu1.L.return..L.static.silence:
+  ldw s1, -9(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.apply_display:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -18
+  stw s1, -15(fp)
+  stw s2, -18(fp)
+  stw sp, -12(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, __tu1.L.static.fg(zero)
+  slti a0, a0, 0
+  beqz a0, __tu1.L.else2070
+  j __tu1.L.return..L.static.apply_display
+  j __tu1.L.end2070
+__tu1.L.else2070:
+__tu1.L.end2070:
+  stw zero, -9(fp)
+  ldw a0, __tu1.L.static.fg(zero)
+  muli a0, a0, 120
+  mv a1, a0
+  addi a0, zero, procs
+  add a0, a0, a1
+  stw a0, -9(fp)
+  li a0, 9
+  neg a0, a0
+  mv s1, a0
+  ldw a0, -9(fp)
+  addi a0, a0, 96
+  ldw a0, 0(a0)
+  stw a0, 0(s1)
+  stw zero, -6(fp)
+  ldw a0, -9(fp)
+  addi a0, a0, 99
+  ldw a0, 0(a0)
+  stw a0, -6(fp)
+  stw zero, -3(fp)
+  ldw a0, -9(fp)
+  addi a0, a0, 96
+  ldw a0, 0(a0)
+  addi a0, a0, -1
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else2121
+  li a0, 23040
+  j __tu1.L.end2121
+__tu1.L.else2121:
+  ldw a0, -9(fp)
+  addi a0, a0, 96
+  ldw a0, 0(a0)
+  addi a0, a0, -2
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else2129
+  li a0, 207360
+  j __tu1.L.end2129
+__tu1.L.else2129:
+  li a0, 64000
+__tu1.L.end2129:
+__tu1.L.end2121:
+  stw a0, -3(fp)
+  li a0, 5
+  neg a0, a0
+  mv s1, a0
+  ldw a1, -6(fp)
+  li a0, 0
+  slt a0, a0, a1
+  beqz a0, __tu1.L.logic2147
+  addi sp, sp, -18
+  ldw a0, -9(fp)
+  stw a0, 0(sp)
+  ldw a0, -6(fp)
+  stw a0, 3(sp)
+  ldw a0, -3(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.uptr
+  addi sp, sp, 18
+  beqz a0, __tu1.L.logic2147
+  li a0, 1
+  j __tu1.L.end2147
+__tu1.L.logic2147:
+  li a0, 0
+__tu1.L.end2147:
+  beqz a0, __tu1.L.else2146
+  ldw a0, -6(fp)
+  mv s2, a0
+  ldw a0, -9(fp)
+  addi a0, a0, 84
+  ldw a0, 0(a0)
+  add a0, a0, s2
+  j __tu1.L.end2146
+__tu1.L.else2146:
+  li a0, 0
+__tu1.L.end2146:
+  stw a0, 0(s1)
+__tu1.L.return..L.static.apply_display:
+  ldw s1, -15(fp)
+  ldw s2, -18(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.dir_find:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw s1, -12(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  stw zero, -3(fp)
+  li a0, 0
+  stw a0, -3(fp)
+__tu1.L.begin2170:
+  addi sp, sp, -18
+  jal ra, __tu1.L.static.dir_count
+  addi sp, sp, 18
+  mv a1, a0
+  ldw a0, -3(fp)
+  slt a0, a0, a1
+  beqz a0, __tu1.L..20
+  addi sp, sp, -18
+  addi sp, sp, -18
+  ldw a0, -3(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.dir_entry
+  addi sp, sp, 18
+  stw a0, 0(sp)
+  ldw a0, -9(fp)
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.name_eq
+  addi sp, sp, 18
+  beqz a0, __tu1.L.else2185
+  ldw a0, -3(fp)
+  j __tu1.L.return..L.static.dir_find
+  j __tu1.L.end2185
+__tu1.L.else2185:
+__tu1.L.end2185:
+__tu1.L..21:
+  ldw a0, -3(fp)
+  addi a0, a0, 1
+  stw a0, -3(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin2170
+__tu1.L..20:
+  li a0, 1
+  neg a0, a0
+  j __tu1.L.return..L.static.dir_find
+__tu1.L.return..L.static.dir_find:
+  ldw s1, -12(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.name_eq:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -18
+  stw s1, -15(fp)
+  stw s2, -18(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  ldw a0, 9(fp)
+  stw a0, -12(fp)
+  stw zero, -3(fp)
+  li a0, 0
+  stw a0, -3(fp)
+__tu1.L.begin2210:
+  ldw a0, -3(fp)
+  slti a0, a0, 16
+  beqz a0, __tu1.L..16
+  ldw a1, -3(fp)
+  ldw a0, -12(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  mv s1, a0
+  ldw a1, -3(fp)
+  ldw a0, -9(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  seq a0, a0, s1
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else2224
+  li a0, 0
+  j __tu1.L.return..L.static.name_eq
+  j __tu1.L.end2224
+__tu1.L.else2224:
+__tu1.L.end2224:
+  ldw a1, -3(fp)
+  ldw a0, -9(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else2247
+  li a0, 1
+  j __tu1.L.return..L.static.name_eq
+  j __tu1.L.end2247
+__tu1.L.else2247:
+__tu1.L.end2247:
+__tu1.L..17:
+  ldw a0, -3(fp)
+  addi a0, a0, 1
+  stw a0, -3(fp)
+  addi a0, a0, -1
+  j __tu1.L.begin2210
+__tu1.L..16:
+  li a0, 1
+  j __tu1.L.return..L.static.name_eq
+__tu1.L.return..L.static.name_eq:
+  ldw s1, -15(fp)
+  ldw s2, -18(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.dir_entry:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -9
+  stw s1, -9(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  muli a0, a0, 30
+  mv s1, a0
+  addi a0, zero, __tu1.L.static.dir
+  addi a0, a0, 6
+  add a0, a0, s1
+  j __tu1.L.return..L.static.dir_entry
+__tu1.L.return..L.static.dir_entry:
+  ldw s1, -9(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.dir_count:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -3
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L.static.dir
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  addi a0, a0, -27027
+  seq a0, a0, zero
+  beqz a0, __tu1.L.else2289
+  addi sp, sp, -18
+  addi a0, zero, __tu1.L.static.dir
+  addi a0, a0, 3
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  j __tu1.L.end2289
+__tu1.L.else2289:
+  li a0, 0
+__tu1.L.end2289:
+  j __tu1.L.return..L.static.dir_count
+__tu1.L.return..L.static.dir_count:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.disk_read:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw s1, -12(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+  li a0, 20
+  neg a0, a0
+  mv s1, a0
+  ldw a0, -6(fp)
+  stw a0, 0(s1)
+  li a0, 21
+  neg a0, a0
+  mv s1, a0
+  ldw a0, -9(fp)
+  stw a0, 0(s1)
+  li a0, 22
+  neg a0, a0
+  mv s1, a0
+  li a0, 1
+  stw a0, 0(s1)
+__tu1.L.return..L.static.disk_read:
+  ldw s1, -12(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.uptr:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -15
+  stw s1, -15(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+  ldw a0, 12(fp)
+  stw a0, -12(fp)
+  ldw a0, -9(fp)
+  slti a0, a0, 0
+  bnez a0, __tu1.L.logic2334
+  ldw a0, -12(fp)
+  slti a0, a0, 0
+  bnez a0, __tu1.L.logic2334
+  li a0, 0
+  j __tu1.L.end2334
+__tu1.L.logic2334:
+  li a0, 1
+__tu1.L.end2334:
+  bnez a0, __tu1.L.logic2333
+  ldw a1, -12(fp)
+  ldw a0, -9(fp)
+  add a0, a0, a1
+  mv s1, a0
+  ldw a0, -6(fp)
+  addi a0, a0, 87
+  ldw a0, 0(a0)
+  slt a0, a0, s1
+  bnez a0, __tu1.L.logic2333
+  li a0, 0
+  j __tu1.L.end2333
+__tu1.L.logic2333:
+  li a0, 1
+__tu1.L.end2333:
+  beqz a0, __tu1.L.else2332
+  li a0, 0
+  j __tu1.L.return..L.static.uptr
+  j __tu1.L.end2332
+__tu1.L.else2332:
+__tu1.L.end2332:
+  ldw a0, -9(fp)
+  mv s1, a0
+  ldw a0, -6(fp)
+  addi a0, a0, 84
+  ldw a0, 0(a0)
+  add a0, a0, s1
+  j __tu1.L.return..L.static.uptr
+__tu1.L.return..L.static.uptr:
+  ldw s1, -15(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.pid:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -9
+  stw s1, -9(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  addi a1, zero, procs
+  ldw a0, -6(fp)
+  sub a0, a0, a1
+  li t0, 120
+  div a0, a0, t0
+  j __tu1.L.return..L.static.pid
+__tu1.L.return..L.static.pid:
+  ldw s1, -9(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.word_at:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw s1, -9(fp)
+  stw s2, -12(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  addi a0, a0, 2
+  ldt a0, 0(a0)
+  muli a0, a0, 19683
+  muli a0, a0, 19683
+  mv s1, a0
+  ldw a0, -6(fp)
+  addi a0, a0, 1
+  ldt a0, 0(a0)
+  muli a0, a0, 19683
+  mv s2, a0
+  ldw a0, -6(fp)
+  ldt a0, 0(a0)
+  add a0, a0, s2
+  add a0, a0, s1
+  j __tu1.L.return..L.static.word_at
+__tu1.L.return..L.static.word_at:
+  ldw s1, -9(fp)
+  ldw s2, -12(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.bal:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -21
+  stw s1, -18(fp)
+  stw s2, -21(fp)
+  stw sp, -9(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -12(fp)
+  ldw a0, 9(fp)
+  stw a0, -15(fp)
+  stw zero, -6(fp)
+  ldw a0, -15(fp)
+  addi a0, a0, -1
+  li t0, 2
+  div a0, a0, t0
+  stw a0, -6(fp)
+  stw zero, -3(fp)
+  ldw a0, -15(fp)
+  mv s1, a0
+  ldw a1, -6(fp)
+  ldw a0, -12(fp)
+  add a0, a0, a1
+  mod a0, a0, s1
+  stw a0, -3(fp)
+  slti a0, a0, 0
+  beqz a0, __tu1.L.else2428
+  ldw a1, -15(fp)
+  ldw a0, -3(fp)
+  add a0, a0, a1
+  stw a0, -3(fp)
+  j __tu1.L.end2428
+__tu1.L.else2428:
+__tu1.L.end2428:
+  ldw a1, -6(fp)
+  ldw a0, -3(fp)
+  sub a0, a0, a1
+  j __tu1.L.return..L.static.bal
+__tu1.L.return..L.static.bal:
+  ldw s1, -18(fp)
+  ldw s2, -21(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+
+; khost.tas — services de base du NOYAU (mode -1) : accès direct au matériel.
+.align 3
+putchar:
+  stt a0, -1(zero)
+  ret
+exit:
+  halt
+abort:
+  halt
+__builtin_tmin:
+  min a0, a0, a1
+  ret
+__builtin_tmax:
+  max a0, a0, a1
+  ret
+__builtin_tmul:
+  tmul a0, a0, a1
+  ret
+__builtin_sht:
+  sht a0, a0, a1
+  ret
+
+  .align 1
+__tu3.L..29:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 117
+  .tryte 115
+  .tryte 104
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu3.L..28:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 117
+  .tryte 115
+  .tryte 104
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu3.L..27:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 117
+  .tryte 109
+  .tryte 111
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu3.L..26:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 117
+  .tryte 109
+  .tryte 111
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu3.L..25:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 117
+  .tryte 100
+  .tryte 105
+  .tryte 118
+  .tryte 0
+  .align 1
+__tu3.L..24:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 117
+  .tryte 100
+  .tryte 105
+  .tryte 118
+  .tryte 0
+  .align 1
+__tu3.L..19:
+  .tryte 117
+  .tryte 100
+  .tryte 105
+  .tryte 118
+  .tryte 114
+  .tryte 101
+  .tryte 109
+  .tryte 0
+  .align 1
+__tu3.L..18:
+  .tryte 117
+  .tryte 100
+  .tryte 105
+  .tryte 118
+  .tryte 114
+  .tryte 101
+  .tryte 109
+  .tryte 0
+  .align 1
+__tu3.L..15:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 115
+  .tryte 104
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu3.L..14:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 115
+  .tryte 104
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu3.L..11:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 115
+  .tryte 104
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu3.L..10:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 115
+  .tryte 104
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu3.L..9:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 120
+  .tryte 111
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu3.L..8:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 120
+  .tryte 111
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu3.L..7:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 111
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu3.L..6:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 111
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu3.L..5:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 97
+  .tryte 110
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu3.L..4:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 97
+  .tryte 110
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu3.L..1:
+  .tryte 98
+  .tryte 105
+  .tryte 116
+  .tryte 111
+  .tryte 112
+  .tryte 0
+  .align 1
+__tu3.L..0:
+  .tryte 98
+  .tryte 105
+  .tryte 116
+  .tryte 111
+  .tryte 112
+  .tryte 0
+  .align 3
+__tri_ushr:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw s1, -12(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+  slti a0, a0, 0
+  bnez a0, __tu3.L.logic2
+  ldw a1, -9(fp)
+  li a0, 41
+  slt a0, a0, a1
+  bnez a0, __tu3.L.logic2
+  li a0, 0
+  j __tu3.L.end2
+__tu3.L.logic2:
+  li a0, 1
+__tu3.L.end2:
+  beqz a0, __tu3.L.else1
+  addi sp, sp, -18
+  jal ra, abort
+  addi sp, sp, 18
+  j __tu3.L.end1
+__tu3.L.else1:
+__tu3.L.end1:
+__tu3.L.begin13:
+  ldw a0, -9(fp)
+  addi a0, a0, -1
+  stw a0, -9(fp)
+  addi a0, a0, 1
+  beqz a0, __tu3.L..30
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  li a0, 2
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tri_udiv
+  addi sp, sp, 18
+  stw a0, -6(fp)
+__tu3.L..31:
+  j __tu3.L.begin13
+__tu3.L..30:
+  ldw a0, -6(fp)
+  j __tu3.L.return.__tri_ushr
+__tu3.L.return.__tri_ushr:
+  ldw s1, -12(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tri_umod:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  ldw a0, 9(fp)
+  stw a0, -12(fp)
+  addi sp, sp, -18
+  ldw a0, -9(fp)
+  stw a0, 0(sp)
+  ldw a0, -12(fp)
+  stw a0, 3(sp)
+  addi a0, fp, -3
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu3.L.static.udivrem
+  addi sp, sp, 18
+  ldw a0, -3(fp)
+  j __tu3.L.return.__tri_umod
+__tu3.L.return.__tri_umod:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tri_udiv:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  ldw a0, 9(fp)
+  stw a0, -12(fp)
+  addi sp, sp, -18
+  ldw a0, -9(fp)
+  stw a0, 0(sp)
+  ldw a0, -12(fp)
+  stw a0, 3(sp)
+  addi a0, fp, -3
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu3.L.static.udivrem
+  addi sp, sp, 18
+  j __tu3.L.return.__tri_udiv
+__tu3.L.return.__tri_udiv:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu3.L.static.udivrem:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -27
+  stw s1, -24(fp)
+  stw s2, -27(fp)
+  stw sp, -12(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -15(fp)
+  ldw a0, 9(fp)
+  stw a0, -18(fp)
+  ldw a0, 12(fp)
+  stw a0, -21(fp)
+  ldw a0, -18(fp)
+  seq a0, a0, zero
+  beqz a0, __tu3.L.else62
+  addi sp, sp, -18
+  jal ra, abort
+  addi sp, sp, 18
+  j __tu3.L.end62
+__tu3.L.else62:
+__tu3.L.end62:
+  stw zero, -9(fp)
+  li a0, 0
+  stw a0, -9(fp)
+__tu3.L.begin76:
+  ldw a1, -15(fp)
+  ldw a0, -18(fp)
+  li t0, 3812798742493
+  sub a0, a0, t0
+  sub a1, a1, t0
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu3.L..20
+  stw zero, -6(fp)
+  ldw a0, -18(fp)
+  stw a0, -6(fp)
+  stw zero, -3(fp)
+  li a0, 1
+  stw a0, -3(fp)
+__tu3.L.begin100:
+  li a1, 3812798742493
+  ldw a0, -6(fp)
+  li t0, 3812798742493
+  sub a0, a0, t0
+  sub a1, a1, t0
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu3.L.logic101
+  ldw a0, -15(fp)
+  mv s1, a0
+  ldw a1, -6(fp)
+  ldw a0, -6(fp)
+  add a0, a0, a1
+  mv a1, s1
+  li t0, 3812798742493
+  sub a0, a0, t0
+  sub a1, a1, t0
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu3.L.logic101
+  li a0, 1
+  j __tu3.L.end101
+__tu3.L.logic101:
+  li a0, 0
+__tu3.L.end101:
+  beqz a0, __tu3.L..22
+  ldw a1, -6(fp)
+  ldw a0, -6(fp)
+  add a0, a0, a1
+  stw a0, -6(fp)
+  ldw a1, -3(fp)
+  ldw a0, -3(fp)
+  add a0, a0, a1
+  stw a0, -3(fp)
+__tu3.L..23:
+  j __tu3.L.begin100
+__tu3.L..22:
+  ldw a1, -6(fp)
+  ldw a0, -15(fp)
+  sub a0, a0, a1
+  stw a0, -15(fp)
+  ldw a1, -3(fp)
+  ldw a0, -9(fp)
+  add a0, a0, a1
+  stw a0, -9(fp)
+__tu3.L..21:
+  j __tu3.L.begin76
+__tu3.L..20:
+  ldw a0, -21(fp)
+  mv s1, a0
+  ldw a0, -15(fp)
+  stw a0, 0(s1)
+  ldw a0, -9(fp)
+  j __tu3.L.return..L.static.udivrem
+__tu3.L.return..L.static.udivrem:
+  ldw s1, -24(fp)
+  ldw s2, -27(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tri_shr:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -15
+  stw s1, -15(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  ldw a0, 9(fp)
+  stw a0, -12(fp)
+  slti a0, a0, 0
+  bnez a0, __tu3.L.logic159
+  ldw a1, -12(fp)
+  li a0, 41
+  slt a0, a0, a1
+  bnez a0, __tu3.L.logic159
+  li a0, 0
+  j __tu3.L.end159
+__tu3.L.logic159:
+  li a0, 1
+__tu3.L.end159:
+  beqz a0, __tu3.L.else158
+  addi sp, sp, -18
+  jal ra, abort
+  addi sp, sp, 18
+  j __tu3.L.end158
+__tu3.L.else158:
+__tu3.L.end158:
+__tu3.L.begin170:
+  ldw a0, -12(fp)
+  addi a0, a0, -1
+  stw a0, -12(fp)
+  addi a0, a0, 1
+  beqz a0, __tu3.L..16
+  stw zero, -3(fp)
+  ldw a0, -9(fp)
+  li t0, 2
+  mod a0, a0, t0
+  stw a0, -3(fp)
+  slti a0, a0, 0
+  mv s1, a0
+  ldw a0, -9(fp)
+  li t0, 2
+  div a0, a0, t0
+  sub a0, a0, s1
+  stw a0, -9(fp)
+__tu3.L..17:
+  j __tu3.L.begin170
+__tu3.L..16:
+  ldw a0, -9(fp)
+  j __tu3.L.return.__tri_shr
+__tu3.L.return.__tri_shr:
+  ldw s1, -15(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tri_shl:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw s1, -12(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+  slti a0, a0, 0
+  bnez a0, __tu3.L.logic208
+  ldw a1, -9(fp)
+  li a0, 41
+  slt a0, a0, a1
+  bnez a0, __tu3.L.logic208
+  li a0, 0
+  j __tu3.L.end208
+__tu3.L.logic208:
+  li a0, 1
+__tu3.L.end208:
+  beqz a0, __tu3.L.else207
+  addi sp, sp, -18
+  jal ra, abort
+  addi sp, sp, 18
+  j __tu3.L.end207
+__tu3.L.else207:
+__tu3.L.end207:
+__tu3.L.begin219:
+  ldw a0, -9(fp)
+  addi a0, a0, -1
+  stw a0, -9(fp)
+  addi a0, a0, 1
+  beqz a0, __tu3.L..12
+  ldw a0, -6(fp)
+  muli a0, a0, 2
+  stw a0, -6(fp)
+__tu3.L..13:
+  j __tu3.L.begin219
+__tu3.L..12:
+  ldw a0, -6(fp)
+  j __tu3.L.return.__tri_shl
+__tu3.L.return.__tri_shl:
+  ldw s1, -12(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tri_xor:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -9
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  ldw a0, -9(fp)
+  stw a0, 3(sp)
+  li a0, 2
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu3.L.static.bitop
+  addi sp, sp, 18
+  j __tu3.L.return.__tri_xor
+__tu3.L.return.__tri_xor:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tri_or:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -9
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  ldw a0, -9(fp)
+  stw a0, 3(sp)
+  li a0, 1
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu3.L.static.bitop
+  addi sp, sp, 18
+  j __tu3.L.return.__tri_or
+__tu3.L.return.__tri_or:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tri_and:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -9
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  ldw a0, -9(fp)
+  stw a0, 3(sp)
+  stw zero, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu3.L.static.bitop
+  addi sp, sp, 18
+  j __tu3.L.return.__tri_and
+__tu3.L.return.__tri_and:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu3.L.static.bitop:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -30
+  stw s1, -30(fp)
+  stw sp, -18(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -21(fp)
+  ldw a0, 9(fp)
+  stw a0, -24(fp)
+  ldw a0, 12(fp)
+  stw a0, -27(fp)
+  stw zero, -15(fp)
+  li a0, 0
+  stw a0, -15(fp)
+  stw zero, -12(fp)
+  li a0, 1
+  stw a0, -12(fp)
+  stw zero, -9(fp)
+  li a0, 0
+  stw a0, -9(fp)
+__tu3.L.begin285:
+  ldw a0, -9(fp)
+  slti a0, a0, 42
+  beqz a0, __tu3.L..2
+  stw zero, -6(fp)
+  ldw a0, -21(fp)
+  li t0, 2
+  mod a0, a0, t0
+  stw a0, -6(fp)
+  stw zero, -3(fp)
+  ldw a0, -24(fp)
+  li t0, 2
+  mod a0, a0, t0
+  stw a0, -3(fp)
+  ldw a0, -6(fp)
+  slti a0, a0, 0
+  beqz a0, __tu3.L.else320
+  ldw a0, -6(fp)
+  addi a0, a0, 2
+  stw a0, -6(fp)
+  j __tu3.L.end320
+__tu3.L.else320:
+__tu3.L.end320:
+  ldw a0, -3(fp)
+  slti a0, a0, 0
+  beqz a0, __tu3.L.else330
+  ldw a0, -3(fp)
+  addi a0, a0, 2
+  stw a0, -3(fp)
+  j __tu3.L.end330
+__tu3.L.else330:
+__tu3.L.end330:
+  ldw a0, -9(fp)
+  addi a0, a0, -41
+  seq a0, a0, zero
+  beqz a0, __tu3.L.else340
+  ldw a0, -12(fp)
+  neg a0, a0
+  stw a0, -12(fp)
+  j __tu3.L.end340
+__tu3.L.else340:
+__tu3.L.end340:
+  ldw a0, -27(fp)
+  seq a0, a0, zero
+  beqz a0, __tu3.L.logic354
+  ldw a0, -6(fp)
+  beqz a0, __tu3.L.logic354
+  li a0, 1
+  j __tu3.L.end354
+__tu3.L.logic354:
+  li a0, 0
+__tu3.L.end354:
+  beqz a0, __tu3.L.logic353
+  ldw a0, -3(fp)
+  beqz a0, __tu3.L.logic353
+  li a0, 1
+  j __tu3.L.end353
+__tu3.L.logic353:
+  li a0, 0
+__tu3.L.end353:
+  bnez a0, __tu3.L.logic352
+  ldw a0, -27(fp)
+  addi a0, a0, -1
+  seq a0, a0, zero
+  beqz a0, __tu3.L.logic360
+  ldw a0, -6(fp)
+  bnez a0, __tu3.L.logic364
+  ldw a0, -3(fp)
+  bnez a0, __tu3.L.logic364
+  li a0, 0
+  j __tu3.L.end364
+__tu3.L.logic364:
+  li a0, 1
+__tu3.L.end364:
+  beqz a0, __tu3.L.logic360
+  li a0, 1
+  j __tu3.L.end360
+__tu3.L.logic360:
+  li a0, 0
+__tu3.L.end360:
+  bnez a0, __tu3.L.logic352
+  li a0, 0
+  j __tu3.L.end352
+__tu3.L.logic352:
+  li a0, 1
+__tu3.L.end352:
+  bnez a0, __tu3.L.logic351
+  ldw a0, -27(fp)
+  addi a0, a0, -2
+  seq a0, a0, zero
+  beqz a0, __tu3.L.logic367
+  ldw a1, -3(fp)
+  ldw a0, -6(fp)
+  seq a0, a0, a1
+  seq a0, a0, zero
+  beqz a0, __tu3.L.logic367
+  li a0, 1
+  j __tu3.L.end367
+__tu3.L.logic367:
+  li a0, 0
+__tu3.L.end367:
+  bnez a0, __tu3.L.logic351
+  li a0, 0
+  j __tu3.L.end351
+__tu3.L.logic351:
+  li a0, 1
+__tu3.L.end351:
+  beqz a0, __tu3.L.else350
+  ldw a1, -12(fp)
+  ldw a0, -15(fp)
+  add a0, a0, a1
+  stw a0, -15(fp)
+  j __tu3.L.end350
+__tu3.L.else350:
+__tu3.L.end350:
+  ldw a1, -6(fp)
+  ldw a0, -21(fp)
+  sub a0, a0, a1
+  li t0, 2
+  div a0, a0, t0
+  stw a0, -21(fp)
+  ldw a1, -3(fp)
+  ldw a0, -24(fp)
+  sub a0, a0, a1
+  li t0, 2
+  div a0, a0, t0
+  stw a0, -24(fp)
+  ldw a0, -9(fp)
+  addi a0, a0, -41
+  seq a0, a0, zero
+  seq a0, a0, zero
+  beqz a0, __tu3.L.else404
+  ldw a0, -12(fp)
+  muli a0, a0, 2
+  stw a0, -12(fp)
+  j __tu3.L.end404
+__tu3.L.else404:
+__tu3.L.end404:
+__tu3.L..3:
+  ldw a0, -9(fp)
+  addi a0, a0, 1
+  stw a0, -9(fp)
+  addi a0, a0, -1
+  j __tu3.L.begin285
+__tu3.L..2:
+  ldw a0, -15(fp)
+  j __tu3.L.return..L.static.bitop
+__tu3.L.return..L.static.bitop:
+  ldw s1, -30(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+
+  .align 1
+__tu4.L..127:
+  .tryte 97
+  .tryte 115
+  .tryte 115
+  .tryte 101
+  .tryte 114
+  .tryte 116
+  .tryte 105
+  .tryte 111
+  .tryte 110
+  .tryte 32
+  .tryte 102
+  .tryte 97
+  .tryte 105
+  .tryte 108
+  .tryte 101
+  .tryte 100
+  .tryte 58
+  .tryte 32
+  .tryte 37
+  .tryte 115
+  .tryte 32
+  .tryte 40
+  .tryte 37
+  .tryte 115
+  .tryte 58
+  .tryte 37
+  .tryte 100
+  .tryte 41
+  .tryte 10
+  .tryte 0
+  .align 1
+__tu4.L..126:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 97
+  .tryte 115
+  .tryte 115
+  .tryte 101
+  .tryte 114
+  .tryte 116
+  .tryte 95
+  .tryte 102
+  .tryte 97
+  .tryte 105
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu4.L..125:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 97
+  .tryte 115
+  .tryte 115
+  .tryte 101
+  .tryte 114
+  .tryte 116
+  .tryte 95
+  .tryte 102
+  .tryte 97
+  .tryte 105
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu4.L..124:
+  .tryte 115
+  .tryte 110
+  .tryte 112
+  .tryte 114
+  .tryte 105
+  .tryte 110
+  .tryte 116
+  .tryte 102
+  .tryte 0
+  .align 1
+__tu4.L..123:
+  .tryte 115
+  .tryte 110
+  .tryte 112
+  .tryte 114
+  .tryte 105
+  .tryte 110
+  .tryte 116
+  .tryte 102
+  .tryte 0
+  .align 1
+__tu4.L..122:
+  .tryte 115
+  .tryte 112
+  .tryte 114
+  .tryte 105
+  .tryte 110
+  .tryte 116
+  .tryte 102
+  .tryte 0
+  .align 1
+__tu4.L..121:
+  .tryte 115
+  .tryte 112
+  .tryte 114
+  .tryte 105
+  .tryte 110
+  .tryte 116
+  .tryte 102
+  .tryte 0
+  .align 1
+__tu4.L..120:
+  .tryte 112
+  .tryte 114
+  .tryte 105
+  .tryte 110
+  .tryte 116
+  .tryte 102
+  .tryte 0
+  .align 1
+__tu4.L..119:
+  .tryte 112
+  .tryte 114
+  .tryte 105
+  .tryte 110
+  .tryte 116
+  .tryte 102
+  .tryte 0
+  .align 1
+__tu4.L..118:
+  .tryte 118
+  .tryte 112
+  .tryte 114
+  .tryte 105
+  .tryte 110
+  .tryte 116
+  .tryte 102
+  .tryte 0
+  .align 1
+__tu4.L..117:
+  .tryte 118
+  .tryte 112
+  .tryte 114
+  .tryte 105
+  .tryte 110
+  .tryte 116
+  .tryte 102
+  .tryte 0
+  .align 1
+__tu4.L..116:
+  .tryte 118
+  .tryte 115
+  .tryte 112
+  .tryte 114
+  .tryte 105
+  .tryte 110
+  .tryte 116
+  .tryte 102
+  .tryte 0
+  .align 1
+__tu4.L..115:
+  .tryte 118
+  .tryte 115
+  .tryte 112
+  .tryte 114
+  .tryte 105
+  .tryte 110
+  .tryte 116
+  .tryte 102
+  .tryte 0
+  .align 1
+__tu4.L..114:
+  .tryte 118
+  .tryte 115
+  .tryte 110
+  .tryte 112
+  .tryte 114
+  .tryte 105
+  .tryte 110
+  .tryte 116
+  .tryte 102
+  .tryte 0
+  .align 1
+__tu4.L..113:
+  .tryte 118
+  .tryte 115
+  .tryte 110
+  .tryte 112
+  .tryte 114
+  .tryte 105
+  .tryte 110
+  .tryte 116
+  .tryte 102
+  .tryte 0
+  .align 1
+__tu4.L..102:
+  .tryte 40
+  .tryte 110
+  .tryte 117
+  .tryte 108
+  .tryte 108
+  .tryte 41
+  .tryte 0
+  .align 1
+__tu4.L..93:
+  .tryte 102
+  .tryte 111
+  .tryte 114
+  .tryte 109
+  .tryte 97
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu4.L..92:
+  .tryte 102
+  .tryte 111
+  .tryte 114
+  .tryte 109
+  .tryte 97
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu4.L..91:
+  .tryte 101
+  .tryte 109
+  .tryte 105
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu4.L..90:
+  .tryte 101
+  .tryte 109
+  .tryte 105
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu4.L..89:
+  .tryte 114
+  .tryte 101
+  .tryte 97
+  .tryte 108
+  .tryte 108
+  .tryte 111
+  .tryte 99
+  .tryte 0
+  .align 1
+__tu4.L..88:
+  .tryte 114
+  .tryte 101
+  .tryte 97
+  .tryte 108
+  .tryte 108
+  .tryte 111
+  .tryte 99
+  .tryte 0
+  .align 1
+__tu4.L..87:
+  .tryte 99
+  .tryte 97
+  .tryte 108
+  .tryte 108
+  .tryte 111
+  .tryte 99
+  .tryte 0
+  .align 1
+__tu4.L..86:
+  .tryte 99
+  .tryte 97
+  .tryte 108
+  .tryte 108
+  .tryte 111
+  .tryte 99
+  .tryte 0
+  .align 1
+__tu4.L..85:
+  .tryte 102
+  .tryte 114
+  .tryte 101
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu4.L..84:
+  .tryte 102
+  .tryte 114
+  .tryte 101
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu4.L..83:
+  .tryte 109
+  .tryte 97
+  .tryte 108
+  .tryte 108
+  .tryte 111
+  .tryte 99
+  .tryte 0
+  .align 1
+__tu4.L..82:
+  .tryte 109
+  .tryte 97
+  .tryte 108
+  .tryte 108
+  .tryte 111
+  .tryte 99
+  .tryte 0
+  .align 3
+__tu4.L.static.heap:
+  .space 3
+  .align 1
+__tu4.L..81:
+  .tryte 97
+  .tryte 116
+  .tryte 111
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu4.L..80:
+  .tryte 97
+  .tryte 116
+  .tryte 111
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu4.L..79:
+  .tryte 97
+  .tryte 116
+  .tryte 111
+  .tryte 105
+  .tryte 0
+  .align 1
+__tu4.L..78:
+  .tryte 97
+  .tryte 116
+  .tryte 111
+  .tryte 105
+  .tryte 0
+  .align 1
+__tu4.L..73:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 116
+  .tryte 111
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu4.L..72:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 116
+  .tryte 111
+  .tryte 108
+  .tryte 0
+  .align 1
+__tu4.L..71:
+  .tryte 108
+  .tryte 97
+  .tryte 98
+  .tryte 115
+  .tryte 0
+  .align 1
+__tu4.L..70:
+  .tryte 108
+  .tryte 97
+  .tryte 98
+  .tryte 115
+  .tryte 0
+  .align 1
+__tu4.L..69:
+  .tryte 97
+  .tryte 98
+  .tryte 115
+  .tryte 0
+  .align 1
+__tu4.L..68:
+  .tryte 97
+  .tryte 98
+  .tryte 115
+  .tryte 0
+  .align 1
+__tu4.L..67:
+  .tryte 116
+  .tryte 111
+  .tryte 117
+  .tryte 112
+  .tryte 112
+  .tryte 101
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu4.L..66:
+  .tryte 116
+  .tryte 111
+  .tryte 117
+  .tryte 112
+  .tryte 112
+  .tryte 101
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu4.L..65:
+  .tryte 116
+  .tryte 111
+  .tryte 108
+  .tryte 111
+  .tryte 119
+  .tryte 101
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu4.L..64:
+  .tryte 116
+  .tryte 111
+  .tryte 108
+  .tryte 111
+  .tryte 119
+  .tryte 101
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu4.L..63:
+  .tryte 105
+  .tryte 115
+  .tryte 115
+  .tryte 112
+  .tryte 97
+  .tryte 99
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu4.L..62:
+  .tryte 105
+  .tryte 115
+  .tryte 115
+  .tryte 112
+  .tryte 97
+  .tryte 99
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu4.L..61:
+  .tryte 105
+  .tryte 115
+  .tryte 97
+  .tryte 108
+  .tryte 110
+  .tryte 117
+  .tryte 109
+  .tryte 0
+  .align 1
+__tu4.L..60:
+  .tryte 105
+  .tryte 115
+  .tryte 97
+  .tryte 108
+  .tryte 110
+  .tryte 117
+  .tryte 109
+  .tryte 0
+  .align 1
+__tu4.L..59:
+  .tryte 105
+  .tryte 115
+  .tryte 97
+  .tryte 108
+  .tryte 112
+  .tryte 104
+  .tryte 97
+  .tryte 0
+  .align 1
+__tu4.L..58:
+  .tryte 105
+  .tryte 115
+  .tryte 97
+  .tryte 108
+  .tryte 112
+  .tryte 104
+  .tryte 97
+  .tryte 0
+  .align 1
+__tu4.L..57:
+  .tryte 105
+  .tryte 115
+  .tryte 100
+  .tryte 105
+  .tryte 103
+  .tryte 105
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu4.L..56:
+  .tryte 105
+  .tryte 115
+  .tryte 100
+  .tryte 105
+  .tryte 103
+  .tryte 105
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu4.L..53:
+  .tryte 112
+  .tryte 117
+  .tryte 116
+  .tryte 115
+  .tryte 0
+  .align 1
+__tu4.L..52:
+  .tryte 112
+  .tryte 117
+  .tryte 116
+  .tryte 115
+  .tryte 0
+  .align 1
+__tu4.L..49:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu4.L..48:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu4.L..45:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 114
+  .tryte 99
+  .tryte 104
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu4.L..44:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 114
+  .tryte 99
+  .tryte 104
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu4.L..41:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 99
+  .tryte 104
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu4.L..40:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 99
+  .tryte 104
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu4.L..37:
+  .tryte 109
+  .tryte 101
+  .tryte 109
+  .tryte 99
+  .tryte 109
+  .tryte 112
+  .tryte 0
+  .align 1
+__tu4.L..36:
+  .tryte 109
+  .tryte 101
+  .tryte 109
+  .tryte 99
+  .tryte 109
+  .tryte 112
+  .tryte 0
+  .align 1
+__tu4.L..33:
+  .tryte 109
+  .tryte 101
+  .tryte 109
+  .tryte 109
+  .tryte 111
+  .tryte 118
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu4.L..32:
+  .tryte 109
+  .tryte 101
+  .tryte 109
+  .tryte 109
+  .tryte 111
+  .tryte 118
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu4.L..29:
+  .tryte 109
+  .tryte 101
+  .tryte 109
+  .tryte 99
+  .tryte 112
+  .tryte 121
+  .tryte 0
+  .align 1
+__tu4.L..28:
+  .tryte 109
+  .tryte 101
+  .tryte 109
+  .tryte 99
+  .tryte 112
+  .tryte 121
+  .tryte 0
+  .align 1
+__tu4.L..25:
+  .tryte 109
+  .tryte 101
+  .tryte 109
+  .tryte 115
+  .tryte 101
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu4.L..24:
+  .tryte 109
+  .tryte 101
+  .tryte 109
+  .tryte 115
+  .tryte 101
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu4.L..23:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 99
+  .tryte 97
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu4.L..22:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 99
+  .tryte 97
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu4.L..17:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 110
+  .tryte 99
+  .tryte 112
+  .tryte 121
+  .tryte 0
+  .align 1
+__tu4.L..16:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 110
+  .tryte 99
+  .tryte 112
+  .tryte 121
+  .tryte 0
+  .align 1
+__tu4.L..13:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 99
+  .tryte 112
+  .tryte 121
+  .tryte 0
+  .align 1
+__tu4.L..12:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 99
+  .tryte 112
+  .tryte 121
+  .tryte 0
+  .align 1
+__tu4.L..9:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 110
+  .tryte 99
+  .tryte 109
+  .tryte 112
+  .tryte 0
+  .align 1
+__tu4.L..8:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 110
+  .tryte 99
+  .tryte 109
+  .tryte 112
+  .tryte 0
+  .align 1
+__tu4.L..5:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 99
+  .tryte 109
+  .tryte 112
+  .tryte 0
+  .align 1
+__tu4.L..4:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 99
+  .tryte 109
+  .tryte 112
+  .tryte 0
+  .align 1
+__tu4.L..1:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 108
+  .tryte 101
+  .tryte 110
+  .tryte 0
+  .align 1
+__tu4.L..0:
+  .tryte 115
+  .tryte 116
+  .tryte 114
+  .tryte 108
+  .tryte 101
+  .tryte 110
+  .tryte 0
+  .align 3
+__tri_assert_fail:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+  ldw a0, 12(fp)
+  stw a0, -12(fp)
+  addi sp, sp, -18
+  addi a0, zero, __tu4.L..127
+  stw a0, 0(sp)
+  ldw a0, -6(fp)
+  stw a0, 3(sp)
+  ldw a0, -9(fp)
+  stw a0, 6(sp)
+  ldw a0, -12(fp)
+  stw a0, 9(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  ldw a3, 9(sp)
+  jal ra, printf
+  addi sp, sp, 18
+  addi sp, sp, -18
+  li a0, 1
+  stw a0, 0(sp)
+  jal ra, exit
+  addi sp, sp, 18
+__tu4.L.return.__tri_assert_fail:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu4.L.static.format:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -174
+  stw s1, -171(fp)
+  stw s2, -174(fp)
+  stw sp, -159(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -162(fp)
+  ldw a0, 9(fp)
+  stw a0, -165(fp)
+  ldw a0, 12(fp)
+  stw a0, -168(fp)
+__tu4.L.begin13:
+  ldw a0, -165(fp)
+  ldt a0, 0(a0)
+  beqz a0, __tu4.L..94
+  ldw a0, -165(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -37
+  seq a0, a0, zero
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else17
+  addi sp, sp, -18
+  ldw a0, -162(fp)
+  stw a0, 0(sp)
+  ldw a0, -165(fp)
+  addi a0, a0, 1
+  stw a0, -165(fp)
+  addi a0, a0, -1
+  ldt a0, 0(a0)
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu4.L.static.emit
+  addi sp, sp, 18
+  j __tu4.L..95
+  j __tu4.L.end17
+__tu4.L.else17:
+__tu4.L.end17:
+  ldw a0, -165(fp)
+  addi a0, a0, 1
+  stw a0, -165(fp)
+  addi a0, a0, -1
+  stw zero, -156(fp)
+  li a0, 0
+  stw a0, -156(fp)
+  stw zero, -153(fp)
+  li a0, 0
+  stw a0, -153(fp)
+  stw zero, -150(fp)
+  li a0, 0
+  stw a0, -150(fp)
+  stw zero, -147(fp)
+  li a0, 1
+  neg a0, a0
+  stw a0, -147(fp)
+  ldw a0, -165(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -45
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else82
+  li a0, 1
+  stw a0, -153(fp)
+  ldw a0, -165(fp)
+  addi a0, a0, 1
+  stw a0, -165(fp)
+  addi a0, a0, -1
+  j __tu4.L.end82
+__tu4.L.else82:
+__tu4.L.end82:
+  ldw a0, -165(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -48
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else101
+  li a0, 1
+  stw a0, -156(fp)
+  ldw a0, -165(fp)
+  addi a0, a0, 1
+  stw a0, -165(fp)
+  addi a0, a0, -1
+  j __tu4.L.end101
+__tu4.L.else101:
+__tu4.L.end101:
+  ldw a0, -165(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -42
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else120
+  ldw a0, -168(fp)
+  addi a0, a0, 3
+  stw a0, -168(fp)
+  addi a0, a0, -3
+  ldw a0, 0(a0)
+  stw a0, -150(fp)
+  ldw a0, -165(fp)
+  addi a0, a0, 1
+  stw a0, -165(fp)
+  addi a0, a0, -1
+  j __tu4.L.end120
+__tu4.L.else120:
+__tu4.L.begin146:
+  addi sp, sp, -18
+  ldw a0, -165(fp)
+  ldt a0, 0(a0)
+  stw a0, 0(sp)
+  jal ra, isdigit
+  addi sp, sp, 18
+  beqz a0, __tu4.L..96
+  ldw a0, -165(fp)
+  addi a0, a0, 1
+  stw a0, -165(fp)
+  addi a0, a0, -1
+  ldt a0, 0(a0)
+  mv s1, a0
+  ldw a0, -150(fp)
+  muli a0, a0, 10
+  add a0, a0, s1
+  addi a0, a0, -48
+  stw a0, -150(fp)
+__tu4.L..97:
+  j __tu4.L.begin146
+__tu4.L..96:
+__tu4.L.end120:
+  ldw a0, -165(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -46
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else171
+  ldw a0, -165(fp)
+  addi a0, a0, 1
+  stw a0, -165(fp)
+  addi a0, a0, -1
+  stw zero, -147(fp)
+  ldw a0, -165(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -42
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else190
+  ldw a0, -168(fp)
+  addi a0, a0, 3
+  stw a0, -168(fp)
+  addi a0, a0, -3
+  ldw a0, 0(a0)
+  stw a0, -147(fp)
+  ldw a0, -165(fp)
+  addi a0, a0, 1
+  stw a0, -165(fp)
+  addi a0, a0, -1
+  j __tu4.L.end190
+__tu4.L.else190:
+__tu4.L.begin216:
+  addi sp, sp, -18
+  ldw a0, -165(fp)
+  ldt a0, 0(a0)
+  stw a0, 0(sp)
+  jal ra, isdigit
+  addi sp, sp, 18
+  beqz a0, __tu4.L..98
+  ldw a0, -165(fp)
+  addi a0, a0, 1
+  stw a0, -165(fp)
+  addi a0, a0, -1
+  ldt a0, 0(a0)
+  mv s1, a0
+  ldw a0, -147(fp)
+  muli a0, a0, 10
+  add a0, a0, s1
+  addi a0, a0, -48
+  stw a0, -147(fp)
+__tu4.L..99:
+  j __tu4.L.begin216
+__tu4.L..98:
+__tu4.L.end190:
+  j __tu4.L.end171
+__tu4.L.else171:
+__tu4.L.end171:
+__tu4.L.begin241:
+  ldw a0, -165(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -108
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic243
+  ldw a0, -165(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -104
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic243
+  li a0, 0
+  j __tu4.L.end243
+__tu4.L.logic243:
+  li a0, 1
+__tu4.L.end243:
+  bnez a0, __tu4.L.logic242
+  ldw a0, -165(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -122
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic242
+  li a0, 0
+  j __tu4.L.end242
+__tu4.L.logic242:
+  li a0, 1
+__tu4.L.end242:
+  beqz a0, __tu4.L..100
+  ldw a0, -165(fp)
+  addi a0, a0, 1
+  stw a0, -165(fp)
+  addi a0, a0, -1
+__tu4.L..101:
+  j __tu4.L.begin241
+__tu4.L..100:
+  stt zero, -143(fp)
+  ldw a0, -165(fp)
+  addi a0, a0, 1
+  stw a0, -165(fp)
+  addi a0, a0, -1
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, -143(fp)
+  stw zero, -78(fp)
+  addi a0, fp, -142
+  stw a0, -78(fp)
+  stw zero, -75(fp)
+  li a0, 0
+  stw a0, -75(fp)
+  stw zero, -72(fp)
+  ldt a0, -143(fp)
+  addi a0, a0, -37
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else315
+  addi a0, fp, -142
+  mv s1, a0
+  li a0, 37
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+  li a0, 1
+  stw a0, -75(fp)
+  j __tu4.L.end315
+__tu4.L.else315:
+  ldt a0, -143(fp)
+  addi a0, a0, -99
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else331
+  addi a0, fp, -142
+  mv s1, a0
+  ldw a0, -168(fp)
+  addi a0, a0, 3
+  stw a0, -168(fp)
+  addi a0, a0, -3
+  ldw a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+  li a0, 1
+  stw a0, -75(fp)
+  j __tu4.L.end331
+__tu4.L.else331:
+  ldt a0, -143(fp)
+  addi a0, a0, -115
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else354
+  ldw a0, -168(fp)
+  addi a0, a0, 3
+  stw a0, -168(fp)
+  addi a0, a0, -3
+  ldw a0, 0(a0)
+  stw a0, -78(fp)
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else370
+  addi a0, zero, __tu4.L..102
+  stw a0, -78(fp)
+  j __tu4.L.end370
+__tu4.L.else370:
+__tu4.L.end370:
+  addi sp, sp, -18
+  ldw a0, -78(fp)
+  stw a0, 0(sp)
+  jal ra, strlen
+  addi sp, sp, 18
+  stw a0, -75(fp)
+  ldw a1, -147(fp)
+  li a0, 0
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu4.L.logic384
+  ldw a1, -75(fp)
+  ldw a0, -147(fp)
+  slt a0, a0, a1
+  beqz a0, __tu4.L.logic384
+  li a0, 1
+  j __tu4.L.end384
+__tu4.L.logic384:
+  li a0, 0
+__tu4.L.end384:
+  beqz a0, __tu4.L.else383
+  ldw a0, -147(fp)
+  stw a0, -75(fp)
+  j __tu4.L.end383
+__tu4.L.else383:
+__tu4.L.end383:
+  j __tu4.L.end354
+__tu4.L.else354:
+  ldt a0, -143(fp)
+  addi a0, a0, -100
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic405
+  ldt a0, -143(fp)
+  addi a0, a0, -105
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic405
+  li a0, 0
+  j __tu4.L.end405
+__tu4.L.logic405:
+  li a0, 1
+__tu4.L.end405:
+  bnez a0, __tu4.L.logic404
+  ldt a0, -143(fp)
+  addi a0, a0, -117
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic404
+  li a0, 0
+  j __tu4.L.end404
+__tu4.L.logic404:
+  li a0, 1
+__tu4.L.end404:
+  bnez a0, __tu4.L.logic403
+  ldt a0, -143(fp)
+  addi a0, a0, -120
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic403
+  li a0, 0
+  j __tu4.L.end403
+__tu4.L.logic403:
+  li a0, 1
+__tu4.L.end403:
+  bnez a0, __tu4.L.logic402
+  ldt a0, -143(fp)
+  addi a0, a0, -88
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic402
+  li a0, 0
+  j __tu4.L.end402
+__tu4.L.logic402:
+  li a0, 1
+__tu4.L.end402:
+  bnez a0, __tu4.L.logic401
+  ldt a0, -143(fp)
+  addi a0, a0, -112
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic401
+  li a0, 0
+  j __tu4.L.end401
+__tu4.L.logic401:
+  li a0, 1
+__tu4.L.end401:
+  bnez a0, __tu4.L.logic400
+  ldt a0, -143(fp)
+  addi a0, a0, -111
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic400
+  li a0, 0
+  j __tu4.L.end400
+__tu4.L.logic400:
+  li a0, 1
+__tu4.L.end400:
+  beqz a0, __tu4.L.else399
+  stw zero, -69(fp)
+  ldw a0, -168(fp)
+  addi a0, a0, 3
+  stw a0, -168(fp)
+  addi a0, a0, -3
+  ldw a0, 0(a0)
+  stw a0, -69(fp)
+  stw zero, -66(fp)
+  ldw a0, -69(fp)
+  stw a0, -66(fp)
+  stw zero, -63(fp)
+  li a0, 10
+  stw a0, -63(fp)
+  ldt a0, -143(fp)
+  addi a0, a0, -100
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic463
+  ldt a0, -143(fp)
+  addi a0, a0, -105
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic463
+  li a0, 0
+  j __tu4.L.end463
+__tu4.L.logic463:
+  li a0, 1
+__tu4.L.end463:
+  beqz a0, __tu4.L.else462
+  ldw a0, -69(fp)
+  slti a0, a0, 0
+  stw a0, -72(fp)
+  beqz a0, __tu4.L.else480
+  ldw a0, -69(fp)
+  neg a0, a0
+  j __tu4.L.end480
+__tu4.L.else480:
+  ldw a0, -69(fp)
+__tu4.L.end480:
+  stw a0, -66(fp)
+  j __tu4.L.end462
+__tu4.L.else462:
+__tu4.L.end462:
+  ldt a0, -143(fp)
+  addi a0, a0, -120
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic490
+  ldt a0, -143(fp)
+  addi a0, a0, -88
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic490
+  li a0, 0
+  j __tu4.L.end490
+__tu4.L.logic490:
+  li a0, 1
+__tu4.L.end490:
+  bnez a0, __tu4.L.logic489
+  ldt a0, -143(fp)
+  addi a0, a0, -112
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic489
+  li a0, 0
+  j __tu4.L.end489
+__tu4.L.logic489:
+  li a0, 1
+__tu4.L.end489:
+  beqz a0, __tu4.L.else488
+  li a0, 16
+  stw a0, -63(fp)
+  j __tu4.L.end488
+__tu4.L.else488:
+__tu4.L.end488:
+  ldt a0, -143(fp)
+  addi a0, a0, -111
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else504
+  li a0, 8
+  stw a0, -63(fp)
+  j __tu4.L.end504
+__tu4.L.else504:
+__tu4.L.end504:
+  stw zero, -12(fp)
+  li a0, 0
+  stw a0, -12(fp)
+__tu4.L.begin526:
+  stw zero, -9(fp)
+  ldw a1, -63(fp)
+  ldw a0, -66(fp)
+  addi sp, sp, -18
+  call __tri_umod
+  addi sp, sp, 18
+  stw a0, -9(fp)
+  ldw a0, -12(fp)
+  addi a0, a0, 1
+  stw a0, -12(fp)
+  addi a1, a0, -1
+  addi a0, fp, -60
+  add a0, a0, a1
+  mv s1, a0
+  ldw a0, -9(fp)
+  slti a0, a0, 10
+  beqz a0, __tu4.L.else559
+  ldw a1, -9(fp)
+  li a0, 48
+  add a0, a0, a1
+  j __tu4.L.end559
+__tu4.L.else559:
+  ldw a0, -9(fp)
+  mv s2, a0
+  ldt a0, -143(fp)
+  addi a0, a0, -88
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else576
+  li a0, 65
+  j __tu4.L.end576
+__tu4.L.else576:
+  li a0, 97
+__tu4.L.end576:
+  add a0, a0, s2
+  addi a0, a0, -10
+__tu4.L.end559:
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+  ldw a1, -63(fp)
+  ldw a0, -66(fp)
+  addi sp, sp, -18
+  call __tri_udiv
+  addi sp, sp, 18
+  stw a0, -66(fp)
+__tu4.L..104:
+  ldw a0, -66(fp)
+  bnez a0, __tu4.L.begin526
+__tu4.L..103:
+  ldt a0, -143(fp)
+  addi a0, a0, -112
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else594
+  ldw a0, -75(fp)
+  addi a0, a0, 1
+  stw a0, -75(fp)
+  addi a1, a0, -1
+  addi a0, fp, -142
+  add a0, a0, a1
+  mv s1, a0
+  li a0, 48
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+  ldw a0, -75(fp)
+  addi a0, a0, 1
+  stw a0, -75(fp)
+  addi a1, a0, -1
+  addi a0, fp, -142
+  add a0, a0, a1
+  mv s1, a0
+  li a0, 120
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+  j __tu4.L.end594
+__tu4.L.else594:
+__tu4.L.end594:
+  ldw a0, -72(fp)
+  beqz a0, __tu4.L.else635
+  ldw a0, -75(fp)
+  addi a0, a0, 1
+  stw a0, -75(fp)
+  addi a1, a0, -1
+  addi a0, fp, -142
+  add a0, a0, a1
+  mv s1, a0
+  li a0, 45
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+  j __tu4.L.end635
+__tu4.L.else635:
+__tu4.L.end635:
+__tu4.L.begin655:
+  ldw a0, -12(fp)
+  beqz a0, __tu4.L..105
+  ldw a0, -75(fp)
+  addi a0, a0, 1
+  stw a0, -75(fp)
+  addi a1, a0, -1
+  addi a0, fp, -142
+  add a0, a0, a1
+  mv s1, a0
+  ldw a0, -12(fp)
+  addi a0, a0, -1
+  stw a0, -12(fp)
+  mv a1, a0
+  addi a0, fp, -60
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+__tu4.L..106:
+  j __tu4.L.begin655
+__tu4.L..105:
+  j __tu4.L.end399
+__tu4.L.else399:
+  addi sp, sp, -18
+  ldw a0, -162(fp)
+  stw a0, 0(sp)
+  li a0, 37
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu4.L.static.emit
+  addi sp, sp, 18
+  addi sp, sp, -18
+  ldw a0, -162(fp)
+  stw a0, 0(sp)
+  ldt a0, -143(fp)
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu4.L.static.emit
+  addi sp, sp, 18
+  j __tu4.L..95
+__tu4.L.end399:
+__tu4.L.end354:
+__tu4.L.end331:
+__tu4.L.end315:
+  stw zero, -6(fp)
+  ldw a1, -150(fp)
+  ldw a0, -75(fp)
+  slt a0, a0, a1
+  beqz a0, __tu4.L.else708
+  ldw a1, -75(fp)
+  ldw a0, -150(fp)
+  sub a0, a0, a1
+  j __tu4.L.end708
+__tu4.L.else708:
+  li a0, 0
+__tu4.L.end708:
+  stw a0, -6(fp)
+  ldw a0, -153(fp)
+  seq a0, a0, zero
+  beqz a0, __tu4.L.logic724
+  ldw a0, -156(fp)
+  beqz a0, __tu4.L.logic724
+  li a0, 1
+  j __tu4.L.end724
+__tu4.L.logic724:
+  li a0, 0
+__tu4.L.end724:
+  beqz a0, __tu4.L.logic723
+  ldw a0, -72(fp)
+  beqz a0, __tu4.L.logic723
+  li a0, 1
+  j __tu4.L.end723
+__tu4.L.logic723:
+  li a0, 0
+__tu4.L.end723:
+  beqz a0, __tu4.L.else722
+  addi sp, sp, -18
+  ldw a0, -162(fp)
+  stw a0, 0(sp)
+  li a0, 45
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu4.L.static.emit
+  addi sp, sp, 18
+  ldw a0, -78(fp)
+  addi a0, a0, 1
+  stw a0, -78(fp)
+  addi a0, a0, -1
+  ldw a0, -75(fp)
+  addi a0, a0, -1
+  stw a0, -75(fp)
+  addi a0, a0, 1
+  j __tu4.L.end722
+__tu4.L.else722:
+__tu4.L.end722:
+  ldw a0, -153(fp)
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else754
+__tu4.L.begin757:
+  ldw a0, -6(fp)
+  addi a0, a0, -1
+  stw a0, -6(fp)
+  addi a0, a0, 1
+  beqz a0, __tu4.L..107
+  addi sp, sp, -18
+  ldw a0, -162(fp)
+  stw a0, 0(sp)
+  ldw a0, -156(fp)
+  beqz a0, __tu4.L.else771
+  li a0, 48
+  j __tu4.L.end771
+__tu4.L.else771:
+  li a0, 32
+__tu4.L.end771:
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu4.L.static.emit
+  addi sp, sp, 18
+__tu4.L..108:
+  j __tu4.L.begin757
+__tu4.L..107:
+  j __tu4.L.end754
+__tu4.L.else754:
+__tu4.L.end754:
+  stw zero, -3(fp)
+  li a0, 0
+  stw a0, -3(fp)
+__tu4.L.begin777:
+  ldw a1, -75(fp)
+  ldw a0, -3(fp)
+  slt a0, a0, a1
+  beqz a0, __tu4.L..109
+  addi sp, sp, -18
+  ldw a0, -162(fp)
+  stw a0, 0(sp)
+  ldw a1, -3(fp)
+  ldw a0, -78(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu4.L.static.emit
+  addi sp, sp, 18
+__tu4.L..110:
+  ldw a0, -3(fp)
+  addi a0, a0, 1
+  stw a0, -3(fp)
+  addi a0, a0, -1
+  j __tu4.L.begin777
+__tu4.L..109:
+  ldw a0, -153(fp)
+  beqz a0, __tu4.L.else813
+__tu4.L.begin815:
+  ldw a0, -6(fp)
+  addi a0, a0, -1
+  stw a0, -6(fp)
+  addi a0, a0, 1
+  beqz a0, __tu4.L..111
+  addi sp, sp, -18
+  ldw a0, -162(fp)
+  stw a0, 0(sp)
+  li a0, 32
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu4.L.static.emit
+  addi sp, sp, 18
+__tu4.L..112:
+  j __tu4.L.begin815
+__tu4.L..111:
+  j __tu4.L.end813
+__tu4.L.else813:
+__tu4.L.end813:
+__tu4.L..95:
+  j __tu4.L.begin13
+__tu4.L..94:
+  ldw a0, -162(fp)
+  addi a0, a0, 9
+  ldw a0, 0(a0)
+  seq a0, a0, zero
+  beqz a0, __tu4.L.logic831
+  ldw a0, -162(fp)
+  addi a0, a0, 3
+  ldw a0, 0(a0)
+  beqz a0, __tu4.L.logic831
+  li a0, 1
+  j __tu4.L.end831
+__tu4.L.logic831:
+  li a0, 0
+__tu4.L.end831:
+  beqz a0, __tu4.L.else830
+  ldw a0, -162(fp)
+  addi a0, a0, 3
+  ldw a0, 0(a0)
+  mv s1, a0
+  ldw a0, -162(fp)
+  addi a0, a0, 6
+  ldw a0, 0(a0)
+  mv a1, s1
+  li t0, 3812798742493
+  sub a0, a0, t0
+  sub a1, a1, t0
+  slt a0, a0, a1
+  beqz a0, __tu4.L.else843
+  ldw a0, -162(fp)
+  addi a0, a0, 6
+  ldw a0, 0(a0)
+  j __tu4.L.end843
+__tu4.L.else843:
+  ldw a0, -162(fp)
+  addi a0, a0, 3
+  ldw a0, 0(a0)
+  addi a0, a0, -1
+__tu4.L.end843:
+  mv s1, a0
+  ldw a0, -162(fp)
+  ldw a0, 0(a0)
+  add a0, a0, s1
+  mv s1, a0
+  stt zero, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+  j __tu4.L.end830
+__tu4.L.else830:
+__tu4.L.end830:
+  ldw a0, -162(fp)
+  addi a0, a0, 6
+  ldw a0, 0(a0)
+  j __tu4.L.return..L.static.format
+__tu4.L.return..L.static.format:
+  ldw s1, -171(fp)
+  ldw s2, -174(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu4.L.static.emit:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -15
+  stw s1, -15(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  ldw a0, 9(fp)
+  stw a0, -12(fp)
+  ldw a0, -9(fp)
+  addi a0, a0, 9
+  ldw a0, 0(a0)
+  beqz a0, __tu4.L.else869
+  addi sp, sp, -18
+  ldw a0, -12(fp)
+  stw a0, 0(sp)
+  jal ra, putchar
+  addi sp, sp, 18
+  j __tu4.L.end869
+__tu4.L.else869:
+  ldw a0, -9(fp)
+  addi a0, a0, 3
+  ldw a0, 0(a0)
+  beqz a0, __tu4.L.logic877
+  ldw a0, -9(fp)
+  addi a0, a0, 3
+  ldw a0, 0(a0)
+  addi a0, a0, -1
+  mv s1, a0
+  ldw a0, -9(fp)
+  addi a0, a0, 6
+  ldw a0, 0(a0)
+  mv a1, s1
+  li t0, 3812798742493
+  sub a0, a0, t0
+  sub a1, a1, t0
+  slt a0, a0, a1
+  beqz a0, __tu4.L.logic877
+  li a0, 1
+  j __tu4.L.end877
+__tu4.L.logic877:
+  li a0, 0
+__tu4.L.end877:
+  beqz a0, __tu4.L.else876
+  ldw a0, -9(fp)
+  addi a0, a0, 6
+  ldw a0, 0(a0)
+  mv s1, a0
+  ldw a0, -9(fp)
+  ldw a0, 0(a0)
+  add a0, a0, s1
+  mv s1, a0
+  ldw a0, -12(fp)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+  j __tu4.L.end876
+__tu4.L.else876:
+__tu4.L.end876:
+__tu4.L.end869:
+  ldw a0, -9(fp)
+  stw a0, -3(fp)
+  addi a0, a0, 6
+  mv s1, a0
+  ldw a0, -3(fp)
+  addi a0, a0, 6
+  ldw a0, 0(a0)
+  addi a0, a0, 1
+  stw a0, 0(s1)
+  addi a0, a0, -1
+__tu4.L.return..L.static.emit:
+  ldw s1, -15(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+isalnum:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -6
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  jal ra, isalpha
+  addi sp, sp, 18
+  bnez a0, __tu4.L.logic921
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  jal ra, isdigit
+  addi sp, sp, 18
+  bnez a0, __tu4.L.logic921
+  li a0, 0
+  j __tu4.L.end921
+__tu4.L.logic921:
+  li a0, 1
+__tu4.L.end921:
+  j __tu4.L.return.isalnum
+__tu4.L.return.isalnum:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+tolower:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -9
+  stw s1, -9(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  mv a1, a0
+  li a0, 65
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu4.L.logic932
+  ldw a0, -6(fp)
+  slti a0, a0, 91
+  beqz a0, __tu4.L.logic932
+  li a0, 1
+  j __tu4.L.end932
+__tu4.L.logic932:
+  li a0, 0
+__tu4.L.end932:
+  beqz a0, __tu4.L.else931
+  ldw a0, -6(fp)
+  addi a0, a0, 32
+  j __tu4.L.end931
+__tu4.L.else931:
+  ldw a0, -6(fp)
+__tu4.L.end931:
+  j __tu4.L.return.tolower
+__tu4.L.return.tolower:
+  ldw s1, -9(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+toupper:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -9
+  stw s1, -9(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  mv a1, a0
+  li a0, 97
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu4.L.logic951
+  ldw a0, -6(fp)
+  slti a0, a0, 123
+  beqz a0, __tu4.L.logic951
+  li a0, 1
+  j __tu4.L.end951
+__tu4.L.logic951:
+  li a0, 0
+__tu4.L.end951:
+  beqz a0, __tu4.L.else950
+  ldw a0, -6(fp)
+  addi a0, a0, -32
+  j __tu4.L.end950
+__tu4.L.else950:
+  ldw a0, -6(fp)
+__tu4.L.end950:
+  j __tu4.L.return.toupper
+__tu4.L.return.toupper:
+  ldw s1, -9(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+isspace:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -9
+  stw s1, -9(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  addi a0, a0, -32
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic969
+  ldw a1, -6(fp)
+  li a0, 9
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu4.L.logic973
+  ldw a0, -6(fp)
+  slti a0, a0, 14
+  beqz a0, __tu4.L.logic973
+  li a0, 1
+  j __tu4.L.end973
+__tu4.L.logic973:
+  li a0, 0
+__tu4.L.end973:
+  bnez a0, __tu4.L.logic969
+  li a0, 0
+  j __tu4.L.end969
+__tu4.L.logic969:
+  li a0, 1
+__tu4.L.end969:
+  j __tu4.L.return.isspace
+__tu4.L.return.isspace:
+  ldw s1, -9(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+isalpha:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -9
+  stw s1, -9(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  mv a1, a0
+  li a0, 97
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu4.L.logic986
+  ldw a0, -6(fp)
+  slti a0, a0, 123
+  beqz a0, __tu4.L.logic986
+  li a0, 1
+  j __tu4.L.end986
+__tu4.L.logic986:
+  li a0, 0
+__tu4.L.end986:
+  bnez a0, __tu4.L.logic985
+  ldw a1, -6(fp)
+  li a0, 65
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu4.L.logic995
+  ldw a0, -6(fp)
+  slti a0, a0, 91
+  beqz a0, __tu4.L.logic995
+  li a0, 1
+  j __tu4.L.end995
+__tu4.L.logic995:
+  li a0, 0
+__tu4.L.end995:
+  bnez a0, __tu4.L.logic985
+  li a0, 0
+  j __tu4.L.end985
+__tu4.L.logic985:
+  li a0, 1
+__tu4.L.end985:
+  j __tu4.L.return.isalpha
+__tu4.L.return.isalpha:
+  ldw s1, -9(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+isdigit:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -9
+  stw s1, -9(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  mv a1, a0
+  li a0, 48
+  slt a0, a1, a0
+  seq a0, a0, zero
+  beqz a0, __tu4.L.logic1007
+  ldw a0, -6(fp)
+  slti a0, a0, 58
+  beqz a0, __tu4.L.logic1007
+  li a0, 1
+  j __tu4.L.end1007
+__tu4.L.logic1007:
+  li a0, 0
+__tu4.L.end1007:
+  j __tu4.L.return.isdigit
+__tu4.L.return.isdigit:
+  ldw s1, -9(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+strstr:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  ldw a0, 9(fp)
+  stw a0, -12(fp)
+  stw zero, -3(fp)
+  addi sp, sp, -18
+  ldw a0, -12(fp)
+  stw a0, 0(sp)
+  jal ra, strlen
+  addi sp, sp, 18
+  stw a0, -3(fp)
+__tu4.L.begin1028:
+  addi sp, sp, -18
+  ldw a0, -9(fp)
+  stw a0, 0(sp)
+  ldw a0, -12(fp)
+  stw a0, 3(sp)
+  ldw a0, -3(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, strncmp
+  addi sp, sp, 18
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else1030
+  ldw a0, -9(fp)
+  j __tu4.L.return.strstr
+  j __tu4.L.end1030
+__tu4.L.else1030:
+__tu4.L.end1030:
+__tu4.L..51:
+  ldw a0, -9(fp)
+  addi a0, a0, 1
+  stw a0, -9(fp)
+  addi a0, a0, -1
+  ldt a0, 0(a0)
+  bnez a0, __tu4.L.begin1028
+__tu4.L..50:
+  li a0, 0
+  j __tu4.L.return.strstr
+__tu4.L.return.strstr:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+strrchr:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -15
+  stw s1, -15(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  ldw a0, 9(fp)
+  stw a0, -12(fp)
+  stw zero, -3(fp)
+  li a0, 0
+  stw a0, -3(fp)
+__tu4.L.begin1067:
+  ldw a0, -12(fp)
+  mv s1, a0
+  ldw a0, -9(fp)
+  ldt a0, 0(a0)
+  seq a0, a0, s1
+  beqz a0, __tu4.L.else1069
+  ldw a0, -9(fp)
+  stw a0, -3(fp)
+  j __tu4.L.end1069
+__tu4.L.else1069:
+__tu4.L.end1069:
+__tu4.L..47:
+  ldw a0, -9(fp)
+  addi a0, a0, 1
+  stw a0, -9(fp)
+  addi a0, a0, -1
+  ldt a0, 0(a0)
+  bnez a0, __tu4.L.begin1067
+__tu4.L..46:
+  ldw a0, -3(fp)
+  j __tu4.L.return.strrchr
+__tu4.L.return.strrchr:
+  ldw s1, -15(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+strchr:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw s1, -12(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+__tu4.L.begin1094:
+  ldw a0, -9(fp)
+  mv s1, a0
+  ldw a0, -6(fp)
+  ldt a0, 0(a0)
+  seq a0, a0, s1
+  beqz a0, __tu4.L.else1096
+  ldw a0, -6(fp)
+  j __tu4.L.return.strchr
+  j __tu4.L.end1096
+__tu4.L.else1096:
+__tu4.L.end1096:
+__tu4.L..43:
+  ldw a0, -6(fp)
+  addi a0, a0, 1
+  stw a0, -6(fp)
+  addi a0, a0, -1
+  ldt a0, 0(a0)
+  bnez a0, __tu4.L.begin1094
+__tu4.L..42:
+  li a0, 0
+  j __tu4.L.return.strchr
+__tu4.L.return.strchr:
+  ldw s1, -12(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+memcmp:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -21
+  stw s1, -21(fp)
+  stw sp, -9(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -12(fp)
+  ldw a0, 9(fp)
+  stw a0, -15(fp)
+  ldw a0, 12(fp)
+  stw a0, -18(fp)
+  stw zero, -6(fp)
+  ldw a0, -12(fp)
+  stw a0, -6(fp)
+  stw zero, -3(fp)
+  ldw a0, -15(fp)
+  stw a0, -3(fp)
+__tu4.L.begin1141:
+  ldw a0, -18(fp)
+  addi a0, a0, -1
+  stw a0, -18(fp)
+  addi a0, a0, 1
+  beqz a0, __tu4.L..38
+  ldw a0, -3(fp)
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  bgez a0, __tu4.L.uc1156
+  addi a0, a0, 19683
+__tu4.L.uc1156:
+  mv s1, a0
+  ldw a0, -6(fp)
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  bgez a0, __tu4.L.uc1160
+  addi a0, a0, 19683
+__tu4.L.uc1160:
+  seq a0, a0, s1
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else1151
+  ldw a0, -3(fp)
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  bgez a0, __tu4.L.uc1167
+  addi a0, a0, 19683
+__tu4.L.uc1167:
+  mv s1, a0
+  ldw a0, -6(fp)
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  bgez a0, __tu4.L.uc1171
+  addi a0, a0, 19683
+__tu4.L.uc1171:
+  sub a0, a0, s1
+  j __tu4.L.return.memcmp
+  j __tu4.L.end1151
+__tu4.L.else1151:
+__tu4.L.end1151:
+  ldw a0, -6(fp)
+  addi a0, a0, 1
+  stw a0, -6(fp)
+  addi a0, a0, -1
+  ldw a0, -3(fp)
+  addi a0, a0, 1
+  stw a0, -3(fp)
+  addi a0, a0, -1
+__tu4.L..39:
+  j __tu4.L.begin1141
+__tu4.L..38:
+  li a0, 0
+  j __tu4.L.return.memcmp
+__tu4.L.return.memcmp:
+  ldw s1, -21(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+memset:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -18
+  stw s1, -18(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  ldw a0, 9(fp)
+  stw a0, -12(fp)
+  ldw a0, 12(fp)
+  stw a0, -15(fp)
+  stw zero, -3(fp)
+  ldw a0, -9(fp)
+  stw a0, -3(fp)
+__tu4.L.begin1205:
+  ldw a0, -15(fp)
+  addi a0, a0, -1
+  stw a0, -15(fp)
+  addi a0, a0, 1
+  beqz a0, __tu4.L..26
+  ldw a0, -3(fp)
+  addi a0, a0, 1
+  stw a0, -3(fp)
+  addi a0, a0, -1
+  mv s1, a0
+  ldw a0, -12(fp)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+__tu4.L..27:
+  j __tu4.L.begin1205
+__tu4.L..26:
+  ldw a0, -9(fp)
+  j __tu4.L.return.memset
+__tu4.L.return.memset:
+  ldw s1, -18(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+memmove:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -24
+  stw s1, -21(fp)
+  stw s2, -24(fp)
+  stw sp, -9(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -12(fp)
+  ldw a0, 9(fp)
+  stw a0, -15(fp)
+  ldw a0, 12(fp)
+  stw a0, -18(fp)
+  stw zero, -6(fp)
+  ldw a0, -12(fp)
+  stw a0, -6(fp)
+  stw zero, -3(fp)
+  ldw a0, -15(fp)
+  stw a0, -3(fp)
+  mv a1, a0
+  ldw a0, -6(fp)
+  slt a0, a0, a1
+  beqz a0, __tu4.L.else1252
+  addi sp, sp, -18
+  ldw a0, -12(fp)
+  stw a0, 0(sp)
+  ldw a0, -15(fp)
+  stw a0, 3(sp)
+  ldw a0, -18(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, memcpy
+  addi sp, sp, 18
+  j __tu4.L.return.memmove
+  j __tu4.L.end1252
+__tu4.L.else1252:
+__tu4.L.end1252:
+__tu4.L.begin1267:
+  ldw a0, -18(fp)
+  beqz a0, __tu4.L..34
+  ldw a0, -18(fp)
+  addi a0, a0, -1
+  stw a0, -18(fp)
+  addi a0, a0, 1
+  ldw a1, -18(fp)
+  ldw a0, -6(fp)
+  add a0, a0, a1
+  mv s1, a0
+  ldw a1, -18(fp)
+  ldw a0, -3(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+__tu4.L..35:
+  j __tu4.L.begin1267
+__tu4.L..34:
+  ldw a0, -12(fp)
+  j __tu4.L.return.memmove
+__tu4.L.return.memmove:
+  ldw s1, -21(fp)
+  ldw s2, -24(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+memcpy:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -21
+  stw s1, -21(fp)
+  stw sp, -9(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -12(fp)
+  ldw a0, 9(fp)
+  stw a0, -15(fp)
+  ldw a0, 12(fp)
+  stw a0, -18(fp)
+  stw zero, -6(fp)
+  ldw a0, -12(fp)
+  stw a0, -6(fp)
+  stw zero, -3(fp)
+  ldw a0, -15(fp)
+  stw a0, -3(fp)
+__tu4.L.begin1323:
+  ldw a0, -18(fp)
+  addi a0, a0, -1
+  stw a0, -18(fp)
+  addi a0, a0, 1
+  beqz a0, __tu4.L..30
+  ldw a0, -6(fp)
+  addi a0, a0, 1
+  stw a0, -6(fp)
+  addi a0, a0, -1
+  mv s1, a0
+  ldw a0, -3(fp)
+  addi a0, a0, 1
+  stw a0, -3(fp)
+  addi a0, a0, -1
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+__tu4.L..31:
+  j __tu4.L.begin1323
+__tu4.L..30:
+  ldw a0, -12(fp)
+  j __tu4.L.return.memcpy
+__tu4.L.return.memcpy:
+  ldw s1, -21(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+strcat:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw s1, -12(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+  addi sp, sp, -18
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  jal ra, strlen
+  addi sp, sp, 18
+  mv a1, a0
+  ldw a0, -6(fp)
+  add a0, a0, a1
+  stw a0, 0(sp)
+  ldw a0, -9(fp)
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, strcpy
+  addi sp, sp, 18
+  ldw a0, -6(fp)
+  j __tu4.L.return.strcat
+__tu4.L.return.strcat:
+  ldw s1, -12(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+strncpy:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -18
+  stw s1, -18(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  ldw a0, 9(fp)
+  stw a0, -12(fp)
+  ldw a0, 12(fp)
+  stw a0, -15(fp)
+  stw zero, -3(fp)
+  ldw a0, -9(fp)
+  stw a0, -3(fp)
+__tu4.L.begin1385:
+  ldw a0, -15(fp)
+  beqz a0, __tu4.L.logic1386
+  ldw a0, -12(fp)
+  ldt a0, 0(a0)
+  beqz a0, __tu4.L.logic1386
+  li a0, 1
+  j __tu4.L.end1386
+__tu4.L.logic1386:
+  li a0, 0
+__tu4.L.end1386:
+  beqz a0, __tu4.L..18
+  ldw a0, -9(fp)
+  addi a0, a0, 1
+  stw a0, -9(fp)
+  addi a0, a0, -1
+  mv s1, a0
+  ldw a0, -12(fp)
+  addi a0, a0, 1
+  stw a0, -12(fp)
+  addi a0, a0, -1
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+  ldw a0, -15(fp)
+  addi a0, a0, -1
+  stw a0, -15(fp)
+  addi a0, a0, 1
+__tu4.L..19:
+  j __tu4.L.begin1385
+__tu4.L..18:
+__tu4.L.begin1420:
+  ldw a0, -15(fp)
+  addi a0, a0, -1
+  stw a0, -15(fp)
+  addi a0, a0, 1
+  beqz a0, __tu4.L..20
+  ldw a0, -9(fp)
+  addi a0, a0, 1
+  stw a0, -9(fp)
+  addi a0, a0, -1
+  mv s1, a0
+  stt zero, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+__tu4.L..21:
+  j __tu4.L.begin1420
+__tu4.L..20:
+  ldw a0, -3(fp)
+  j __tu4.L.return.strncpy
+__tu4.L.return.strncpy:
+  ldw s1, -18(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+strcpy:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -15
+  stw s1, -15(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  ldw a0, 9(fp)
+  stw a0, -12(fp)
+  stw zero, -3(fp)
+  ldw a0, -9(fp)
+  stw a0, -3(fp)
+__tu4.L.begin1456:
+  ldw a0, -9(fp)
+  addi a0, a0, 1
+  stw a0, -9(fp)
+  addi a0, a0, -1
+  mv s1, a0
+  ldw a0, -12(fp)
+  addi a0, a0, 1
+  stw a0, -12(fp)
+  addi a0, a0, -1
+  ldt a0, 0(a0)
+  stt a0, -1(sp)
+  ldt a0, -1(sp)
+  stt a0, 0(s1)
+  beqz a0, __tu4.L..14
+__tu4.L..15:
+  j __tu4.L.begin1456
+__tu4.L..14:
+  ldw a0, -3(fp)
+  j __tu4.L.return.strcpy
+__tu4.L.return.strcpy:
+  ldw s1, -15(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+strncmp:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -15
+  stw s1, -15(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+  ldw a0, 12(fp)
+  stw a0, -12(fp)
+__tu4.L.begin1481:
+  ldw a0, -12(fp)
+  beqz a0, __tu4.L.logic1483
+  ldw a0, -6(fp)
+  ldt a0, 0(a0)
+  beqz a0, __tu4.L.logic1483
+  li a0, 1
+  j __tu4.L.end1483
+__tu4.L.logic1483:
+  li a0, 0
+__tu4.L.end1483:
+  beqz a0, __tu4.L.logic1482
+  ldw a0, -9(fp)
+  ldt a0, 0(a0)
+  mv s1, a0
+  ldw a0, -6(fp)
+  ldt a0, 0(a0)
+  seq a0, a0, s1
+  beqz a0, __tu4.L.logic1482
+  li a0, 1
+  j __tu4.L.end1482
+__tu4.L.logic1482:
+  li a0, 0
+__tu4.L.end1482:
+  beqz a0, __tu4.L..10
+  ldw a0, -6(fp)
+  addi a0, a0, 1
+  stw a0, -6(fp)
+  addi a0, a0, -1
+  ldw a0, -9(fp)
+  addi a0, a0, 1
+  stw a0, -9(fp)
+  addi a0, a0, -1
+  ldw a0, -12(fp)
+  addi a0, a0, -1
+  stw a0, -12(fp)
+  addi a0, a0, 1
+__tu4.L..11:
+  j __tu4.L.begin1481
+__tu4.L..10:
+  ldw a0, -12(fp)
+  beqz a0, __tu4.L.else1524
+  ldw a0, -9(fp)
+  ldt a0, 0(a0)
+  mv s1, a0
+  ldw a0, -6(fp)
+  ldt a0, 0(a0)
+  sub a0, a0, s1
+  j __tu4.L.end1524
+__tu4.L.else1524:
+  li a0, 0
+__tu4.L.end1524:
+  j __tu4.L.return.strncmp
+__tu4.L.return.strncmp:
+  ldw s1, -15(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+strcmp:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw s1, -12(fp)
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+__tu4.L.begin1537:
+  ldw a0, -6(fp)
+  ldt a0, 0(a0)
+  beqz a0, __tu4.L.logic1538
+  ldw a0, -9(fp)
+  ldt a0, 0(a0)
+  mv s1, a0
+  ldw a0, -6(fp)
+  ldt a0, 0(a0)
+  seq a0, a0, s1
+  beqz a0, __tu4.L.logic1538
+  li a0, 1
+  j __tu4.L.end1538
+__tu4.L.logic1538:
+  li a0, 0
+__tu4.L.end1538:
+  beqz a0, __tu4.L..6
+  ldw a0, -6(fp)
+  addi a0, a0, 1
+  stw a0, -6(fp)
+  addi a0, a0, -1
+  ldw a0, -9(fp)
+  addi a0, a0, 1
+  stw a0, -9(fp)
+  addi a0, a0, -1
+__tu4.L..7:
+  j __tu4.L.begin1537
+__tu4.L..6:
+  ldw a0, -9(fp)
+  ldt a0, 0(a0)
+  mv s1, a0
+  ldw a0, -6(fp)
+  ldt a0, 0(a0)
+  sub a0, a0, s1
+  j __tu4.L.return.strcmp
+__tu4.L.return.strcmp:
+  ldw s1, -12(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+strlen:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw s1, -12(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  stw zero, -3(fp)
+  li a0, 0
+  stw a0, -3(fp)
+__tu4.L.begin1586:
+  ldw a1, -3(fp)
+  ldw a0, -9(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  beqz a0, __tu4.L..2
+  ldw a0, -3(fp)
+  addi a0, a0, 1
+  stw a0, -3(fp)
+  addi a0, a0, -1
+__tu4.L..3:
+  j __tu4.L.begin1586
+__tu4.L..2:
+  ldw a0, -3(fp)
+  j __tu4.L.return.strlen
+__tu4.L.return.strlen:
+  ldw s1, -12(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+strtol:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -36
+  stw s1, -33(fp)
+  stw s2, -36(fp)
+  stw sp, -21(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -24(fp)
+  ldw a0, 9(fp)
+  stw a0, -27(fp)
+  ldw a0, 12(fp)
+  stw a0, -30(fp)
+  stw zero, -18(fp)
+  ldw a0, -24(fp)
+  stw a0, -18(fp)
+__tu4.L.begin1619:
+  addi sp, sp, -18
+  ldw a0, -24(fp)
+  ldt a0, 0(a0)
+  stw a0, 0(sp)
+  jal ra, isspace
+  addi sp, sp, 18
+  beqz a0, __tu4.L..74
+  ldw a0, -24(fp)
+  addi a0, a0, 1
+  stw a0, -24(fp)
+  addi a0, a0, -1
+__tu4.L..75:
+  j __tu4.L.begin1619
+__tu4.L..74:
+  stw zero, -15(fp)
+  ldw a0, -24(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -45
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic1643
+  ldw a0, -24(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -43
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic1643
+  li a0, 0
+  j __tu4.L.end1643
+__tu4.L.logic1643:
+  li a0, 1
+__tu4.L.end1643:
+  beqz a0, __tu4.L.else1642
+  ldw a0, -24(fp)
+  addi a0, a0, 1
+  stw a0, -24(fp)
+  addi a0, a0, -1
+  ldt a0, 0(a0)
+  addi a0, a0, -45
+  seq a0, a0, zero
+  stw a0, -15(fp)
+  j __tu4.L.end1642
+__tu4.L.else1642:
+__tu4.L.end1642:
+  ldw a0, -30(fp)
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic1669
+  ldw a0, -30(fp)
+  addi a0, a0, -16
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic1669
+  li a0, 0
+  j __tu4.L.end1669
+__tu4.L.logic1669:
+  li a0, 1
+__tu4.L.end1669:
+  beqz a0, __tu4.L.logic1668
+  ldw a0, -24(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -48
+  seq a0, a0, zero
+  beqz a0, __tu4.L.logic1668
+  li a0, 1
+  j __tu4.L.end1668
+__tu4.L.logic1668:
+  li a0, 0
+__tu4.L.end1668:
+  beqz a0, __tu4.L.logic1667
+  ldw a0, -24(fp)
+  addi a0, a0, 1
+  ldt a0, 0(a0)
+  addi a0, a0, -120
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic1682
+  ldw a0, -24(fp)
+  addi a0, a0, 1
+  ldt a0, 0(a0)
+  addi a0, a0, -88
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic1682
+  li a0, 0
+  j __tu4.L.end1682
+__tu4.L.logic1682:
+  li a0, 1
+__tu4.L.end1682:
+  beqz a0, __tu4.L.logic1667
+  li a0, 1
+  j __tu4.L.end1667
+__tu4.L.logic1667:
+  li a0, 0
+__tu4.L.end1667:
+  beqz a0, __tu4.L.else1666
+  li a0, 16
+  stw a0, -30(fp)
+  ldw a0, -24(fp)
+  addi a0, a0, 2
+  stw a0, -24(fp)
+  j __tu4.L.end1666
+__tu4.L.else1666:
+__tu4.L.end1666:
+  ldw a0, -30(fp)
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else1706
+  ldw a0, -24(fp)
+  ldt a0, 0(a0)
+  addi a0, a0, -48
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else1712
+  li a0, 8
+  j __tu4.L.end1712
+__tu4.L.else1712:
+  li a0, 10
+__tu4.L.end1712:
+  stw a0, -30(fp)
+  j __tu4.L.end1706
+__tu4.L.else1706:
+__tu4.L.end1706:
+  ldw a0, -30(fp)
+  slti a0, a0, 2
+  bnez a0, __tu4.L.logic1722
+  ldw a1, -30(fp)
+  li a0, 36
+  slt a0, a0, a1
+  bnez a0, __tu4.L.logic1722
+  li a0, 0
+  j __tu4.L.end1722
+__tu4.L.logic1722:
+  li a0, 1
+__tu4.L.end1722:
+  beqz a0, __tu4.L.else1721
+  ldw a0, -27(fp)
+  beqz a0, __tu4.L.else1732
+  ldw a0, -27(fp)
+  mv s1, a0
+  ldw a0, -18(fp)
+  stw a0, 0(s1)
+  j __tu4.L.end1732
+__tu4.L.else1732:
+__tu4.L.end1732:
+  li a0, 0
+  j __tu4.L.return.strtol
+  j __tu4.L.end1721
+__tu4.L.else1721:
+__tu4.L.end1721:
+  stw zero, -12(fp)
+  li a0, 0
+  stw a0, -12(fp)
+  stw zero, -9(fp)
+  li a0, 0
+  stw a0, -9(fp)
+__tu4.L.begin1761:
+  stw zero, -6(fp)
+  addi sp, sp, -18
+  ldw a0, -24(fp)
+  ldt a0, 0(a0)
+  stw a0, 0(sp)
+  jal ra, tolower
+  addi sp, sp, 18
+  stw a0, -6(fp)
+  stw zero, -3(fp)
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  jal ra, isdigit
+  addi sp, sp, 18
+  beqz a0, __tu4.L.else1783
+  ldw a0, -6(fp)
+  addi a0, a0, -48
+  j __tu4.L.end1783
+__tu4.L.else1783:
+  ldw a0, -6(fp)
+  addi a0, a0, -97
+  addi a0, a0, 10
+__tu4.L.end1783:
+  stw a0, -3(fp)
+  slti a0, a0, 0
+  bnez a0, __tu4.L.logic1798
+  ldw a1, -3(fp)
+  ldw a0, -30(fp)
+  slt a0, a1, a0
+  seq a0, a0, zero
+  bnez a0, __tu4.L.logic1798
+  li a0, 0
+  j __tu4.L.end1798
+__tu4.L.logic1798:
+  li a0, 1
+__tu4.L.end1798:
+  beqz a0, __tu4.L.else1797
+  j __tu4.L..76
+  j __tu4.L.end1797
+__tu4.L.else1797:
+__tu4.L.end1797:
+  ldw a0, -3(fp)
+  mv s1, a0
+  ldw a1, -30(fp)
+  ldw a0, -12(fp)
+  mul a0, a0, a1
+  add a0, a0, s1
+  stw a0, -12(fp)
+  ldw a0, -24(fp)
+  addi a0, a0, 1
+  stw a0, -24(fp)
+  addi a0, a0, -1
+  li a0, 1
+  stw a0, -9(fp)
+__tu4.L..77:
+  j __tu4.L.begin1761
+__tu4.L..76:
+  ldw a0, -27(fp)
+  beqz a0, __tu4.L.else1833
+  ldw a0, -27(fp)
+  mv s1, a0
+  ldw a0, -9(fp)
+  beqz a0, __tu4.L.else1840
+  ldw a0, -24(fp)
+  j __tu4.L.end1840
+__tu4.L.else1840:
+  ldw a0, -18(fp)
+__tu4.L.end1840:
+  stw a0, 0(s1)
+  j __tu4.L.end1833
+__tu4.L.else1833:
+__tu4.L.end1833:
+  ldw a0, -15(fp)
+  beqz a0, __tu4.L.else1848
+  ldw a0, -12(fp)
+  neg a0, a0
+  j __tu4.L.end1848
+__tu4.L.else1848:
+  ldw a0, -12(fp)
+__tu4.L.end1848:
+  j __tu4.L.return.strtol
+__tu4.L.return.strtol:
+  ldw s1, -33(fp)
+  ldw s2, -36(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+atol:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -6
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  stw zero, 3(sp)
+  li a0, 10
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, strtol
+  addi sp, sp, 18
+  j __tu4.L.return.atol
+__tu4.L.return.atol:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+atoi:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -6
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  stw zero, 3(sp)
+  li a0, 10
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, strtol
+  addi sp, sp, 18
+  j __tu4.L.return.atoi
+__tu4.L.return.atoi:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+labs:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -6
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  slti a0, a0, 0
+  beqz a0, __tu4.L.else1879
+  ldw a0, -6(fp)
+  neg a0, a0
+  j __tu4.L.end1879
+__tu4.L.else1879:
+  ldw a0, -6(fp)
+__tu4.L.end1879:
+  j __tu4.L.return.labs
+__tu4.L.return.labs:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+abs:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -6
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  slti a0, a0, 0
+  beqz a0, __tu4.L.else1892
+  ldw a0, -6(fp)
+  neg a0, a0
+  j __tu4.L.end1892
+__tu4.L.else1892:
+  ldw a0, -6(fp)
+__tu4.L.end1892:
+  j __tu4.L.return.abs
+__tu4.L.return.abs:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+free:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -6
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+__tu4.L.return.free:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+realloc:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -18
+  stw s1, -18(fp)
+  stw sp, -9(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -12(fp)
+  ldw a0, 9(fp)
+  stw a0, -15(fp)
+  ldw a0, -12(fp)
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else1907
+  addi sp, sp, -18
+  ldw a0, -15(fp)
+  stw a0, 0(sp)
+  jal ra, malloc
+  addi sp, sp, 18
+  j __tu4.L.return.realloc
+  j __tu4.L.end1907
+__tu4.L.else1907:
+__tu4.L.end1907:
+  ldw a0, -15(fp)
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else1915
+  li a0, 0
+  j __tu4.L.return.realloc
+  j __tu4.L.end1915
+__tu4.L.else1915:
+__tu4.L.end1915:
+  stw zero, -6(fp)
+  addi sp, sp, -18
+  ldw a0, -15(fp)
+  stw a0, 0(sp)
+  jal ra, malloc
+  addi sp, sp, 18
+  stw a0, -6(fp)
+  beqz a0, __tu4.L.else1934
+  stw zero, -3(fp)
+  ldw a0, -12(fp)
+  addi a0, a0, -3
+  ldw a0, 0(a0)
+  stw a0, -3(fp)
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  ldw a0, -12(fp)
+  stw a0, 3(sp)
+  ldw a1, -15(fp)
+  ldw a0, -3(fp)
+  li t0, 3812798742493
+  sub a0, a0, t0
+  sub a1, a1, t0
+  slt a0, a0, a1
+  beqz a0, __tu4.L.else1956
+  ldw a0, -3(fp)
+  j __tu4.L.end1956
+__tu4.L.else1956:
+  ldw a0, -15(fp)
+__tu4.L.end1956:
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, memcpy
+  addi sp, sp, 18
+  j __tu4.L.end1934
+__tu4.L.else1934:
+__tu4.L.end1934:
+  ldw a0, -6(fp)
+  j __tu4.L.return.realloc
+__tu4.L.return.realloc:
+  ldw s1, -18(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+calloc:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -18
+  stw s1, -15(fp)
+  stw s2, -18(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  ldw a0, 9(fp)
+  stw a0, -12(fp)
+  beqz a0, __tu4.L.logic1971
+  ldw a0, -9(fp)
+  mv s1, a0
+  ldw a1, -12(fp)
+  li a0, 2000000
+  addi sp, sp, -18
+  call __tri_udiv
+  addi sp, sp, 18
+  mv a1, s1
+  li t0, 3812798742493
+  sub a0, a0, t0
+  sub a1, a1, t0
+  slt a0, a0, a1
+  beqz a0, __tu4.L.logic1971
+  li a0, 1
+  j __tu4.L.end1971
+__tu4.L.logic1971:
+  li a0, 0
+__tu4.L.end1971:
+  beqz a0, __tu4.L.else1970
+  li a0, 0
+  j __tu4.L.return.calloc
+  j __tu4.L.end1970
+__tu4.L.else1970:
+__tu4.L.end1970:
+  ldw a1, -12(fp)
+  ldw a0, -9(fp)
+  mul a0, a0, a1
+  stw a0, -9(fp)
+  stw zero, -3(fp)
+  addi sp, sp, -18
+  ldw a0, -9(fp)
+  stw a0, 0(sp)
+  jal ra, malloc
+  addi sp, sp, 18
+  stw a0, -3(fp)
+  beqz a0, __tu4.L.else2006
+  addi sp, sp, -18
+  ldw a0, -3(fp)
+  stw a0, 0(sp)
+  stw zero, 3(sp)
+  ldw a0, -9(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, memset
+  addi sp, sp, 18
+  j __tu4.L.end2006
+__tu4.L.else2006:
+__tu4.L.end2006:
+  ldw a0, -3(fp)
+  j __tu4.L.return.calloc
+__tu4.L.return.calloc:
+  ldw s1, -15(fp)
+  ldw s2, -18(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+malloc:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw s1, -12(fp)
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -9(fp)
+  mv a1, a0
+  li a0, 2000000
+  li t0, 3812798742493
+  sub a0, a0, t0
+  sub a1, a1, t0
+  slt a0, a0, a1
+  beqz a0, __tu4.L.else2020
+  li a0, 0
+  j __tu4.L.return.malloc
+  j __tu4.L.end2020
+__tu4.L.else2020:
+__tu4.L.end2020:
+  ldw a0, __tu4.L.static.heap(zero)
+  seq a0, a0, zero
+  beqz a0, __tu4.L.else2029
+  addi a0, zero, __tri_heap_start
+  stw a0, __tu4.L.static.heap(zero)
+  j __tu4.L.end2029
+__tu4.L.else2029:
+__tu4.L.end2029:
+  li a0, 3
+  mv s1, a0
+  ldw a0, -9(fp)
+  addi a0, a0, 2
+  mv a1, s1
+  addi sp, sp, -18
+  call __tri_udiv
+  addi sp, sp, 18
+  muli a0, a0, 3
+  stw a0, -9(fp)
+  mv a1, a0
+  ldw a0, __tu4.L.static.heap(zero)
+  add a0, a0, a1
+  addi a0, a0, 3
+  mv s1, a0
+  addi a0, zero, __tri_heap_start
+  addi a0, a0, 2000000
+  slt a0, a0, s1
+  beqz a0, __tu4.L.else2048
+  li a0, 0
+  j __tu4.L.return.malloc
+  j __tu4.L.end2048
+__tu4.L.else2048:
+__tu4.L.end2048:
+  ldw a0, __tu4.L.static.heap(zero)
+  mv s1, a0
+  ldw a0, -9(fp)
+  stw a0, 0(s1)
+  stw zero, -3(fp)
+  ldw a0, __tu4.L.static.heap(zero)
+  addi a0, a0, 3
+  stw a0, -3(fp)
+  ldw a0, -9(fp)
+  addi a1, a0, 3
+  ldw a0, __tu4.L.static.heap(zero)
+  add a0, a0, a1
+  stw a0, __tu4.L.static.heap(zero)
+  ldw a0, -3(fp)
+  j __tu4.L.return.malloc
+__tu4.L.return.malloc:
+  ldw s1, -12(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+vprintf:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -24
+  stw s1, -24(fp)
+  stw sp, -15(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -18(fp)
+  ldw a0, 9(fp)
+  stw a0, -21(fp)
+  stw zero, -12(fp)
+  stw zero, -9(fp)
+  stw zero, -6(fp)
+  stw zero, -3(fp)
+  addi a0, fp, -12
+  mv s1, a0
+  stw zero, 0(s1)
+  addi a0, fp, -12
+  addi a0, a0, 3
+  mv s1, a0
+  stw zero, 0(s1)
+  addi a0, fp, -12
+  addi a0, a0, 6
+  mv s1, a0
+  stw zero, 0(s1)
+  addi a0, fp, -12
+  addi a0, a0, 9
+  mv s1, a0
+  li a0, 1
+  stw a0, 0(s1)
+  addi sp, sp, -18
+  addi a0, fp, -12
+  stw a0, 0(sp)
+  ldw a0, -18(fp)
+  stw a0, 3(sp)
+  ldw a0, -21(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu4.L.static.format
+  addi sp, sp, 18
+  j __tu4.L.return.vprintf
+__tu4.L.return.vprintf:
+  ldw s1, -24(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+vsnprintf:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -30
+  stw s1, -30(fp)
+  stw sp, -15(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -18(fp)
+  ldw a0, 9(fp)
+  stw a0, -21(fp)
+  ldw a0, 12(fp)
+  stw a0, -24(fp)
+  ldw a0, 15(fp)
+  stw a0, -27(fp)
+  stw zero, -12(fp)
+  stw zero, -9(fp)
+  stw zero, -6(fp)
+  stw zero, -3(fp)
+  addi a0, fp, -12
+  mv s1, a0
+  ldw a0, -18(fp)
+  stw a0, 0(s1)
+  addi a0, fp, -12
+  addi a0, a0, 3
+  mv s1, a0
+  ldw a0, -21(fp)
+  stw a0, 0(s1)
+  addi a0, fp, -12
+  addi a0, a0, 6
+  mv s1, a0
+  stw zero, 0(s1)
+  addi a0, fp, -12
+  addi a0, a0, 9
+  mv s1, a0
+  li a0, 0
+  stw a0, 0(s1)
+  addi sp, sp, -18
+  addi a0, fp, -12
+  stw a0, 0(sp)
+  ldw a0, -24(fp)
+  stw a0, 3(sp)
+  ldw a0, -27(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu4.L.static.format
+  addi sp, sp, 18
+  j __tu4.L.return.vsnprintf
+__tu4.L.return.vsnprintf:
+  ldw s1, -30(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+vsprintf:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+  ldw a0, 9(fp)
+  stw a0, -9(fp)
+  ldw a0, 12(fp)
+  stw a0, -12(fp)
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  stw a0, 0(sp)
+  li a0, 3812798742493
+  stw a0, 3(sp)
+  ldw a0, -9(fp)
+  stw a0, 6(sp)
+  ldw a0, -12(fp)
+  stw a0, 9(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  ldw a3, 9(sp)
+  jal ra, vsnprintf
+  addi sp, sp, 18
+  j __tu4.L.return.vsprintf
+__tu4.L.return.vsprintf:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+snprintf:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -18
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -12(fp)
+  ldw a0, 9(fp)
+  stw a0, -15(fp)
+  ldw a0, 12(fp)
+  stw a0, -18(fp)
+  addi t0, fp, 15
+  stw t0, -9(fp)
+  ldw a0, -9(fp)
+  stw a0, -3(fp)
+  addi sp, sp, -18
+  ldw a0, -12(fp)
+  stw a0, 0(sp)
+  ldw a0, -15(fp)
+  stw a0, 3(sp)
+  ldw a0, -18(fp)
+  stw a0, 6(sp)
+  ldw a0, -3(fp)
+  stw a0, 9(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  ldw a3, 9(sp)
+  jal ra, vsnprintf
+  addi sp, sp, 18
+  j __tu4.L.return.snprintf
+__tu4.L.return.snprintf:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+sprintf:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -15
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -12(fp)
+  ldw a0, 9(fp)
+  stw a0, -15(fp)
+  addi t0, fp, 12
+  stw t0, -9(fp)
+  ldw a0, -9(fp)
+  stw a0, -3(fp)
+  addi sp, sp, -18
+  ldw a0, -12(fp)
+  stw a0, 0(sp)
+  ldw a0, -15(fp)
+  stw a0, 3(sp)
+  ldw a0, -3(fp)
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, vsprintf
+  addi sp, sp, 18
+  j __tu4.L.return.sprintf
+__tu4.L.return.sprintf:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+printf:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -12
+  stw sp, -6(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -12(fp)
+  addi t0, fp, 9
+  stw t0, -9(fp)
+  ldw a0, -9(fp)
+  stw a0, -3(fp)
+  addi sp, sp, -18
+  ldw a0, -12(fp)
+  stw a0, 0(sp)
+  ldw a0, -3(fp)
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, vprintf
+  addi sp, sp, 18
+  j __tu4.L.return.printf
+__tu4.L.return.printf:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+puts:
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -6
+  stw sp, -3(fp)
+  stw a0, 6(fp)
+  stw a1, 9(fp)
+  stw a2, 12(fp)
+  stw a3, 15(fp)
+  stw a4, 18(fp)
+  stw a5, 21(fp)
+  ldw a0, 6(fp)
+  stw a0, -6(fp)
+__tu4.L.begin2243:
+  ldw a0, -6(fp)
+  ldt a0, 0(a0)
+  beqz a0, __tu4.L..54
+  addi sp, sp, -18
+  ldw a0, -6(fp)
+  addi a0, a0, 1
+  stw a0, -6(fp)
+  addi a0, a0, -1
+  ldt a0, 0(a0)
+  stw a0, 0(sp)
+  jal ra, putchar
+  addi sp, sp, 18
+__tu4.L..55:
+  j __tu4.L.begin2243
+__tu4.L..54:
+  addi sp, sp, -18
+  li a0, 10
+  stw a0, 0(sp)
+  jal ra, putchar
+  addi sp, sp, 18
+  li a0, 0
+  j __tu4.L.return.puts
+__tu4.L.return.puts:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+
+.align 3
+cur:
+.space 3
+
+.align 3
+procs:
+.space 2880
+
+.align 3
+__tri_heap_start:
+.tryte 0

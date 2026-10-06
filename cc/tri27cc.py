@@ -138,9 +138,9 @@ def peephole(lines):
     return lines
 
 
-def link(fragments, output, runtime=True):
+def link(fragments, output, runtime=True, kernel=False):
     parts = []
-    if runtime:
+    if runtime and not kernel:
         parts.append((ROOT/'lib/crt0.tas').read_text())
     common = {}
     for i, text in enumerate(fragments):
@@ -166,8 +166,8 @@ def link(fragments, output, runtime=True):
     Path(output).write_text(text,encoding='utf-8')
 
 
-def runtime_fragments():
-    result=[(ROOT/'lib/host.tas').read_text()]
+def runtime_fragments(kernel=False):
+    result=[(ROOT/('lib/khost.tas' if kernel else 'lib/host.tas')).read_text()]
     for name in ('bits','libc'):
         source=ROOT/f'lib/{name}.c'
         output=BUILD/f'{name}.tas'
@@ -178,7 +178,7 @@ def runtime_fragments():
     return result
 
 
-def compile_link(inputs, output, flags=(), runtime=True):
+def compile_link(inputs, output, flags=(), runtime=True, kernel=False):
     build()
     fragments=[]
     for i, source in enumerate(inputs):
@@ -190,8 +190,8 @@ def compile_link(inputs, output, flags=(), runtime=True):
             compile_unit(source,obj,flags)
             fragments.append(obj.read_text())
     if runtime:
-        fragments+=runtime_fragments()
-    link(fragments,output,runtime)
+        fragments+=runtime_fragments(kernel)
+    link(fragments,output,runtime,kernel)
 
 
 def main():
@@ -203,6 +203,7 @@ def main():
     p.add_argument('-I',action='append',default=[])
     p.add_argument('-D',action='append',default=[])
     p.add_argument('--no-runtime',action='store_true')
+    p.add_argument('--kernel',action='store_true',help='noyau : pas de crt0, services matériels directs (khost)')
     a=p.parse_args()
     flags=['-I'+str(Path(v).resolve()) for v in a.I]+['-D'+v for v in a.D]
     build()
@@ -211,7 +212,7 @@ def main():
             p.error('-S/-E require one input')
         compile_unit(a.inputs[0],a.o,flags+(['-E'] if a.E else []))
     else:
-        compile_link(a.inputs,a.o,flags,not a.no_runtime)
+        compile_link(a.inputs,a.o,flags,not a.no_runtime,a.kernel)
 
 if __name__=='__main__':
     try:

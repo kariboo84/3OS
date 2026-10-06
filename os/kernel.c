@@ -1,0 +1,300 @@
+/* kernel.c — noyau 3OS v0.3 pour TRI-27 (mode -1).
+ *
+ * - Processus en mode utilisateur (+1), chacun dans un emplacement de 3^12 trytes,
+ *   isolé par UBASE/ULIMIT (la VM traduit et borne toutes ses adresses).
+ * - Pièges : timer (ordonnanceur préemptif), ECALL (appels système), fautes.
+ * - Matériel virtualisé : un accès MMIO (adresse < 0) depuis le mode utilisateur
+ *   faute ; le noyau décode l'instruction et l'émule. Écran, clavier et souris
+ *   appartiennent au processus au premier plan (fg).
+ * - Disque 3FS : secteur 0 = répertoire, fichiers contigus (SPEC §9).
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <tri27io.h>
+
+#define SLOT 531441L          /* 3^12 trytes par processus */
+#define KERNEL_END 1062882L   /* 2 * 3^12 : noyau + pile noyau */
+#define NPROC 24
+#define QUANTUM 60000
+#define SECT 729
+
+#define DISK_SECTOR TRI27_MMIO(-20)
+#define DISK_ADDR   TRI27_MMIO(-21)
+#define DISK_CMD    TRI27_MMIO(-22)
+#define DISK_STATUS TRI27_MMIO(-23)
+#define DISK_COUNT  TRI27_MMIO(-24)
+
+/* Disposition connue de kentry.tas : r à 0, pc à 81, ubase à 84, ulimit à 87. */
+struct proc {
+  long r[27];
+  long pc, ubase, ulimit;
+  long state;      /* 0 libre, 1 prêt, 2 attend un enfant */
+  long parent;
+  long vmode, fbaddr;
+  char name[16];
+};
+enum { FREE, READY, WAITING };
+
+struct proc procs[NPROC];
+struct proc *cur;
+extern long ram_size;
+static long nslots, fg = -1;
+static char dir[SECT];
+
+long csr_cause(void);
+long csr_tval(void);
+void set_timecmp(long t);
+void kresume(void);
+
+#define R(p, k) ((p)->r[(k) + 13])
+#define A0 1
+#define SP (-1)
+
+/* ---------- utilitaires ternaires ---------- */
+static long bal(long x, long m) {
+  long h = (m - 1) / 2, r = (x + h) % m;
+  if (r < 0) r += m;
+  return r - h;
+}
+static long word_at(char *p) { return p[0] + p[1] * 19683L + p[2] * 19683L * 19683L; }
+static long pid(struct proc *p) { return p - procs; }
+
+/* adresse utilisateur → pointeur physique, ou 0 si hors de l'espace du processus */
+static char *uptr(struct proc *p, long v, long len) {
+  if (v < 0 || len < 0 || v + len > p->ulimit) return 0;
+  return (char *)(p->ubase + v);
+}
+
+/* ---------- disque et répertoire ---------- */
+static void disk_read(long sector, long phys) {
+  DISK_SECTOR = sector;
+  DISK_ADDR = phys;
+  DISK_CMD = 1;
+}
+static long dir_count(void) { return word_at(dir) == 27027 ? word_at(dir + 3) : 0; }
+static char *dir_entry(long i) { return dir + 6 + i * 30; }
+static int name_eq(char *a, const char *b) {
+  for (int k = 0; k < 16; k++) {
+    if (a[k] != b[k]) return 0;
+    if (a[k] == 0) return 1;
+  }
+  return 1;
+}
+static long dir_find(const char *name) {
+  for (long i = 0; i < dir_count(); i++)
+    if (name_eq(dir_entry(i), name)) return i;
+  return -1;
+}
+
+/* ---------- affichage du processus au premier plan ---------- */
+static void apply_display(void) {
+  if (fg < 0) return;
+  struct proc *p = &procs[fg];
+  VMODE = p->vmode;
+  long fb = p->fbaddr;
+  /* taille du framebuffer selon le mode ; adresse validée dans l'espace du processus */
+  long sz = p->vmode == 1 ? 23040 : (p->vmode == 2 ? 207360 : 64000);
+  FB_ADDR = (fb > 0 && uptr(p, fb, sz)) ? p->ubase + fb : 0;
+}
+static void silence(void) {
+  for (int v = 0; v < 9; v++) SND_GATE(v) = 0;
+}
+
+/* ---------- processus ---------- */
+static struct proc *spawn(const char *name, long parent) {
+  long e = dir_find(name);
+  if (e < 0) return 0;
+  char *d = dir_entry(e);
+  long start = word_at(d + 16), len = word_at(d + 19), entry = word_at(d + 22);
+  if (entry < 0 || len > SLOT - 3000) return 0;
+  /* emplacement libre : le processus i occupe l'emplacement i */
+  struct proc *p = 0;
+  for (long i = 0; i < NPROC && i < nslots; i++)
+    if (procs[i].state == FREE) { p = &procs[i]; break; }
+  if (!p) return 0;
+  long base = KERNEL_END + pid(p) * SLOT;
+  for (long k = 0; k * SECT < len; k++) disk_read(start + k, base + k * SECT);
+  for (int k = 0; k < 27; k++) p->r[k] = 0;
+  R(p, SP) = SLOT;
+  p->pc = entry;
+  p->ubase = base;
+  p->ulimit = SLOT;
+  p->state = READY;
+  p->parent = parent;
+  p->vmode = 0;
+  p->fbaddr = 0;
+  for (int k = 0; k < 16; k++) p->name[k] = d[k];
+  return p;
+}
+
+static void schedule(void) {
+  long n = pid(cur);
+  for (long k = 1; k <= NPROC; k++) {
+    struct proc *p = &procs[(n + k) % NPROC];
+    if (p->state == READY) { cur = p; break; }
+  }
+  set_timecmp(CYCLES + QUANTUM);
+}
+
+static void boot_init(void);
+
+static void proc_exit(struct proc *p, long code) {
+  long me = pid(p);
+  p->state = FREE;
+  if (fg == me) { silence(); fg = p->parent; }
+  if (p->parent >= 0) {
+    struct proc *par = &procs[p->parent];
+    if (par->state == WAITING) { R(par, A0) = code; par->state = READY; }
+  }
+  if (fg >= 0) apply_display();
+  int alive = 0;
+  for (int i = 0; i < NPROC; i++) if (procs[i].state != FREE) alive = 1;
+  if (!alive) { printf("\n[3OS] plus aucun processus : relance de init\n"); boot_init(); return; }
+  schedule();
+}
+
+static void kill(struct proc *p, const char *why, long val) {
+  printf("\n[3OS] %s tue : %s (%ld) pc=%ld\n", p->name, why, val, p->pc);
+  proc_exit(p, -1);
+}
+
+/* ---------- matériel virtualisé ---------- */
+static long dev_read(long a) {
+  int f = pid(cur) == fg;
+  if (a == -2 || a == -7) return f ? TRI27_MMIO(a) : (a == -2 ? -1 : 0);   /* CONSOLE_IN, KEY */
+  if (a == -10 || a == -11 || a == -12) return f ? TRI27_MMIO(a) : 0;      /* souris */
+  if (a == -4 || a == -8) return TRI27_MMIO(a);                            /* CYCLES, TIME_MS */
+  if (a == -5) return cur->fbaddr;
+  if (a == -9) return cur->vmode;
+  if (a <= -100 && a >= -202) return TRI27_MMIO(a);                        /* son */
+  return 0;
+}
+static void dev_write(long a, long v) {
+  int f = pid(cur) == fg;
+  if (a == -1) { CONSOLE_OUT = v; return; }
+  if (a == -3) { proc_exit(cur, v); return; }
+  if (a == -5) { cur->fbaddr = v; if (f) apply_display(); return; }
+  if (a == -9) { cur->vmode = v; if (f) apply_display(); return; }
+  if (a == -6) { if (f) FB_PRESENT = 0; return; }
+  if (a <= -100 && a >= -202) { if (f) TRI27_MMIO(a) = v; return; }
+}
+
+/* l'instruction fautive est un LDT/LDW/STT/STW sur une adresse négative : l'émuler */
+static void emulate_mmio(long a) {
+  char *ip = uptr(cur, cur->pc, 3);
+  if (!ip) { kill(cur, "pc hors espace", cur->pc); return; }
+  long w = word_at(ip);
+  long op = bal(w, 243); w = (w - op) / 243;
+  long rd = bal(w, 27);
+  struct proc *me = cur;
+  me->pc += 3;
+  if (op == 23 || op == 24) {                 /* LDT, LDW */
+    long v = dev_read(a);
+    if (op == 23) v = bal(v, 19683);
+    if (rd != 0) R(me, rd) = v;
+  } else if (op == 25 || op == 26) {          /* STT, STW */
+    dev_write(a, R(me, rd));
+  } else {
+    me->pc -= 3;
+    kill(me, "acces memoire invalide", a);
+  }
+}
+
+/* ---------- appels système ---------- */
+static void syscall(long n) {
+  struct proc *p = cur;
+  long a0 = R(p, A0), a1 = R(p, A0 + 1), a2 = R(p, A0 + 2);
+  p->pc += 3;
+  if (n == 0) { proc_exit(p, a0); return; }
+  if (n == 1) { CONSOLE_OUT = a0; return; }
+  if (n == 2) { printf("%ld", a0); return; }
+  if (n == 10) {                                   /* exec(nom) : lance et attend */
+    char *s = uptr(p, a0, 16), name[16];
+    if (!s) { R(p, A0) = -1; return; }
+    for (int k = 0; k < 16; k++) name[k] = s[k];
+    name[15] = 0;
+    struct proc *c = spawn(name, pid(p));
+    if (!c) { R(p, A0) = -1; return; }
+    p->state = WAITING;
+    fg = pid(c);
+    silence();
+    apply_display();
+    cur = c;
+    set_timecmp(CYCLES + QUANTUM);
+    return;
+  }
+  if (n == 11) { schedule(); return; }
+  if (n == 12) {                                   /* readdir(i, nom) */
+    char *dst = uptr(p, a1, 16);
+    if (a0 < 0 || a0 >= dir_count() || !dst) { R(p, A0) = 0; return; }
+    char *d = dir_entry(a0);
+    for (int k = 0; k < 16; k++) dst[k] = d[k];
+    R(p, A0) = word_at(d + 22) >= 0 ? 1 : 2;
+    return;
+  }
+  if (n == 13) {                                   /* readfile(nom, buf, max) */
+    char *s = uptr(p, a0, 16), *dst = uptr(p, a1, a2), name[16];
+    long e;
+    if (!s || !dst) { R(p, A0) = -1; return; }
+    for (int k = 0; k < 16; k++) name[k] = s[k];
+    name[15] = 0;
+    if ((e = dir_find(name)) < 0) { R(p, A0) = -1; return; }
+    char *d = dir_entry(e);
+    long start = word_at(d + 16), len = word_at(d + 19);
+    if (len > a2) len = a2;
+    static char sec[SECT];
+    for (long k = 0; k * SECT < len; k++) {
+      disk_read(start + k, (long)sec);
+      for (long j = 0; j < SECT && k * SECT + j < len; j++) dst[k * SECT + j] = sec[j];
+    }
+    R(p, A0) = len;
+    return;
+  }
+  if (n == 14) {
+    long c = 0;
+    for (int i = 0; i < NPROC; i++) if (procs[i].state != FREE) c++;
+    R(p, A0) = c;
+    return;
+  }
+  kill(p, "appel systeme inconnu", n);
+}
+
+/* ---------- point d'entrée des pièges (kentry.tas) ---------- */
+void ktrap(void) {
+  long c = csr_cause(), v = csr_tval();
+  if (c == 9) schedule();
+  else if (c == 8) syscall(v);
+  else if (c == 3 && v < 0) emulate_mmio(v);
+  else if (c == 3) kill(cur, "faute memoire", v);
+  else if (c == 4) kill(cur, "division par zero", 0);
+  else if (c == 1) kill(cur, "instruction illegale", v);
+  else kill(cur, "piege", c);
+}
+
+static void boot_init(void) {
+  struct proc *p = spawn("system3", -1);
+  if (!p) p = spawn("hello", -1);
+  if (!p) { printf("[3OS] aucun programme d'init sur le disque\n"); exit(1); }
+  fg = pid(p);
+  apply_display();
+  cur = p;
+  set_timecmp(CYCLES + QUANTUM);
+}
+
+int kmain(void) {
+  nslots = (ram_size - KERNEL_END) / SLOT;
+  if (nslots > NPROC) nslots = NPROC;
+  printf("3OS v0.3 - noyau ternaire TRI-27\n");
+  printf("RAM %ld trytes, %ld emplacements de processus\n", ram_size, nslots);
+  if (DISK_COUNT < 1) { printf("[3OS] pas de disque\n"); exit(1); }
+  disk_read(0, (long)dir);
+  long n = dir_count();
+  printf("disque : %ld secteurs, %ld fichiers\n", (long)DISK_COUNT, n);
+  for (long i = 0; i < n; i++) {
+    char *d = dir_entry(i);
+    printf("  %-15s %7ld trytes  %s\n", d, word_at(d + 19), word_at(d + 22) >= 0 ? "programme" : "donnee");
+  }
+  boot_init();
+  kresume();
+  return 0;
+}

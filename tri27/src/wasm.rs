@@ -48,6 +48,7 @@ fn fresh_vm(s: &mut State) {
         vm.load(0, &s.image);
     }
     vm.reset_cpu(s.entry);
+    vm.disk = std::mem::take(&mut s.vm.disk);
     vm.mouse_x = s.vm.mouse_x;
     vm.mouse_y = s.vm.mouse_y;
     s.vm = vm;
@@ -249,4 +250,12 @@ pub extern "C" fn audio_render(n: usize) -> *const f32 {
     s.audio.resize(n, 0.0);
     s.vm.snd.render(&mut s.audio[..n]);
     s.audio.as_ptr()
+}
+
+/// Réserve un disque de `n` trytes et renvoie son adresse (le JS y copie l'image i16).
+#[no_mangle]
+pub extern "C" fn disk_alloc(n: usize) -> *mut i16 {
+    let s = st();
+    s.vm.disk = vec![0; n];
+    s.vm.disk.as_mut_ptr()
 }

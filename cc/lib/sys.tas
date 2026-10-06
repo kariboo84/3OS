@@ -1,0 +1,17 @@
+; sys.tas — appels système 3OS v0.3 pour les programmes utilisateur (voir 3os.h).
+.align 3
+sys_exec:
+  ecall 10
+  ret
+sys_yield:
+  ecall 11
+  ret
+sys_readdir:
+  ecall 12
+  ret
+sys_readfile:
+  ecall 13
+  ret
+sys_procs:
+  ecall 14
+  ret

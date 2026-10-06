@@ -64,6 +64,69 @@ fn save_wav(path: &str, s: &[f32]) {
     f.write_all(&h).unwrap();
 }
 
+fn load_disk(path: &str) -> Vec<i16> {
+    let b = std::fs::read(path).unwrap_or_else(|e| {
+        eprintln!("{path}: {e}");
+        std::process::exit(1)
+    });
+    b.chunks_exact(2).map(|c| i16::from_le_bytes([c[0], c[1]])).collect()
+}
+
+fn save_disk(path: &str, d: &[i16]) {
+    let b: Vec<u8> = d.iter().flat_map(|t| t.to_le_bytes()).collect();
+    std::fs::write(path, b).unwrap();
+}
+
+/// Disque 3FS (SPEC §9) : secteur 0 = répertoire, fichiers contigus à partir du secteur 1.
+fn mkdisk(out: &str, items: &[String]) {
+    const MAGIC: i64 = 27027;
+    const ENT: usize = 30;
+    let mut disk: Vec<i16> = vec![0; SECTOR];
+    let put_word = |d: &mut Vec<i16>, a: usize, v: i64| {
+        let t0 = trit::bal_mod(v, trit::T9);
+        let r = (v - t0) / trit::T9;
+        let t1 = trit::bal_mod(r, trit::T9);
+        let t2 = (r - t1) / trit::T9;
+        d[a] = t0 as i16;
+        d[a + 1] = t1 as i16;
+        d[a + 2] = t2 as i16;
+    };
+    put_word(&mut disk, 0, MAGIC);
+    put_word(&mut disk, 3, items.len() as i64);
+    for (n, it) in items.iter().enumerate() {
+        let (name, path) = it.split_once('=').unwrap_or_else(|| {
+            eprintln!("mkdisk : attendu nom=fichier, reçu {it}");
+            std::process::exit(2)
+        });
+        let (data, entry): (Vec<i16>, i64) = if path.ends_with(".tas") {
+            let img = load(path);
+            (img.trytes, img.entry)
+        } else {
+            let b = std::fs::read(path).unwrap();
+            let txt = String::from_utf8_lossy(&b);
+            (txt.chars().map(|c| (c as i64).min(trit::H9) as i16).collect(), -1)
+        };
+        let start = disk.len() / SECTOR;
+        let base = 6 + n * ENT;
+        if base + ENT > SECTOR || name.chars().count() > 15 {
+            eprintln!("mkdisk : trop de fichiers ou nom trop long ({name})");
+            std::process::exit(2);
+        }
+        for (k, c) in name.chars().enumerate() {
+            disk[base + k] = c as i16;
+        }
+        put_word(&mut disk, base + 16, start as i64);
+        put_word(&mut disk, base + 19, data.len() as i64);
+        put_word(&mut disk, base + 22, entry);
+        disk.extend_from_slice(&data);
+        let pad = (SECTOR - disk.len() % SECTOR) % SECTOR;
+        disk.extend(std::iter::repeat(0).take(pad));
+        eprintln!("  {name:<15} secteur {start:>5}  {:>7} trytes  entrée {entry}", data.len());
+    }
+    save_disk(out, &disk);
+    eprintln!("{out} : {} secteurs", disk.len() / SECTOR);
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
@@ -78,6 +141,7 @@ fn main() {
             let mut stats = false;
             let mut input = String::new();
             let mut wav: Option<String> = None;
+            let mut disk: Option<String> = None;
             let mut audio: Vec<f32> = Vec::new();
             let mut i = 3;
             while i < args.len() {
@@ -96,6 +160,10 @@ fn main() {
                         mouse = Some((v[0], v[1], *v.get(2).unwrap_or(&0)));
                         i += 1;
                     }
+                    "--disk" => {
+                        disk = Some(args[i + 1].clone());
+                        i += 1
+                    }
                     "--wav" => {
                         wav = Some(args[i + 1].clone());
                         i += 1
@@ -112,6 +180,9 @@ fn main() {
             let mut vm = Vm::new(RAM);
             vm.load(0, &img.trytes);
             vm.reset_cpu(img.entry);
+            if let Some(d) = &disk {
+                vm.disk = load_disk(d);
+            }
             vm.input.extend(input.chars().map(|c| c as i64));
             vm.capture_present = ppm.is_some();
             let t0 = Instant::now();
@@ -141,6 +212,11 @@ fn main() {
                         std::fs::create_dir_all(d).unwrap();
                         save_ppm(&vm, &std::path::Path::new(d).join(format!("frame_{:05}.ppm", vm.frames)));
                     }
+                }
+            }
+            if let Some(d) = &disk {
+                if vm.disk_dirty {
+                    save_disk(d, &vm.disk);
                 }
             }
             let dt = t0.elapsed().as_secs_f64();
@@ -182,6 +258,12 @@ fn main() {
                 println!("  {a:>7}  {}  {:<32} ; l.{ln}", trit::to_trit_string(w, 27), isa::disasm(w, *a));
             }
             eprintln!("{} trytes, entrée = {}", img.trytes.len(), img.entry);
+        }
+        "mkdisk" => {
+            if args.len() < 4 {
+                usage()
+            }
+            mkdisk(&args[2], &args[3..]);
         }
         "bench" => {
             let src = r#"

@@ -10,6 +10,7 @@
  */
 #include <tri27io.h>
 #include <tgfx.h>
+#include <3os.h>
 
 static char fb[23040];          /* mode 1 : 64 trytes x 360 lignes */
 static char fbc[207360];        /* mode 2 : 576 x 360 trytes */
@@ -114,9 +115,26 @@ static void cur_show(void) {
 /* ---------- bureau ---------- */
 typedef struct { int x, y, w, h, open; const char *title; } Win;
 static Win win[2] = {
-  { 60, 50, 300, 160, 1, "Lisez-moi" },
-  { 320, 200, 170, 110, 1, "Corbeille" },
+  { 40, 40, 220, 170, 1, "3OS" },
+  { 280, 120, 270, 175, 1, "Lisez-moi" },
 };
+/* contenu du disque (sys_readdir) et du fichier lisez-moi (sys_readfile) */
+static char names[24][16];
+static long kinds[24], nfiles;
+static char readme[1200];
+static char status[64] = "Cliquez un programme pour le lancer.";
+static void load_disk(void) {
+  nfiles = 0;
+  for (long i = 0; i < 24; i++) {
+    long k = sys_readdir(i, names[nfiles]);
+    if (k == 0) break;
+    kinds[nfiles++] = k;
+  }
+  long n = sys_readfile("lisez-moi", readme, 1199);
+  readme[n > 0 ? n : 0] = 0;
+}
+/* ligne du programme i dans la fenêtre 3OS */
+static int row_y(int i) { return win[0].y + 22 + i * 14; }
 static int top = 0;   /* fenêtre au premier plan */
 
 static void draw_window(int j, int active) {
@@ -139,14 +157,31 @@ static void draw_window(int j, int active) {
   fill(w->x + w->w, w->y + 2, 1, w->h - 1, K_BLACK);
   int x = w->x + 10, y = w->y + 22;
   if (j == 0) {
-    text(x, y, "3OS - bureau Systeme 3", K_BLACK);
-    text(x, y + 16, "Machine ternaire equilibree TRI-27.", K_BLACK);
-    text(x, y + 28, "Tirez une barre de titre a la souris.", K_BLACK);
-    text(x, y + 40, "C : couleur / trits.  Q : quitter.", K_BLACK);
-    text(x, y + 56, "Pixel = 1 trit : noir, gris, blanc.", K_BLACK);
-    text(x, y + 68, "Le Mac avait 1 bit. Ici : 1,58.", K_BLACK);
+    for (int i = 0; i < nfiles && row_y(i) + 10 < w->y + w->h; i++) {
+      /* petite icône : programme = carré plein, donnée = page */
+      if (kinds[i] == 1) fill(x, row_y(i), 9, 9, mode == 1 ? K_BLACK : K_ACCENT);
+      else frame(x, row_y(i), 8, 10, K_BLACK);
+      char lab[24];
+      int k = 0;
+      lab[k++] = '1' + i; lab[k++] = ' ';
+      for (int c = 0; names[i][c] && k < 22; c++) lab[k++] = names[i][c];
+      lab[k] = 0;
+      text(x + 14, row_y(i) + 1, lab, kinds[i] == 1 ? K_BLACK : K_GRAY);
+    }
+    text(x, w->y + w->h - 12, status, K_GRAY);
   } else {
-    text(x, y, "(vide)", K_GRAY);
+    /* texte du fichier lisez-moi, coupé aux retours à la ligne */
+    char line[64];
+    int k = 0, ly = y;
+    for (char *c = readme; ; c++) {
+      if (*c == 10 || *c == 0 || k == 40) {
+        line[k] = 0;
+        if (ly + 8 < w->y + w->h) text(x, ly, line, K_BLACK);
+        ly += 12; k = 0;
+        if (*c == 0) break;
+        if (*c != 10) line[k++] = *c;
+      } else line[k++] = *c;
+    }
   }
 }
 
@@ -195,11 +230,28 @@ static void set_mode(int m) {
   present();
 }
 
+static void launch(int i) {
+  if (i < 0 || i >= nfiles || kinds[i] != 1) return;
+  cur_hide();
+  long code = sys_exec(names[i]);
+  /* retour au bureau : le noyau a rétabli notre écran ; on redessine par sécurité */
+  char *m = status;
+  const char *a = "Fin de ";
+  while (*a) *m++ = *a++;
+  for (int c = 0; names[i][c] && m < status + 40; c++) *m++ = names[i][c];
+  *m++ = ' '; *m++ = '(';
+  if (code < 0) { *m++ = '-'; code = -code; }
+  if (code >= 10) *m++ = '0' + code / 10 % 10;
+  *m++ = '0' + code % 10; *m++ = ')'; *m = 0;
+  set_mode(mode);
+}
+
 static int in(int x, int y, int rx, int ry, int rw, int rh) {
   return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
 }
 
 int main(void) {
+  load_disk();
   set_mode(1);
   int drag = -1, dx = 0, dy = 0, prev_left = 0;
   for (;;) {
@@ -208,7 +260,8 @@ int main(void) {
       if (k == 67) { cur_hide(); set_mode(mode == 1 ? 2 : 1); }     /* C */
       if (k == 81 || k == 27) return 0;                            /* Q, Échap */
     }
-    while (CONSOLE_IN >= 0) {}
+    int ch = CONSOLE_IN;                    /* touches 1..9 : lancer le n-ième fichier */
+    if (ch >= '1' && ch <= '9') launch(ch - '1');
     int mx = MOUSE_X, my = MOUSE_Y, left = MOUSE_BTN % 3;
     int dirty = 0;
 
@@ -218,6 +271,7 @@ int main(void) {
         Win *w = &win[j];
         if (!w->open || !in(mx, my, w->x, w->y, w->w, w->h)) continue;
         if (j == top && in(mx, my, w->x + 6, w->y + 2, 11, 10)) { w->open = 0; dirty = 1; }
+        else if (j == 0 && my >= row_y(0) && my < row_y(nfiles)) { launch((my - row_y(0)) / 14); prev_left = 1; }
         else {
           if (j != top) { top = j; dirty = 1; }
           if (my < w->y + 13) { drag = j; dx = mx - w->x; dy = my - w->y; }

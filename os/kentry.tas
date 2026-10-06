@@ -1,0 +1,107 @@
+; kentry.tas — 3OS v0.3 : démarrage et vecteur de pièges.
+; Le contexte utilisateur est sauvé dans *cur (struct proc, kernel.c) :
+;   r[k] (registre k = -13..13) au décalage (k+13)*3, pc à 81, ubase à 84, ulimit à 87.
+
+.align 3
+start:
+        stw   sp, ram_size(zero)     ; la VM place sp en fin de RAM
+        la    sp, kstack_top
+        la    t0, __trap
+        csrw  t0, tvec
+        addi  sp, sp, -18
+        call  kmain
+        halt
+
+; ---------- entrée de piège ----------
+__trap:
+        csrw  t0, scratch
+        ldw   t0, cur(zero)
+        stw   s10, 0(t0)
+        stw   s9, 3(t0)
+        stw   s8, 6(t0)
+        stw   s7, 9(t0)
+        stw   s6, 12(t0)
+        stw   s5, 15(t0)
+        stw   s4, 18(t0)
+        stw   s3, 21(t0)
+        stw   s2, 24(t0)
+        stw   s1, 27(t0)
+        stw   fp, 30(t0)
+        stw   ra, 33(t0)
+        stw   sp, 36(t0)
+        stw   a0, 42(t0)
+        stw   a1, 45(t0)
+        stw   a2, 48(t0)
+        stw   a3, 51(t0)
+        stw   a4, 54(t0)
+        stw   a5, 57(t0)
+        stw   t1, 63(t0)
+        stw   t2, 66(t0)
+        stw   t3, 69(t0)
+        stw   t4, 72(t0)
+        stw   t5, 75(t0)
+        stw   t6, 78(t0)
+        csrr  t1, scratch
+        stw   t1, 60(t0)
+        csrr  t1, epc
+        stw   t1, 81(t0)
+        la    sp, kstack_top
+        addi  sp, sp, -18
+        call  ktrap
+        ; retombe dans kresume
+
+; ---------- reprise du processus *cur (ne revient pas) ----------
+kresume:
+        ldw   t0, cur(zero)
+        ldw   t1, 81(t0)
+        csrw  t1, epc
+        ldw   t1, 84(t0)
+        csrw  t1, 10                 ; UBASE
+        ldw   t1, 87(t0)
+        csrw  t1, 11                 ; ULIMIT
+        li    t1, 1
+        csrw  t1, pmode              ; reprise en mode utilisateur
+        csrw  t1, pie                ; interruptions actives
+        ldw   s10, 0(t0)
+        ldw   s9, 3(t0)
+        ldw   s8, 6(t0)
+        ldw   s7, 9(t0)
+        ldw   s6, 12(t0)
+        ldw   s5, 15(t0)
+        ldw   s4, 18(t0)
+        ldw   s3, 21(t0)
+        ldw   s2, 24(t0)
+        ldw   s1, 27(t0)
+        ldw   fp, 30(t0)
+        ldw   ra, 33(t0)
+        ldw   sp, 36(t0)
+        ldw   a0, 42(t0)
+        ldw   a1, 45(t0)
+        ldw   a2, 48(t0)
+        ldw   a3, 51(t0)
+        ldw   a4, 54(t0)
+        ldw   a5, 57(t0)
+        ldw   t1, 63(t0)
+        ldw   t2, 66(t0)
+        ldw   t3, 69(t0)
+        ldw   t4, 72(t0)
+        ldw   t5, 75(t0)
+        ldw   t6, 78(t0)
+        ldw   t0, 60(t0)
+        eret
+
+; ---------- accès CSR pour le C ----------
+csr_cause:
+        csrr  a0, cause
+        ret
+csr_tval:
+        csrr  a0, tval
+        ret
+set_timecmp:
+        csrw  a0, timecmp
+        ret
+
+        .align 3
+ram_size:    .word 0
+             .space 30000
+kstack_top:  .space 3

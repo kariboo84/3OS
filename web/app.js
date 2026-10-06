@@ -134,11 +134,22 @@ function audioPump() {
   }
 }
 
+let diskImage = null;
+fetch('3os.t3d', { cache: 'no-store' })
+  .then(r => r.ok ? r.arrayBuffer() : null)
+  .then(b => { if (b) diskImage = new Int16Array(b); })
+  .catch(() => {});
+
 function assembleAndRun() {
   audioInit();
   const bytes = enc.encode(srcEl.value);
   const p = W.src_alloc(bytes.length);
   mem().set(bytes, p);
+  // disque 3FS (web/3os.t3d) : attaché à chaque lancement, lu par le noyau 3OS
+  if (diskImage) {
+    const dp = W.disk_alloc(diskImage.length);
+    new Int16Array(W.memory.buffer, dp, diskImage.length).set(diskImage);
+  }
   const r = W.assemble(p, bytes.length);
   if (r !== 0) {
     running = false; loaded = false;

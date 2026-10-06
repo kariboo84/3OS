@@ -1,5 +1,11 @@
 [
  {
+  "file": "../os/kernel3.tas",
+  "title": "3OS v0.3 — noyau + disque : bureau, lancer Tetris, crash isolé",
+  "framebuffer": true,
+  "animated": true
+ },
+ {
   "file": "system3.tas",
   "title": "Système 3 — bureau façon System 7 (souris, fenêtres, C = couleur)",
   "framebuffer": true,

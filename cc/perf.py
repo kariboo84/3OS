@@ -7,6 +7,7 @@ R = Path(__file__).resolve().parent.parent
 VM = R / 'tri27/target/release/tri27'
 B = R / 'cc/build/perf'; B.mkdir(parents=True, exist_ok=True)
 CASES = [  # (nom, sources, args run, motif de sortie attendu)
+    ('bits', ['examples/bitbench.c'], [], r'bits checksum: 188466828'),
     ('sieve',  ['examples/sieve.c'], [], r'9592'),
     ('bench',  ['examples/bench.c'], [], r'.'),
     ('fb',     ['examples/framebuffer.c'], [], r'.'),

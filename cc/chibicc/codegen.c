@@ -330,6 +330,40 @@ static void expr(Node *n) {
   long k;
   { long pk; int pr=postinc_reg(n,&pk);
     if(pr) { emit("  mv a0, s%d",pr); emit("  addi s%d, s%d, %ld",pr,pr,pk); return; } }
+  /* Binary payload is signed 42 bits, not the full ternary word. */
+  if(n->kind==ND_BITAND || n->kind==ND_BITOR || n->kind==ND_BITXOR) {
+    Node *value=n->lhs;
+    bool constant=const_val(n->rhs,&k);
+    if(!constant && const_val(n->lhs,&k)) { constant=true; value=n->rhs; }
+    if(constant && k==0) {
+      expr(value); /* preserve side effects, even for AND zero */
+      if(n->kind==ND_BITAND) emit("  li a0, 0");
+      else {
+        emit("  li t0, -3812798742493"); emit("  bne a0, t0, .L.bitmin%d",id);
+        emit("  li a0, 3812798742493"); emit(".L.bitmin%d:",id);
+        emit("  li t0, 2199023255552");
+        emit("  blt a0, t0, .L.bitlow%d",id);
+        emit("  li t0, 4398046511104"); emit("  sub a0, a0, t0");
+        emit("  j .L.bitend%d",id);
+        emit(".L.bitlow%d:",id); emit("  neg t0, t0");
+        emit("  bge a0, t0, .L.bitend%d",id);
+        emit("  li t0, 4398046511104"); emit("  add a0, a0, t0");
+        emit(".L.bitend%d:",id);
+      }
+      return;
+    }
+    if(constant && n->kind==ND_BITAND && k>0 && k<2199023255552L &&
+       (k & (k+1))==0 && fits16(k+1)) {
+      const char *src="a0";
+      if(simple(value)) src=operand(value,"a0"); else expr(value);
+      emit("  mv a0, %s",src);
+      emit("  li t0, -3812798742493"); emit("  bne a0, t0, .L.maskmin%d",id);
+      emit("  li a0, 3812798742493"); emit(".L.maskmin%d:",id);
+      emit("  modi a0, a0, %ld",k+1);
+      emit("  bgez a0, .L.mask%d",id); emit("  addi a0, a0, %ld",k+1);
+      emit(".L.mask%d:",id); return;
+    }
+  }
   bool ulhs = n->lhs->ty && n->lhs->ty->is_unsigned && n->lhs->ty->kind!=TY_PTR;
   if(const_val(n->rhs,&k) && fits16(k) && fits16(-k)) {
     switch(n->kind) {

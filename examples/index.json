@@ -1,5 +1,11 @@
 [
  {
+  "file": "tetris.tas",
+  "title": "Tetris en C (compilé par chibicc ternaire)",
+  "framebuffer": true,
+  "animated": true
+ },
+ {
   "file": "../os/kernel.tas",
   "title": "3OS v0.1 — noyau, ordonnanceur préemptif, shell (tape help)",
   "framebuffer": true,

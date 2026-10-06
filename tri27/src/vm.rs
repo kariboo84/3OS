@@ -74,6 +74,11 @@ pub struct Vm {
     pub mouse_btn: i64,
     pub frames: u64,
     pub frame_ready: bool,
+    /// Copie RGBA de l'image au moment du FB_PRESENT (pour captures fiables),
+    /// None tant qu'aucune image n'a été présentée. Taille du mode actif.
+    pub present_rgba: Vec<u8>,
+    pub present_w: usize,
+    pub present_h: usize,
     pub time_ms: i64,
     pub snd: crate::sound::Tsg,
 }
@@ -102,6 +107,9 @@ impl Vm {
             mouse_btn: 0,
             frames: 0,
             frame_ready: false,
+            present_rgba: Vec::new(),
+            present_w: 0,
+            present_h: 0,
             time_ms: 0,
             snd: crate::sound::Tsg::new(),
         };
@@ -172,6 +180,13 @@ impl Vm {
             mmio::FB_PRESENT => {
                 self.frames += 1;
                 self.frame_ready = true;
+                let (w, h) = self.fb_dims();
+                self.present_rgba.resize(w * h * 4, 0);
+                let mut tmp = std::mem::take(&mut self.present_rgba);
+                self.render_rgba(&mut tmp);
+                self.present_rgba = tmp;
+                self.present_w = w;
+                self.present_h = h;
             }
             _ => {}
         }

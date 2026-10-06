@@ -26,9 +26,15 @@ fn load(path: &str) -> asm::Image {
 }
 
 fn save_ppm(vm: &Vm, path: &std::path::Path) {
-    let (fb_w, fb_h) = vm.fb_dims();
-    let mut rgba = vec![0u8; fb_w * fb_h * 4];
-    vm.render_rgba(&mut rgba);
+    // capture fiable : photographier le framebuffer tel qu'il était au moment du présent
+    let (fb_w, fb_h, rgba) = if vm.present_rgba.is_empty() {
+        let (w, h) = vm.fb_dims();
+        let mut b = vec![0u8; w * h * 4];
+        vm.render_rgba(&mut b);
+        (w, h, b)
+    } else {
+        (vm.present_w, vm.present_h, vm.present_rgba.clone())
+    };
     let mut f = std::fs::File::create(path).unwrap();
     write!(f, "P6\n{fb_w} {fb_h}\n255\n").unwrap();
     let rgb: Vec<u8> = rgba.chunks(4).flat_map(|p| [p[0], p[1], p[2]]).collect();

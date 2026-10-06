@@ -1,8 +1,35 @@
 [
-  {"file": "hello.tas", "title": "Hello — chaîne .str écrite sur CONSOLE_OUT (MMIO -1)"},
-  {"file": "fact.tas", "title": "Factorielle récursive 1..15 (pile, call/ret), décimal et trits"},
-  {"file": "sieve.tas", "title": "Crible d'Ératosthène jusqu'à 100000 (9592 premiers) + cycles"},
-  {"file": "ternary.tas", "title": "Vitrine ternaire : NEG, MIN/MAX/TMUL/CONS/ANY, SHT arrondi, BR3, CMP"},
-  {"file": "mandel.tas", "title": "Mandelbrot 320x200 en virgule fixe 3^9 (framebuffer TRGB)", "framebuffer": true},
-  {"file": "plasma.tas", "title": "Plasma animé (600 frames, Échap pour quitter)", "framebuffer": true, "animated": true}
+ {
+  "file": "../os/kernel.tas",
+  "title": "3OS v0.1 — noyau, ordonnanceur préemptif, shell (tape help)",
+  "framebuffer": true,
+  "animated": true
+ },
+ {
+  "file": "hello.tas",
+  "title": "Hello — chaîne .str écrite sur CONSOLE_OUT (MMIO -1)"
+ },
+ {
+  "file": "fact.tas",
+  "title": "Factorielle récursive 1..15 (pile, call/ret), décimal et trits"
+ },
+ {
+  "file": "sieve.tas",
+  "title": "Crible d'Ératosthène jusqu'à 100000 (9592 premiers) + cycles"
+ },
+ {
+  "file": "ternary.tas",
+  "title": "Vitrine ternaire : NEG, MIN/MAX/TMUL/CONS/ANY, SHT arrondi, BR3, CMP"
+ },
+ {
+  "file": "mandel.tas",
+  "title": "Mandelbrot 320x200 en virgule fixe 3^9 (framebuffer TRGB)",
+  "framebuffer": true
+ },
+ {
+  "file": "plasma.tas",
+  "title": "Plasma animé (600 frames, Échap pour quitter)",
+  "framebuffer": true,
+  "animated": true
+ }
 ]

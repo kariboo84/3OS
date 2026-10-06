@@ -210,10 +210,12 @@ async function loadExampleList() {
     const r = await fetch('../examples/index.json', { cache: 'no-store' });
     if (!r.ok) return;
     const list = await r.json();
-    for (const name of list) {
+    for (const it of list) {
+      const name = typeof it === 'string' ? it : it && it.file;
       if (typeof name !== 'string' || !name.endsWith('.tas')) continue;
       const o = document.createElement('option');
-      o.value = name; o.textContent = name;
+      o.value = name;
+      o.textContent = (typeof it === 'object' && it.title) ? name + ' — ' + it.title : name;
       sel.appendChild(o);
     }
   } catch (_) { /* pas de liste : démo intégrée seulement */ }
@@ -222,7 +224,7 @@ $('examples').onchange = async (e) => {
   const v = e.target.value;
   if (v === '__demo') { srcEl.value = DEMO; return; }
   try {
-    const r = await fetch('../examples/' + encodeURIComponent(v), { cache: 'no-store' });
+    const r = await fetch(v.startsWith('../') ? v : '../examples/' + encodeURIComponent(v), { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     srcEl.value = await r.text();
     setStatus('Chargé : ' + v);

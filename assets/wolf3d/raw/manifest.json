@@ -1,0 +1,17 @@
+{
+  "input": "/mnt/data/WOLF3D-assets.zip",
+  "dataRoot": "/mnt/data/worknext/historical/.tmp_wolf3d_data",
+  "outDir": "/mnt/data/worknext/historical/assets/wolf3d/raw",
+  "files": [
+    "AUDIOHED.WL6",
+    "AUDIOT.WL6",
+    "CONFIG.WL6",
+    "GAMEMAPS.WL6",
+    "MAPHEAD.WL6",
+    "VGADICT.WL6",
+    "VGAGRAPH.WL6",
+    "VGAHEAD.WL6",
+    "VSWAP.WL6",
+    "WOLF3D.EXE"
+  ]
+}

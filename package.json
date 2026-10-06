@@ -1,0 +1,18 @@
+{
+  "name": "tna-doom-vm",
+  "version": "1.0.0",
+  "description": "Ternary Native Architecture VM — Wolfenstein 3D via GPU emulation",
+  "main": "src/main.js",
+  "scripts": {
+    "start":         "node src/main.js",
+    "start:patched": "node src/main.js --boot patched",
+    "start:gpu":     "node src/main.js --backend gpu-fpga-emulator",
+    "web-ui":        "node serve_vm.js",
+    "patch":         "node tools/patch_linker_stubs.js",
+    "build:patched": "node tools/patch_linker_stubs.js build/wolf3d_historical_official.tna build/wolf3d_patched.tna",
+    "stage-wolf3d-data": "node tools/stage_wolf3d_data.js"
+  },
+  "keywords": ["ternary", "vm", "wolfenstein", "gpu", "emulation"],
+  "author": "AI",
+  "license": "MIT"
+}

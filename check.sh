@@ -7,12 +7,16 @@ echo "== VM";        (cd tri27 && cargo build --release -q)
 echo "== C : tests chibicc"; (cd cc && python run_tests.py | tail -1)
 echo "== C : banc d'instructions"; python cc/perf.py
 echo "== OS : noyau + disque"; bash os/build.sh >/dev/null 2>&1
-out=$(timeout 120 $VM run os/kernel3.tas --disk os/3os.t3d --max 400000000 --input '2  dd  q    3    4      5' 2>&1)
+out=$(timeout 120 $VM run os/kernel3.tas --disk os/3os.t3d --max 400000000 --input '4  dd  q    7    8      9' 2>&1)
 for want in "tetris: score" "Hello from TRI-27" "primes <= 100000: 9592" "crash tue : faute memoire"; do
   grep -q "$want" <<<"$out" && echo "  ok  $want" || { echo "  ÉCHEC $want"; exit 1; }
 done
 $VM run examples/sieve.tas | grep -q 9592 && echo "  ok  crible asm"
 $VM run os/kernel.tas --input 'trits 42\nhalt\n' | grep -q "42 =" && echo "  ok  noyau v0.1"
+echo "== Reseau ternaire + Kleene"
+(cd cc && python tri27cc.py examples/ternet.c -o build/ternet.tas && python tri27cc.py examples/kleene.c -o build/kleene.tas)
+tn=$($VM run cc/build/ternet.tas 2>&1); grep -q "identique a la reference hote : 450/450" <<<"$tn" && echo "  ok  ternet 450/450" || { echo "  ECHEC ternet"; exit 1; }
+kl=$($VM run cc/build/kleene.tas 2>&1); grep -q "0 erreur(s)" <<<"$kl" && echo "  ok  kleene 0 erreur" || { echo "  ECHEC kleene"; exit 1; }
 if [[ "${1:-}" == "--web" ]]; then
   echo "== Web"; ./build_web.sh >/dev/null
   curl -sf -o /dev/null http://127.0.0.1:8124/web/ || { echo "  serveur :8124 absent (python -m http.server 8124 --directory .)"; exit 1; }

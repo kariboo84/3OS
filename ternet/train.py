@@ -25,15 +25,13 @@ from sklearn.model_selection import train_test_split
 ROOT = Path(__file__).resolve().parent.parent
 
 def augment(X, y):
-    """Décalages de ±1 pixel (fond = 0) : robustesse à la position du tracé."""
-    imgs = X.reshape(-1, 8, 8); out = [X]; ys = [y]
-    for dy in (-1, 0, 1):
-        for dx in (-1, 0, 1):
-            if dx == 0 and dy == 0: continue
-            sh = np.zeros_like(imgs)
-            ys0, ys1 = max(0, dy), 8 + min(0, dy); xs0, xs1 = max(0, dx), 8 + min(0, dx)
-            sh[:, ys0:ys1, xs0:xs1] = imgs[:, ys0 - dy:ys1 - dy, xs0 - dx:xs1 - dx]
-            out.append(sh.reshape(-1, 64)); ys.append(y)
+    """Décalages horizontaux dx = -1/+1 (fond = 0) : robustesse à la position du tracé."""
+    im = X.reshape(-1, 8, 8); out = [X]; ys = [y]
+    for dx in (1, -1):
+        sh = np.zeros_like(im)
+        if dx == 1: sh[:, :, 1:] = im[:, :, :-1]
+        else: sh[:, :, :-1] = im[:, :, 1:]
+        out.append(sh.reshape(-1, 64)); ys.append(y)
     return np.concatenate(out), np.concatenate(ys)
 
 def ternarize_input(X):

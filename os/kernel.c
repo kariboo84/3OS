@@ -1,4 +1,4 @@
-/* kernel.c — noyau 3OS v0.3 pour TRI-27 (mode -1).
+/* kernel.c — noyau 3OS v0.4 pour TRI-27 (mode -1).
  *
  * - Processus en mode utilisateur (+1), chacun dans un emplacement de 3^12 trytes,
  *   isolé par UBASE/ULIMIT (la VM traduit et borne toutes ses adresses).
@@ -340,7 +340,7 @@ static void boot_init(void) {
 int kmain(void) {
   nslots = (ram_size - KERNEL_END) / SLOT;
   if (nslots > NPROC) nslots = NPROC;
-  printf("3OS v0.3 - noyau ternaire TRI-27\n");
+  printf("3OS v0.4 - noyau ternaire TRI-27\n");
   printf("RAM %ld trytes, %ld emplacements de processus\n", ram_size, nslots);
   if (DISK_COUNT < 1) { printf("[3OS] pas de disque\n"); exit(1); }
   disk_read(0, (long)dir);

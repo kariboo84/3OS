@@ -64,8 +64,12 @@ Décalages de saut (`imm` des branches, `JAL`, `offn/offp`) comptés **en instru
 | 14 | `SLT` | rd = (rs1 < rs2) ? 1 : 0 |
 | 15 | `SEQ` | rd = (rs1 == rs2) ? 1 : 0 |
 | 16 | `MULH` | rd = partie haute (trits 27–53) du produit |
+| 17 | `SXT rd, rs1` | rd = rs1 ramené sur une tryte (9 trits, cast `char`) |
+| 18 | `TSUM rd, rs1` | somme des 27 trits (−27..27) |
+| 19 | `TDOT rd, rs1, rs2` | Σ aᵢ·bᵢ trit à trit (= TSUM(TMUL)) |
 | 50 | `HALT` | arrêt (noyau uniquement) |
 | 51 | `ERET` | retour de piège (noyau uniquement) |
+| 52 | `WFI` | attend le prochain événement hôte (privilégiée : en mode utilisateur → piège cause 2, TVAL=52 ; le noyau cède ou dort) |
 
 ### I
 | op | mnémo | effet |
@@ -87,6 +91,7 @@ Décalages de saut (`imm` des branches, `JAL`, `offn/offp`) comptés **en instru
 | 34 | `CSRW rs1, csr` | csr[imm] = rs1 (noyau ; champ rs1) |
 | 35 | `MINI` / 36 `MAXI` | MIN/MAX avec immédiat |
 | 37 | `SLTI` | rd = (rs1 < imm) |
+| 38 | `DIVI` / 39 `MODI` | division / reste par immédiat (troncature vers 0, piège 4 si imm=0) |
 
 ### J / B3
 | op | mnémo | effet |
@@ -113,6 +118,9 @@ Mode = 1 trit : **−1 noyau**, 0 pilote, +1 utilisateur. Démarrage en noyau.
 | 7 | IE | interruptions autorisées (0/1) |
 | 8 | PMODE | mode avant le piège |
 | 9 | PIE | IE avant le piège |
+| 10 | UBASE | base physique du mode utilisateur |
+| 11 | ULIMIT | en mode utilisateur avec ULIMIT>0 : adresses virtuelles [0,ULIMIT) → physiques +UBASE ; hors bornes → piège 3 |
+| 12 | IOPERM | ≠0 : le mode utilisateur accède directement au MMIO sauf EXIT (−3) et disque (−20..−24) ; FB_ADDR lu/écrit en adresse virtuelle |
 
 Causes : 1 illégale, 2 privilège, 3 accès mémoire, 4 division par 0, 5 désalignement pc, 8 ECALL, 9 timer.
 Piège : EPC=pc, CAUSE, TVAL, PMODE=mode, PIE=IE, mode=−1, IE=0, pc=TVEC. `ERET` : pc=EPC, mode=PMODE, IE=PIE.
@@ -134,6 +142,14 @@ Si TVEC=0 : ECALL est servi par l'hôte (0 exit(a0), 1 putc(a0), 2 print_int(a0)
 | −10 | MOUSE_X | lecture : x souris, pixels du mode courant, borné à 0…largeur−1 |
 | −11 | MOUSE_Y | lecture : y souris, borné à 0…hauteur−1 |
 | −12 | MOUSE_BTN | lecture : trit 0 = bouton gauche, trit 1 = bouton droit (chacun 0/1) ; valeur = gauche + 3·droit |
+| −13 | TEXT_IN | 1 = la page envoie aussi les caractères CONSOLE_IN quand l'écran a le focus ; le noyau le remet à 0 à chaque changement de premier plan |
+| −20 | DISK_SECTOR | numéro de secteur |
+| −21 | DISK_ADDR | adresse RAM du transfert |
+| −22 | DISK_CMD | 1 = lire secteur→RAM, 2 = écrire RAM→secteur (synchrone) |
+| −23 | DISK_STATUS | 0 ok, −1 erreur |
+| −24 | DISK_COUNT | nombre de secteurs du disque |
+
+Un secteur = 729 trytes.
 
 Framebuffer : 320×200 trytes, ligne par ligne. Couleur **TRGB** : un tryte = 3 trits par canal
 (B = trits 0–2, G = 3–5, R = 6–8), chaque canal −13…+13 → 0…255.
@@ -203,3 +219,27 @@ pas de biais : la troncature équilibrée arrondit au plus proche). Fréquence d
 
 Natif : `tri27 run prog.tas --wav sortie.wav` enregistre le son (temps réel de l'hôte).
 Web : Web Audio, rendu par blocs à chaque image.
+
+## 9. Disque 3FS et appels système 3OS
+
+Secteur 0 = répertoire : mot 0 magic 27027, mot 3 nombre d'entrées, puis entrées de 30 trytes à partir de 6 :
+nom 16 trytes (chaîne), secteur de début (mot +16), longueur en trytes (+19), entrée (+22, −1 = fichier de données),
+capacité réservée en trytes (+25). Fichiers contigus.
+Outil : `tri27 mkdisk out.t3d nom=fichier[.tas][:capacité] ...`.
+
+Appels système (`ecall n`, arguments a0..a2, résultat a0) :
+
+| n | appel | effet |
+|---|---|---|
+| 0 | exit | fin du programme |
+| 1 | putchar | affiche un caractère |
+| 2 | print_int | affiche un entier |
+| 10 | exec(nom) | lance et attend → code de sortie ou −1 |
+| 11 | yield | cède le processeur |
+| 12 | readdir(i, nom) | 0 absent / 1 programme / 2 donnée |
+| 13 | readfile(nom, buf, max) | longueur ou −1 |
+| 14 | procs | nombre de processus |
+| 15 | writefile(nom, buf, len) | len ou −1 (fichiers de données seulement, len ≤ capacité, persistant) |
+
+En-tête C : `cc/include/3os.h`. Intrinsèques ternaires : `cc/include/tri27.h` (T_AND = min de Kleene, T_OR = max,
+T_NOT, T_MUL, T_CONS, T_SUM, T_DOT ; une instruction chacune).

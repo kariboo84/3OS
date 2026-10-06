@@ -1,7 +1,7 @@
 [
  {
   "file": "../os/kernel3.tas",
-  "title": "3OS v0.3 — noyau + disque : bureau, lancer Tetris, crash isolé",
+  "title": "3OS v0.4 — bureau, chiffres (réseau ternaire), éditeur, Tetris",
   "framebuffer": true,
   "animated": true
  },
@@ -48,4 +48,4 @@
   "framebuffer": true,
   "animated": true
  }
-]
+]

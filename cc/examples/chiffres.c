@@ -5,7 +5,7 @@
  * blocs 4x4 (0..16), puis ternarisé comme à l'entraînement (<=3 : -1, >=10 : +1).
  *   clic gauche : encre (pinceau 5 px)   clic droit : gomme
  *   N : image suivante du jeu de test  E : effacer  Q / Echap : quitter
- * Affiche en direct le chiffre reconnu, les 10 scores et les 54 neurones cachés
+ * Affiche en direct le chiffre reconnu, les 10 scores et les TN_H neurones cachés
  * (blanc = pour, gris = sans avis, noir = contre). */
 #include <stdio.h>
 #include <tri27.h>
@@ -119,12 +119,12 @@ static void draw_panel(void) {
     tg_fillrect(px + 16, y + 1, 182, 10, TG_GRAY);
     if (w > 0) tg_fillrect(px + 17, y + 2, w, 8, k == pred ? TG_BLACK : TG_WHITE);
   }
-  tg_text(px + 4, 258, "54 neurones caches :", TG_BLACK);
+  { char nb[40]; sprintf(nb, "%d neurones caches :", TN_H); tg_text(px + 4, 258, nb, TG_BLACK); }
   for (int j = 0; j < TN_H; j++) {
-    int x = px + 4 + (j % 18) * 12, y = 270 + (j / 18) * 12;
+    int x = px + 4 + (j % 27) * 8, y = 270 + (j / 27) * 8;
     int h = hidden(j);
-    tg_fillrect(x, y, 11, 11, h > 0 ? TG_WHITE : (h < 0 ? TG_BLACK : TG_GRAY));
-    tg_rect(x, y, 11, 11, TG_BLACK);
+    tg_fillrect(x, y, 7, 7, h > 0 ? TG_WHITE : (h < 0 ? TG_BLACK : TG_GRAY));
+    tg_rect(x, y, 7, 7, TG_BLACK);
   }
   tg_text(px + 4, 310, "blanc pour, gris sans avis,", TG_BLACK);
   tg_text(px + 4, 320, "noir contre", TG_BLACK);

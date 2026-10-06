@@ -1,0 +1,59 @@
+; TRI-27 — démo web : dégradé TRGB animé + écho console
+; R suit x, G suit y, B défile avec le compteur d'images.
+; Clavier : chaque appui de touche fait sauter la teinte bleue.
+; Les caractères tapés (CONSOLE_IN) sont renvoyés sur la console.
+
+        .org 0
+start:  la    a0, msg
+pmsg:   ldt   t0, 0(a0)
+        beq   t0, zero, pdone
+        stt   t0, -1(zero)        ; CONSOLE_OUT
+        addi  a0, a0, 1
+        j     pmsg
+pdone:  li    s1, 300000          ; framebuffer en RAM
+        stw   s1, -5(zero)        ; FB_ADDR
+        li    s2, 0               ; compteur d'images
+        addi  s6, zero, 12
+        addi  s7, zero, 27
+        addi  s8, zero, 4
+        addi  s9, zero, 8
+
+frame:  mv    t6, s1              ; pointeur pixel
+        li    s3, 0               ; y
+yloop:  li    s4, 0               ; x
+        div   t2, s3, s9          ; g = y/8 - 12  (-12..12)
+        addi  t2, t2, -12
+        muli  s5, t2, 27          ; g * 27
+xloop:  div   t3, s4, s6          ; r = x/12 - 13 (-13..13)
+        addi  t3, t3, -13
+        muli  t3, t3, 729         ; r * 729
+        add   t3, t3, s5
+        add   t4, s4, s3
+        add   t4, t4, s2
+        div   t4, t4, s8
+        mod   t4, t4, s7          ; b = ((x+y+f)/4) mod 27 - 13
+        addi  t4, t4, -13
+        add   t3, t3, t4
+        stt   t3, 0(t6)
+        addi  t6, t6, 1
+        addi  s4, s4, 1
+        slti  t1, s4, 320
+        bne   t1, zero, xloop
+        addi  s3, s3, 1
+        slti  t1, s3, 200
+        bne   t1, zero, yloop
+
+        stw   zero, -6(zero)      ; FB_PRESENT
+        addi  s2, s2, 2
+
+        ldw   t0, -7(zero)        ; KEY
+        slt   t1, zero, t0
+        beq   t1, zero, nokey
+        addi  s2, s2, 36
+nokey:  ldw   t0, -2(zero)        ; CONSOLE_IN
+        addi  t1, zero, -1
+        beq   t0, t1, frame
+        stt   t0, -1(zero)        ; écho
+        j     nokey
+
+msg:    .str  "TRI-27 : bonjour depuis la VM ternaire !\nTapez du texte, il sera renvoye ici.\n"

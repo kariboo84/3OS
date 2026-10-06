@@ -1,0 +1,224 @@
+; ternary.tas — vitrine de ce qui est propre au ternaire équilibré.
+;  - NEG = inversion de chaque trit (pas de complément à deux, pas de "-0")
+;  - MIN / MAX / TMUL / CONS / ANY : logique trit à trit (Kleene / Łukasiewicz)
+;  - SHT : décalage = ×3^k ; vers la droite = arrondi AU PLUS PROCHE (troncature équilibrée)
+;  - BR3 : branchement à 3 voies sur le signe (une seule instruction)
+;  - CMP : comparaison à 3 issues (-1 / 0 / +1)
+
+start:
+        ; ---------- opérandes A et B, en littéraux .trits / 0t ----------
+        la    a0, h_logic
+        call  puts
+        la    t0, litA
+        ldw   s1, 0(t0)                 ; A = .trits +0-+-0+
+        li    s2, 0t-0++0-+             ; B (littéral 0t dans li)
+        la    a0, s_A
+        mv    a1, s1
+        call  show
+        la    a0, s_B
+        mv    a1, s2
+        call  show
+
+        neg   s3, s1
+        la    a0, s_neg
+        mv    a1, s3
+        call  show
+        min   s3, s1, s2
+        la    a0, s_min
+        mv    a1, s3
+        call  show
+        max   s3, s1, s2
+        la    a0, s_max
+        mv    a1, s3
+        call  show
+        tmul  s3, s1, s2
+        la    a0, s_tmul
+        mv    a1, s3
+        call  show
+        cons  s3, s1, s2
+        la    a0, s_cons
+        mv    a1, s3
+        call  show
+        any   s3, s1, s2
+        la    a0, s_any
+        mv    a1, s3
+        call  show
+        ; A + NEG(A) = 0 sans retenue spéciale
+        neg   s3, s1
+        add   s3, s3, s1
+        la    a0, s_sum
+        mv    a1, s3
+        call  show
+
+        ; ---------- décalages ----------
+        la    a0, h_shift
+        call  puts
+        li    s1, 5
+        shti  s3, s1, 2                 ; 5 * 9 = 45
+        la    a0, s_sh5p2
+        mv    a1, s3
+        call  show
+        la    s4, shtab                 ; table de (valeur, décalage) terminée par 0,0
+sh_lp:  ldw   s1, 0(s4)
+        ldw   s5, 3(s4)
+        beqz  s5, sh_end
+        sht   s3, s1, s5
+        mv    a0, s1
+        ecall 2
+        la    a0, s_shr
+        call  puts
+        mv    a0, s5
+        ecall 2
+        la    a0, s_shr2
+        call  puts
+        mv    a0, s3
+        ecall 2
+        la    a0, s_shr3
+        call  puts
+        mv    a0, s1
+        ecall 3
+        la    a0, s_arrow
+        call  puts
+        mv    a0, s3
+        ecall 3
+        li    a0, 10
+        ecall 1
+        addi  s4, s4, 6
+        j     sh_lp
+sh_end:
+
+        ; ---------- BR3 : classement négatif / zéro / positif ----------
+        la    a0, h_br3
+        call  puts
+        la    s4, nums
+        la    s6, nums_end
+        li    s7, 0                     ; compteurs : s7 négatifs, s8 zéros, s9 positifs
+        li    s8, 0
+        li    s9, 0
+cl_lp:  bge   s4, s6, cl_end
+        ldw   s1, 0(s4)
+        mv    a0, s1
+        ecall 2
+        br3   s1, is_neg, is_pos        ; 3 issues en une instruction
+        addi  s8, s8, 1
+        la    a0, s_zero
+        j     cl_put
+is_neg: addi  s7, s7, 1
+        la    a0, s_negv
+        j     cl_put
+is_pos: addi  s9, s9, 1
+        la    a0, s_posv
+cl_put: call  puts
+        addi  s4, s4, 3
+        j     cl_lp
+cl_end: la    a0, s_tot
+        call  puts
+        mv    a0, s7
+        ecall 2
+        li    a0, '/'
+        ecall 1
+        mv    a0, s8
+        ecall 2
+        li    a0, '/'
+        ecall 1
+        mv    a0, s9
+        ecall 2
+        li    a0, 10
+        ecall 1
+
+        ; ---------- CMP : comparaison à 3 issues ----------
+        la    a0, h_cmp
+        call  puts
+        la    s4, pairs
+cmp_lp: ldw   s1, 0(s4)
+        ldw   s2, 3(s4)
+        beq   s1, s2, cmp_chk           ; paire (x,x) avec x=99999 = fin
+        j     cmp_go
+cmp_chk: li   t0, 99999
+        beq   s1, t0, cmp_end
+cmp_go: cmp   s3, s1, s2
+        la    a0, s_cmp
+        call  puts
+        mv    a0, s1
+        ecall 2
+        li    a0, ','
+        ecall 1
+        mv    a0, s2
+        ecall 2
+        la    a0, s_cmp2
+        call  puts
+        mv    a0, s3
+        ecall 2
+        ; le résultat de CMP alimente directement BR3
+        br3   s3, c_lt, c_gt
+        la    a0, s_eqs
+        j     c_put
+c_lt:   la    a0, s_lts
+        j     c_put
+c_gt:   la    a0, s_gts
+c_put:  call  puts
+        addi  s4, s4, 6
+        j     cmp_lp
+cmp_end:
+        li    a0, 0
+        ecall 0
+
+; show(a0 = libellé, a1 = valeur) : "libellé valeur = 0t<trits>\n"
+show:   push  ra
+        push  a1
+        call  puts
+        ldw   a0, 0(sp)
+        ecall 2
+        la    a0, s_eq
+        call  puts
+        pop   a0
+        ecall 3
+        li    a0, 10
+        ecall 1
+        pop   ra
+        ret
+
+; puts(a0) — utilise t0
+puts:   mv    t0, a0
+p_lp:   ldt   a0, 0(t0)
+        beqz  a0, p_end
+        ecall 1
+        addi  t0, t0, 1
+        j     p_lp
+p_end:  ret
+
+; ---------- données ----------
+litA:   .trits +0-+-0+
+shtab:  .word 4, -1,  5, -1,  -4, -1,  -5, -1,  13, -2,  14, -2,  -14, -2,  1000, -3,  1000, -6,  0, 0
+nums:   .word -7, 0, 42, -1, 0t+-, 0t-+, 0, 9841, -3812798742493
+nums_end:
+pairs:  .word 3, 5,  5, 3,  -2, -2,  0t+--, 5,  -100, 7,  99999, 99999
+
+h_logic: .str "== logique trit à trit ==\n"
+s_A:    .str  "A        = "
+s_B:    .str  "B        = "
+s_neg:  .str  "NEG A    = "
+s_min:  .str  "MIN A,B  = "
+s_max:  .str  "MAX A,B  = "
+s_tmul: .str  "TMUL A,B = "
+s_cons: .str  "CONS A,B = "
+s_any:  .str  "ANY A,B  = "
+s_sum:  .str  "A+NEG A  = "
+s_eq:   .str  "  = 0t"
+h_shift: .str "== décalages (SHT/SHTI) : ÷3^k arrondi au plus proche ==\n"
+s_sh5p2: .str "SHTI 5,+2 = "
+s_shr:  .str  " SHT "
+s_shr2: .str  " = "
+s_shr3: .str  "   0t"
+s_arrow: .str " -> 0t"
+h_br3:  .str  "== BR3 : classement en 3 voies ==\n"
+s_zero: .str  " : zéro\n"
+s_negv: .str  " : négatif\n"
+s_posv: .str  " : positif\n"
+s_tot:  .str  "négatifs/zéros/positifs = "
+h_cmp:  .str  "== CMP (3 issues) ==\n"
+s_cmp:  .str  "CMP "
+s_cmp2: .str  " = "
+s_lts:  .str  "  (<)\n"
+s_eqs:  .str  "  (=)\n"
+s_gts:  .str  "  (>)\n"

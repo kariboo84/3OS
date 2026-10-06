@@ -1,0 +1,22 @@
+; hello.tas — affiche un message via le MMIO CONSOLE_OUT (adresse -1)
+; Parcourt une chaîne .str tryte par tryte jusqu'au 0 terminal.
+
+        .equ  CONSOLE_OUT, -1
+        .equ  EXIT, -3
+
+start:  la    t0, msg           ; t0 = pointeur sur la chaîne
+loop:   ldt   t1, 0(t0)         ; t1 = caractère courant (un tryte)
+        beqz  t1, done
+        stt   t1, CONSOLE_OUT(zero)
+        addi  t0, t0, 1
+        j     loop
+done:   la    t0, msg2
+loop2:  ldt   t1, 0(t0)
+        beqz  t1, fin
+        stt   t1, CONSOLE_OUT(zero)
+        addi  t0, t0, 1
+        j     loop2
+fin:    stt   zero, EXIT(zero)  ; arrêt, code 0
+
+msg:    .str  "Bonjour depuis TRI-27, machine ternaire équilibrée !\n"
+msg2:   .str  "Un tryte = 9 trits (−9841…+9841) : assez pour l'Unicode de base → ∴ ±∓\n"

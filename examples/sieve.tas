@@ -1,0 +1,68 @@
+; sieve.tas — crible d'Ératosthène jusqu'à N = 100000, un tryte par nombre.
+; Compte les premiers (attendu : 9592) et mesure le temps en cycles (MMIO CYCLES = -4).
+
+        .equ  N, 100000
+        .equ  CYCLES, -4
+
+start:  ldw   s5, CYCLES(zero)  ; s5 = cycles au départ
+        la    s1, flags         ; s1 = base du tableau (flags[k] = 1 si composé)
+        li    s2, N
+        li    t0, 2             ; i = 2
+outer:  mul   t1, t0, t0        ; i*i
+        bgt   t1, s2, count     ; i*i > N : fin du marquage
+        add   t2, s1, t0
+        ldt   t3, 0(t2)
+        bnez  t3, o_next        ; i composé : on saute
+        add   t2, s1, t1        ; j = i*i
+        add   t4, s1, s2        ; t4 = &flags[N]
+        li    t5, 1
+mark:   stt   t5, 0(t2)
+        add   t2, t2, t0        ; j += i
+        ble   t2, t4, mark
+o_next: addi  t0, t0, 1
+        j     outer
+
+count:  li    s3, 0             ; s3 = nombre de premiers
+        li    t0, 2
+        add   t2, s1, t0
+        add   t4, s1, s2
+c_lp:   ldt   t3, 0(t2)
+        bnez  t3, c_skip
+        addi  s3, s3, 1
+c_skip: addi  t2, t2, 1
+        ble   t2, t4, c_lp
+
+        ldw   s6, CYCLES(zero)
+        sub   s6, s6, s5        ; s6 = durée en cycles
+
+        la    a0, s_res
+        call  puts
+        mv    a0, s3
+        ecall 2
+        la    a0, s_tri
+        call  puts
+        mv    a0, s3
+        ecall 3
+        la    a0, s_cyc
+        call  puts
+        mv    a0, s6
+        ecall 2
+        li    a0, 10
+        ecall 1
+        li    t0, 9592
+        sub   a0, s3, t0        ; exit 0 si le compte est juste
+        ecall 0
+
+puts:   mv    t0, a0
+p_lp:   ldt   a0, 0(t0)
+        beqz  a0, p_end
+        ecall 1
+        addi  t0, t0, 1
+        j     p_lp
+p_end:  ret
+
+s_res:  .str  "premiers <= 100000 : "
+s_tri:  .str  " (0t"
+s_cyc:  .str  ")\ncycles du crible : "
+        .align 3
+flags:  .space 100001

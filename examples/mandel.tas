@@ -1,0 +1,91 @@
+; mandel.tas — ensemble de Mandelbrot en virgule fixe TERNAIRE.
+; Échelle S = 3^9 = 19683 : un nombre réel x est stocké comme round(x * 3^9).
+; Produit : MUL puis SHTI -9 = division par 3^9 avec arrondi au plus proche
+; (la troncature en ternaire équilibré arrondit naturellement — pas de biais).
+; Framebuffer 320x200 trytes en RAM (étiquette fb), couleurs TRGB.
+
+        .equ  FB_ADDR, -5
+        .equ  FB_PRESENT, -6
+        .equ  CYCLES, -4
+        .equ  W, 320
+        .equ  H, 200
+        .equ  STEP, 200            ; pas d'un pixel = 200/3^9 ≈ 0,01016
+        .equ  XMIN, -45271         ; -2,3 * 3^9
+        .equ  YMIN, -20000         ; -(H/2)*STEP
+        .equ  MAXIT, 81            ; 3^4 itérations
+        .equ  FOUR, 78732          ; 4 * 3^9
+
+start:  ldw   s10, CYCLES(zero)
+        la    s1, fb               ; s1 = pointeur pixel
+        li    s2, 0                ; py
+        li    s4, YMIN             ; cy
+        li    s9, FOUR
+        li    s8, MAXIT
+        la    s7, palette
+row:    li    s3, 0                ; px
+        li    s5, XMIN             ; cx
+col:    li    t0, 0                ; zx
+        li    t1, 0                ; zy
+        li    t6, 0                ; n
+iter:   mul   t2, t0, t0
+        shti  t2, t2, -9           ; zx² (échelle 3^9)
+        mul   t3, t1, t1
+        shti  t3, t3, -9           ; zy²
+        add   t4, t2, t3
+        bgt   t4, s9, escaped      ; |z|² > 4
+        mul   t5, t0, t1
+        shti  t5, t5, -9
+        add   t5, t5, t5
+        add   t1, t5, s4           ; zy = 2·zx·zy + cy
+        sub   t0, t2, t3
+        add   t0, t0, s5           ; zx = zx² − zy² + cx
+        addi  t6, t6, 1
+        blt   t6, s8, iter
+        li    t5, -9841            ; dans l'ensemble : noir = tous les trits à −1 (R=G=B=−13)
+        j     plot
+escaped: add  t5, s7, t6
+        ldt   t5, 0(t5)            ; couleur TRGB de la palette
+plot:   stt   t5, 0(s1)
+        addi  s1, s1, 1
+        addi  s5, s5, STEP
+        addi  s3, s3, 1
+        li    t0, W
+        blt   s3, t0, col
+        addi  s4, s4, STEP
+        addi  s2, s2, 1
+        li    t0, H
+        blt   s2, t0, row
+
+        la    t0, fb
+        stw   t0, FB_ADDR(zero)
+        stw   zero, FB_PRESENT(zero)
+        ldw   a0, CYCLES(zero)
+        sub   a0, a0, s10
+        la    t0, s_done
+p_lp:   ldt   t1, 0(t0)
+        beqz  t1, p_end
+        stt   t1, -1(zero)
+        addi  t0, t0, 1
+        j     p_lp
+p_end:  ecall 2
+        li    a0, 10
+        ecall 1
+        li    a0, 0
+        ecall 0
+
+s_done: .str  "Mandelbrot 320x200 (virgule fixe 3^9) rendu en cycles : "
+
+; palette de 81 couleurs TRGB : R*729 + G*27 + B, canaux dans -13..13
+palette:
+        .tryte -9815, -9815, -9815, -9815, -9788, -9059, -9060, -9033, -9033
+        .tryte -8277, -8250, -7495, -7495, -6739, -6713, -5957, -5931, -5175
+        .tryte -4419, -4393, -3637, -2882, -2855, -2100, -1344, -589, -563
+        .tryte 193, 948, 1677, 2432, 2458, 3214, 3942, 3969, 4697
+        .tryte 5425, 5452, 6180, 6909, 6908, 7636, 7636, 8364, 8337
+        .tryte 8336, 9065, 9037, 9037, 9738, 9711, 9683, 9683, 9656
+        .tryte 9628, 9601, 9574, 9546, 9519, 8763, 8736, 8708, 7952
+        .tryte 7925, 7898, 7142, 7115, 6359, 5603, 5603, 4847, 4820
+        .tryte 4064, 3336, 2580, 2580, 1851, 1096, 1096, 367, -362
+
+        .align 27
+fb:     .space 64000

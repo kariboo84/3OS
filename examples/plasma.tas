@@ -1,0 +1,122 @@
+; plasma.tas — démo animée : plasma de sinus en couleurs TRGB, plusieurs frames.
+; Chaque frame : calcule 320x200 pixels dans le framebuffer en RAM, puis écrit FB_PRESENT (-6).
+; Lit KEY (-7) après chaque frame : quitte sur Échap (27) ; sinon s'arrête après NFRAMES frames.
+; Table sinus : 243 = 3^5 échantillons (une période), dupliquée pour éviter un MOD.
+
+        .equ  FB_ADDR, -5
+        .equ  FB_PRESENT, -6
+        .equ  KEY, -7
+        .equ  W, 320
+        .equ  H, 200
+        .equ  PER, 243
+        .equ  NFRAMES, 600
+
+start:  la    s1, sintab
+        li    s2, 0                ; f = numéro de frame
+        li    s8, PER
+        la    s9, ax
+        li    s10, NFRAMES
+        la    t0, fb
+        stw   t0, FB_ADDR(zero)
+
+frame:  mod   a1, s2, s8          ; a1 = f mod 243   (a1 = n11)
+        ; --- ax[x] = sin[(3x + 2f) mod 243] ---
+        li    t0, 0
+        add   t1, a1, a1         ; 2f
+ax_lp:  mod   t2, t1, s8
+        add   t2, t2, s1
+        ldt   t3, 0(t2)
+        add   t4, s9, t0
+        stt   t3, 0(t4)
+        addi  t1, t1, 3
+        addi  t0, t0, 1
+        li    t5, W
+        blt   t0, t5, ax_lp
+
+        la    s3, fb
+        li    s4, 0                ; y
+row:    muli  t0, s4, 4
+        muli  t1, a1, 3
+        add   t0, t0, t1
+        mod   t0, t0, s8
+        add   t0, t0, s1
+        ldt   s6, 0(t0)            ; b = sin[(4y + 3f) mod 243]
+        add   t0, s4, s4
+        muli  t1, a1, 5
+        add   t0, t0, t1
+        mod   s7, t0, s8           ; cidx = (2y + 5f) mod 243
+        addi  a2, a1, 120        ; décalage de teinte
+        li    s5, 0                ; x
+col:    add   t0, s9, s5
+        ldt   t1, 0(t0)            ; a
+        add   t2, s1, s7
+        ldt   t2, 0(t2)            ; c = sin[cidx]
+        addi  s7, s7, 2
+        blt   s7, s8, c_ok
+        sub   s7, s7, s8
+c_ok:   add   t1, t1, s6
+        add   t1, t1, t2           ; v = a + b + c   (−39…39)
+        muli  t1, t1, 3
+        add   t1, t1, a2          ; k = 3v + 120 + f  (≥ 3)
+        mod   t1, t1, s8
+        add   t1, t1, s1
+        ldt   t3, 0(t1)            ; R = sin[k]
+        ldt   t4, 81(t1)           ; G = sin[k + 81]
+        ldt   t5, 162(t1)          ; B = sin[k + 162]
+        muli  t3, t3, 729
+        muli  t4, t4, 27
+        add   t3, t3, t4
+        add   t3, t3, t5           ; tryte TRGB = R·3^6 + G·3^3 + B
+        stt   t3, 0(s3)
+        addi  s3, s3, 1
+        addi  s5, s5, 1
+        li    t0, W
+        blt   s5, t0, col
+        addi  s4, s4, 1
+        li    t0, H
+        blt   s4, t0, row
+
+        stw   zero, FB_PRESENT(zero)
+keys:   ldw   t0, KEY(zero)        ; vide la file d'événements clavier
+        beqz  t0, nokey
+        li    t1, 27
+        beq   t0, t1, quit         ; Échap appuyé
+        j     keys
+nokey:  addi  s2, s2, 1
+        blt   s2, s10, frame
+quit:   mv    a0, s2
+        ecall 2
+        la    t0, s_end
+p_lp:   ldt   a0, 0(t0)
+        beqz  a0, p_end
+        ecall 1
+        addi  t0, t0, 1
+        j     p_lp
+p_end:  li    a0, 0
+        ecall 0
+
+s_end:  .str  " frames de plasma affichées\n"
+
+sintab:                            ; 2 périodes de round(13·sin(2πi/243))
+        .tryte 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8
+        .tryte 8, 9, 9, 9, 9, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 13, 13, 13, 13
+        .tryte 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12, 12, 12, 11
+        .tryte 11, 11, 11, 11, 11, 10, 10, 10, 10, 9, 9, 9, 9, 8, 8, 8, 8, 7, 7, 7, 7, 6, 6, 6, 5, 5, 5
+        .tryte 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, -1, -1, -1, -2, -2, -2, -3, -3, -3, -3, -4, -4
+        .tryte -4, -5, -5, -5, -6, -6, -6, -7, -7, -7, -7, -8, -8, -8, -8, -9, -9, -9, -9, -10, -10, -10, -10, -11, -11, -11, -11
+        .tryte -11, -11, -12, -12, -12, -12, -12, -12, -12, -12, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13
+        .tryte -13, -13, -13, -13, -13, -12, -12, -12, -12, -12, -12, -12, -12, -11, -11, -11, -11, -11, -10, -10, -10, -10, -10, -9, -9, -9, -9
+        .tryte -8, -8, -8, -8, -7, -7, -7, -6, -6, -6, -6, -5, -5, -5, -4, -4, -4, -3, -3, -3, -2, -2, -2, -1, -1, -1, 0
+        .tryte 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8
+        .tryte 8, 9, 9, 9, 9, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 13, 13, 13, 13
+        .tryte 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12, 12, 12, 11
+        .tryte 11, 11, 11, 11, 11, 10, 10, 10, 10, 9, 9, 9, 9, 8, 8, 8, 8, 7, 7, 7, 7, 6, 6, 6, 5, 5, 5
+        .tryte 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, -1, -1, -1, -2, -2, -2, -3, -3, -3, -3, -4, -4
+        .tryte -4, -5, -5, -5, -6, -6, -6, -7, -7, -7, -7, -8, -8, -8, -8, -9, -9, -9, -9, -10, -10, -10, -10, -11, -11, -11, -11
+        .tryte -11, -11, -12, -12, -12, -12, -12, -12, -12, -12, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13, -13
+        .tryte -13, -13, -13, -13, -13, -12, -12, -12, -12, -12, -12, -12, -12, -11, -11, -11, -11, -11, -10, -10, -10, -10, -10, -9, -9, -9, -9
+        .tryte -8, -8, -8, -8, -7, -7, -7, -6, -6, -6, -6, -5, -5, -5, -4, -4, -4, -3, -3, -3, -2, -2, -2, -1, -1, -1, 0
+
+ax:     .space W
+        .align 27
+fb:     .space 64000

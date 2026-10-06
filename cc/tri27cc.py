@@ -55,7 +55,7 @@ def compile_unit(source, output, flags=()):
 # un saut ou un appel). Désactivable : TRI27_NOPEEP=1.
 _REG = r'(?:a[0-5]|t[0-6]|s10|s[0-9]|sp|fp|ra|zero)'
 _WRITES_FIRST = {'add','sub','mul','div','mod','neg','min','max','tmul','cons','any','cmp','sht','slt','seq',
-                 'mulh','addi','muli','shti','ldt','ldw','mini','maxi','slti','lui','li','la','mv','not','csrr'}
+                 'mulh','addi','muli','shti','ldt','ldw','mini','maxi','slti','lui','li','la','mv','not','csrr','sxt'}
 _SAFE = _WRITES_FIRST | {'stt','stw','nop'}
 
 def _parse(line):
@@ -89,13 +89,18 @@ def peephole(lines):
         out = []
         i = 0
         n = len(lines)
+        regvars = set()
         while i < n:
             l0 = lines[i]
+            if l0.startswith('; REGVARS'):
+                regvars = set(l0.split()[2:])
+            elif re.match(r'^[\w.]+:$', l0) and not l0.startswith('__tu') and not l0.startswith('.L'):
+                pass
             p0 = _parse(l0)
             p1 = _parse(lines[i+1]) if i+1 < n else None
             p2 = _parse(lines[i+2]) if i+2 < n else None
             # A : mv sN,a0 ; X ; mv a1,sN  →  mv a1,a0 ; X
-            if p0 and p0[0] == 'mv' and p0[1][1:] == ['a0'] and re.fullmatch(r's\d+', p0[1][0]) and p2 and p2[0] == 'mv' \
+            if p0 and p0[0] == 'mv' and p0[1][1:] == ['a0'] and re.fullmatch(r's\d+', p0[1][0]) and p0[1][0] not in regvars and p2 and p2[0] == 'mv' \
                     and p2[1] == ['a1', p0[1][0]]:
                 rw = _rw(p1)
                 if rw and not ({p0[1][0], 'a1'} & (rw[0] | rw[1])):
@@ -116,6 +121,26 @@ def peephole(lines):
                 rw2 = _rw(p2)
                 if rw2 and 'a0' in rw2[1] and 'a0' not in rw2[0]:
                     out.append(f'  {p1[0]} zero, {p1[1][1]}'); i += 2; changed = True; continue
+            # I : post-incrément  ldw a0,M ; addi a0,a0,K ; stw a0,M ; addi a0,a0,-K
+            #     →  ldw a0,M ; addi t5,a0,K ; stw t5,M   (t5 n'est jamais utilisé par codegen)
+            p3 = _parse(lines[i+3]) if i+3 < n else None
+            if p0 and p1 and p2 and p3 and p0[0] in ('ldw', 'ldt') and p0[1][0] == 'a0' and 'a0' not in p0[1][1] \
+                    and p1[0] == 'addi' and p1[1][:2] == ['a0', 'a0'] and p2 and p2[0] == ('stw' if p0[0] == 'ldw' else 'stt') \
+                    and p2[1] == p0[1] and p3[0] == 'addi' and p3[1][:2] == ['a0', 'a0'] \
+                    and re.fullmatch(r'-?\d+', p1[1][2]) and re.fullmatch(r'-?\d+', p3[1][2]) and int(p1[1][2]) == -int(p3[1][2]):
+                out += [l0, f'  addi t5, a0, {p1[1][2]}', f'  {p2[0]} t5, {p0[1][1]}']; i += 4; changed = True; continue
+            # J : addi a0,R,K ; ldw|ldt a0,0(a0)  →  ldw a0,K(R)
+            if p0 and p1 and p0[0] == 'addi' and p0[1][0] == 'a0' and len(p0[1]) == 3 and re.fullmatch(r'-?[\w.]+', p0[1][2]) \
+                    and p1[0] in ('ldw', 'ldt') and p1[1] == ['a0', '0(a0)']:
+                out.append(f'  {p1[0]} a0, {p0[1][2]}({p0[1][1]})'); i += 2; changed = True; continue
+            # M : addi a0,zero,X ; add a0,a0,R  →  addi a0,R,X   (X constante ou symbole)
+            if p0 and p1 and p0[0] == 'addi' and p0[1][:2] == ['a0', 'zero'] and len(p0[1]) == 3 \
+                    and p1[0] == 'add' and p1[1][:2] == ['a0', 'a0'] and p1[1][2] not in ('a0',):
+                out.append(f'  addi a0, {p1[1][2]}, {p0[1][2]}'); i += 2; changed = True; continue
+            # K : li R,K ; sxt R,R  avec K déjà sur une tryte → li seul
+            if p0 and p1 and p0[0] == 'li' and p1[0] == 'sxt' and p1[1] == [p0[1][0], p0[1][0]] \
+                    and re.fullmatch(r'-?\d+', p0[1][1]) and abs(int(p0[1][1])) <= 9841:
+                out.append(l0); i += 2; changed = True; continue
             # H : opérations neutres  addi r,r,0 / muli r,r,1 / mv r,r
             if p0 and ((p0[0] == 'addi' and len(p0[1]) == 3 and p0[1][0] == p0[1][1] and p0[1][2] == '0')
                        or (p0[0] == 'muli' and len(p0[1]) == 3 and p0[1][0] == p0[1][1] and p0[1][2] == '1')

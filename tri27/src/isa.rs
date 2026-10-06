@@ -36,6 +36,8 @@ pub mod op {
     pub const SLT: u8 = 14;
     pub const SEQ: u8 = 15;
     pub const MULH: u8 = 16;
+    /// Extension de signe d'une tryte : rd = valeur sur 9 trits de rs1 (cast char).
+    pub const SXT: u8 = 17;
     pub const ADDI: u8 = 20;
     pub const MULI: u8 = 21;
     pub const SHTI: u8 = 22;
@@ -54,6 +56,9 @@ pub mod op {
     pub const MINI: u8 = 35;
     pub const MAXI: u8 = 36;
     pub const SLTI: u8 = 37;
+    /// Division / reste par une constante (troncature vers zéro, comme DIV/MOD).
+    pub const DIVI: u8 = 38;
+    pub const MODI: u8 = 39;
     pub const LUI: u8 = 40;
     pub const JAL: u8 = 41;
     pub const BR3: u8 = 45;
@@ -79,12 +84,12 @@ macro_rules! ops {
 ops! {
     "add" ADD R, "sub" SUB R, "mul" MUL R, "div" DIV R, "mod" MOD R,
     "neg" NEG R2, "min" MIN R, "max" MAX R, "tmul" TMUL R, "cons" CONS R, "any" ANY R,
-    "cmp" CMP R, "sht" SHT R, "slt" SLT R, "seq" SEQ R, "mulh" MULH R,
+    "cmp" CMP R, "sht" SHT R, "slt" SLT R, "seq" SEQ R, "mulh" MULH R, "sxt" SXT R2,
     "addi" ADDI I, "muli" MULI I, "shti" SHTI I,
     "ldt" LDT Mem, "ldw" LDW Mem, "stt" STT Mem, "stw" STW Mem,
     "beq" BEQ Br, "bne" BNE Br, "blt" BLT Br, "bge" BGE Br,
     "jalr" JALR I, "ecall" ECALL Ecall, "csrr" CSRR CsrR, "csrw" CSRW CsrW,
-    "mini" MINI I, "maxi" MAXI I, "slti" SLTI I,
+    "mini" MINI I, "maxi" MAXI I, "slti" SLTI I, "divi" DIVI I, "modi" MODI I,
     "lui" LUI Lui, "jal" JAL Jal, "br3" BR3 B3,
     "halt" HALT N, "eret" ERET N, "wfi" WFI N,
 }

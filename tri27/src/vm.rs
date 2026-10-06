@@ -563,6 +563,7 @@ impl Vm {
                 set!(if i.op == op::DIV { r!(s1) / d } else { r!(s1) % d })
             }
             op::NEG => set!(-r!(s1)),
+            op::SXT => set!(wrap9(r!(s1))),
             op::MIN => set!(tmin(r!(s1), r!(s2))),
             op::MAX => set!(tmax(r!(s1), r!(s2))),
             op::TMUL => set!(tmul(r!(s1), r!(s2))),
@@ -575,6 +576,13 @@ impl Vm {
             op::MULH => set!(mulh(r!(s1), r!(s2))),
             op::ADDI => set!(wrap27(r!(s1) + i.imm)),
             op::MULI => set!(wrap27_i128(r!(s1) as i128 * i.imm as i128)),
+            op::DIVI | op::MODI => {
+                if i.imm == 0 {
+                    self.trap(cause::DIV0, 0);
+                    return;
+                }
+                set!(if i.op == op::DIVI { r!(s1) / i.imm } else { r!(s1) % i.imm })
+            }
             op::SHTI => set!(sht(r!(s1), i.imm)),
             op::MINI => set!(tmin(r!(s1), i.imm)),
             op::MAXI => set!(tmax(r!(s1), i.imm)),

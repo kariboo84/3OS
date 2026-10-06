@@ -69,16 +69,16 @@ static void call(Node *n) {
     emit(".L.aend%d:",id); emit("  sub a0, t0, a0"); emit("  stw a0, %d(fp)",fn->alloca_bottom->offset);
     return;
   }
-  int count=n->ret_buffer?1:0, extra=0;
-  for(Node *a=n->args;a;a=a->next) { count++; if(aggregate(a->ty)) extra+=align_to(a->ty->size,3); }
-  int slots=MAX(count,6)*3, total=slots+extra;
+  int count=n->ret_buffer?1:0;
+  for(Node *a=n->args;a;a=a->next) count++;
+  int total=MAX(count,6)*3;
   expr(n->lhs); emit("  push a0"); emit("  addi sp, sp, -%d",total);
-  int i=0, pos=slots;
+  int i=0;
   if(n->ret_buffer) { emit("  addi a0, fp, %d",n->ret_buffer->offset); emit("  stw a0, 0(sp)"); i++; }
   for(Node *a=n->args;a;a=a->next,i++) {
     expr(a);
     if(aggregate(a->ty)) {
-      emit("  addi t0, sp, %d",pos); copy(a->ty->size); emit("  mv a0, t0"); pos+=align_to(a->ty->size,3);
+      emit("  addi t0, fp, %d",a->tri_arg_offset); copy(a->ty->size); emit("  mv a0, t0");
     }
     emit("  stw a0, %d(sp)",i*3);
   }
@@ -186,6 +186,18 @@ static void stmt(Node *n) {
   default: error_tok(n->tok,"TRI27: unsupported statement %d",n->kind);
   }
 }
+// Aggregate copies must not live in the movable expression stack: an alloca
+// in a later argument shifts that stack. Give each argument a stable fp slot.
+static void arg_slots(Node *n, int *size) {
+  if(!n) return;
+  arg_slots(n->lhs,size); arg_slots(n->rhs,size); arg_slots(n->cond,size);
+  arg_slots(n->then,size); arg_slots(n->els,size); arg_slots(n->init,size); arg_slots(n->inc,size);
+  for(Node *s=n->body;s;s=s->next) arg_slots(s,size);
+  for(Node *a=n->args;a;a=a->next) {
+    arg_slots(a,size);
+    if(aggregate(a->ty)) { *size=align_to(*size+a->ty->size,3); a->tri_arg_offset=-*size; }
+  }
+}
 void codegen(Obj *prog, FILE *output) {
   out=output;
   for(Obj *v=prog;v;v=v->next) if(v->is_static && strncmp(v->name,".L",2)) v->name=format(".L.static.%s",v->name);
@@ -198,7 +210,7 @@ void codegen(Obj *prog, FILE *output) {
     if(!v->init_data) { emit("  .space %d",v->ty->size); continue; }
     Relocation *r=v->rel;
     for(int p=0;p<v->ty->size;) {
-      if(r && r->offset==p) { emit("  .word %s%+ld",*r->label,r->addend); p+=3; r=r->next; }
+      if(r && r->offset==p) { emit("  .wordu %s%+ld",*r->label,r->addend); p+=3; r=r->next; }
       else emit("  .tryte %ld",(long)v->init_data[p++]);
     }
   }
@@ -207,6 +219,7 @@ void codegen(Obj *prog, FILE *output) {
     check(fn->ty->return_ty);
     int size=0;
     for(Obj *v=fn->locals;v;v=v->next) { check(v->ty); size=align_to(size+v->ty->size,v->align); v->offset=-size; }
+    arg_slots(fn->body,&size);
     fn->stack_size=align_to(size,3);
     emit("  .align 3"); emit("%s:",fn->name); emit("  push ra"); emit("  push fp"); emit("  mv fp, sp"); emit("  addi sp, sp, -%d",fn->stack_size);
     emit("  stw sp, %d(fp)",fn->alloca_bottom->offset);

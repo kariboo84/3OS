@@ -1,6 +1,6 @@
 .host-root/
 .upstream-git/
-build/
-chibicc/chibicc
-chibicc/*.o
 __pycache__/
+build/
+chibicc/*.o
+chibicc/chibicc

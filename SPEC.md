@@ -161,5 +161,6 @@ msg:    .str  "salut\n"     ; un tryte par caractère, terminé par 0
 Expressions : termes (`123`, `0x1F`, `0t+-0`, `'c'`, symbole) liés par `+` / `-` ; un littéral `0t` se termine par une espace.
 `.equ NOM, expr` définit une constante ; les chaînes de `.equ` (B = A+1, C = B+1…) se résolvent dans l'ordre du source.
 `.str` refuse les caractères > 9841 (hors d'un tryte).
+`.word` et `.trits` alignent implicitement sur 3 ; `.wordu` émet les mêmes trois trytes sans alignement implicite (données C compactées et relocations de pointeurs).
 Entrée = étiquette `start` si elle existe, sinon 0. Les instructions sont alignées sur 3 trytes.
 Pile initiale : `sp` = fin de la RAM (alignée à 3).

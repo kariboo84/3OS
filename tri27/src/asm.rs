@@ -378,9 +378,12 @@ pub fn assemble(src: &str) -> Result<Image, String> {
                             pc += 1;
                         }
                     }
-                    "word" | "trits" => {
-                        while pc % 3 != 0 {
-                            pc += 1
+                    "word" | "wordu" | "trits" => {
+                        // .wordu preserves the current address for packed C data.
+                        if d != "wordu" {
+                            while pc % 3 != 0 {
+                                pc += 1
+                            }
                         }
                         for x in &args {
                             let v = if d == "trits" {

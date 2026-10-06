@@ -255,6 +255,7 @@ struct Node {
   Type *func_ty;
   Node *args;
   bool pass_by_stack;
+  int tri_arg_offset; // caller-frame copy for aggregate arguments
   Obj *ret_buffer;
 
   // Goto or labeled statement, or labels-as-values

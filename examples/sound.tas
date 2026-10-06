@@ -1,0 +1,98 @@
+; sound.tas — démo TSG-3 : gamme en TRI3 (onde ternaire 3 niveaux), accord, bruit LFSR ternaire.
+        .equ NOTE_MS, 220
+
+start:  la    a0, msg
+        call  puts
+        ; voix 0 : TRI3, attaque 5 ms, relâche 120 ms
+        li    t0, 2
+        stw   t0, -101(zero)        ; WAVE v0 = TRI3
+        li    t0, 4000
+        stw   t0, -102(zero)        ; VOL v0
+        li    t0, 5
+        stw   t0, -103(zero)        ; ATTACK
+        li    t0, 120
+        stw   t0, -104(zero)        ; RELEASE
+
+        la    s1, scale             ; table de fréquences (mHz), terminée par 0
+sc_loop:
+        ldw   t0, 0(s1)
+        beqz  t0, chord
+        stw   t0, -100(zero)        ; FREQ v0
+        li    t1, 1
+        stw   t1, -105(zero)        ; GATE on
+        li    a0, NOTE_MS
+        call  wait_ms
+        stw   zero, -105(zero)      ; GATE off
+        li    a0, 40
+        call  wait_ms
+        addi  s1, s1, 3
+        j     sc_loop
+
+chord:  ; accord do-mi-sol sur 3 voix (TRI3, carré, sinus)
+        li    t0, 261626
+        stw   t0, -100(zero)
+        li    t0, 329628
+        stw   t0, -109(zero)        ; FREQ v1
+        li    t0, 3
+        stw   t0, -110(zero)        ; WAVE v1 = carré
+        li    t0, 2000
+        stw   t0, -111(zero)
+        li    t0, 392000
+        stw   t0, -118(zero)        ; FREQ v2
+        li    t0, 1
+        stw   t0, -119(zero)        ; WAVE v2 = sinus
+        li    t0, 3000
+        stw   t0, -120(zero)
+        li    t1, 1
+        stw   t1, -105(zero)
+        stw   t1, -114(zero)
+        stw   t1, -123(zero)
+        li    a0, 900
+        call  wait_ms
+        stw   zero, -105(zero)
+        stw   zero, -114(zero)
+        stw   zero, -123(zero)
+        li    a0, 300
+        call  wait_ms
+
+        ; bruit ternaire (voix 3), cadencé à 8 kHz puis 1 kHz
+        li    t0, 5
+        stw   t0, -128(zero)        ; WAVE v3 = bruit
+        li    t0, 6000
+        stw   t0, -129(zero)
+        li    t0, 8000000
+        stw   t0, -127(zero)        ; FREQ v3
+        li    t1, 1
+        stw   t1, -132(zero)        ; GATE v3
+        li    a0, 400
+        call  wait_ms
+        li    t0, 1000000
+        stw   t0, -127(zero)
+        li    a0, 400
+        call  wait_ms
+        stw   zero, -132(zero)
+        li    a0, 400
+        call  wait_ms
+        la    a0, bye
+        call  puts
+        li    a0, 0
+        ecall 0
+
+wait_ms:                            ; attend a0 ms (TIME_MS = -8)
+        ldw   t5, -8(zero)
+        add   t5, t5, a0
+wm_l:   ldw   t6, -8(zero)
+        blt   t6, t5, wm_l
+        ret
+
+puts:   ldt   t1, 0(a0)
+        beqz  t1, puts_e
+        stt   t1, -1(zero)
+        addi  a0, a0, 1
+        j     puts
+puts_e: ret
+
+msg:    .str "TSG-3 : gamme en TRI3, accord, bruit ternaire...\n"
+bye:    .str "fin.\n"
+        .align 3
+scale:  .word 261626, 293665, 329628, 349228, 391995, 440000, 493883, 523251, 0

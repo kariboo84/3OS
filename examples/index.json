@@ -6,6 +6,10 @@
   "animated": true
  },
  {
+  "file": "sound.tas",
+  "title": "TSG-3 : gamme en onde ternaire TRI3, accord, bruit LFSR ternaire (cliquer Lancer = son)"
+ },
+ {
   "file": "hello.tas",
   "title": "Hello — chaîne .str écrite sur CONSOLE_OUT (MMIO -1)"
  },

@@ -21,6 +21,7 @@ struct State {
     src: Vec<u8>,
     err: String,
     rgba: Vec<u8>,
+    audio: Vec<f32>,
 }
 
 static mut STATE: Option<State> = None;
@@ -36,6 +37,7 @@ fn st() -> &'static mut State {
             src: Vec::new(),
             err: String::new(),
             rgba: vec![0; FB_W * FB_H * 4],
+            audio: Vec::new(),
         })
     }
 }
@@ -224,4 +226,13 @@ pub extern "C" fn pc() -> f64 {
 #[no_mangle]
 pub extern "C" fn ram_size() -> f64 {
     st().vm.mem.len() as f64
+}
+
+/// Rend `n` échantillons audio (44 100 Hz, mono, f32) ; renvoie le pointeur du tampon.
+#[no_mangle]
+pub extern "C" fn audio_render(n: usize) -> *const f32 {
+    let s = st();
+    s.audio.resize(n, 0.0);
+    s.vm.snd.render(&mut s.audio[..n]);
+    s.audio.as_ptr()
 }

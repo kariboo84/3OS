@@ -65,6 +65,7 @@ pub struct Vm {
     pub frames: u64,
     pub frame_ready: bool,
     pub time_ms: i64,
+    pub snd: crate::sound::Tsg,
 }
 
 impl Vm {
@@ -88,6 +89,7 @@ impl Vm {
             frames: 0,
             frame_ready: false,
             time_ms: 0,
+            snd: crate::sound::Tsg::new(),
         };
         vm.regs[SP] = ram as i64;
         vm
@@ -116,6 +118,9 @@ impl Vm {
     // ---------------- mémoire ----------------
 
     fn mmio_read(&mut self, a: i64) -> i64 {
+        if crate::sound::Tsg::owns(a) {
+            return self.snd.read(a);
+        }
         match a {
             mmio::CONSOLE_IN => self.input.pop_front().unwrap_or(-1),
             mmio::CYCLES => wrap27(self.cycles as i64),
@@ -127,6 +132,10 @@ impl Vm {
     }
 
     fn mmio_write(&mut self, a: i64, v: i64) {
+        if crate::sound::Tsg::owns(a) {
+            self.snd.write(a, v);
+            return;
+        }
         match a {
             mmio::CONSOLE_OUT => {
                 if let Some(c) = char::from_u32(v.rem_euclid(T9) as u32) {

@@ -99,7 +99,30 @@ function drawFrame() {
   ctx.putImageData(imgData, 0, 0);
 }
 
+// ---- son TSG-3 : la VM rend des blocs f32 44,1 kHz, planifiés ~120 ms en avance ----
+let actx = null, audioT = 0, audioOn = true;
+function audioInit() {
+  if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
+  try { actx = new AudioContext({ sampleRate: 44100 }); audioT = 0; } catch (_) { actx = null; }
+}
+function audioPump() {
+  if (!actx || !W || !loaded || !running || !audioOn) { if (actx) audioT = Math.max(audioT, actx.currentTime); return; }
+  const now = actx.currentTime;
+  if (audioT < now + 0.02) audioT = now + 0.05;          // rattrapage après pause/ralentissement
+  while (audioT < now + 0.12) {
+    const n = 2048;
+    const p = W.audio_render(n);
+    const data = new Float32Array(W.memory.buffer, p, n);
+    const buf = actx.createBuffer(1, n, 44100);
+    buf.copyToChannel(data, 0);
+    const src = actx.createBufferSource();
+    src.buffer = buf; src.connect(actx.destination); src.start(audioT);
+    audioT += n / 44100;
+  }
+}
+
 function assembleAndRun() {
+  audioInit();
   const bytes = enc.encode(srcEl.value);
   const p = W.src_alloc(bytes.length);
   mem().set(bytes, p);
@@ -146,6 +169,7 @@ function tick(ts) {
     drainConsole();
     const f = W.frames();
     if (f !== lastFrames) { framesWin += f - lastFrames; lastFrames = f; drawFrame(); }
+    audioPump();
     finishIfHalted();
   } else {
     lastTs = null;

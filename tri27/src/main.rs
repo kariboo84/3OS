@@ -34,6 +34,29 @@ fn save_ppm(vm: &Vm, path: &std::path::Path) {
     f.write_all(&rgb).unwrap();
 }
 
+fn save_wav(path: &str, s: &[f32]) {
+    let mut f = std::fs::File::create(path).unwrap();
+    let n = s.len() as u32;
+    let rate = tri27::sound::SR as u32;
+    let mut h = Vec::new();
+    h.extend_from_slice(b"RIFF");
+    h.extend_from_slice(&(36 + n * 2).to_le_bytes());
+    h.extend_from_slice(b"WAVEfmt ");
+    h.extend_from_slice(&16u32.to_le_bytes());
+    h.extend_from_slice(&1u16.to_le_bytes());
+    h.extend_from_slice(&1u16.to_le_bytes());
+    h.extend_from_slice(&rate.to_le_bytes());
+    h.extend_from_slice(&(rate * 2).to_le_bytes());
+    h.extend_from_slice(&2u16.to_le_bytes());
+    h.extend_from_slice(&16u16.to_le_bytes());
+    h.extend_from_slice(b"data");
+    h.extend_from_slice(&(n * 2).to_le_bytes());
+    for x in s {
+        h.extend_from_slice(&((x.clamp(-1.0, 1.0) * 32767.0) as i16).to_le_bytes());
+    }
+    f.write_all(&h).unwrap();
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
@@ -46,6 +69,8 @@ fn main() {
             let mut ppm: Option<String> = None;
             let mut stats = false;
             let mut input = String::new();
+            let mut wav: Option<String> = None;
+            let mut audio: Vec<f32> = Vec::new();
             let mut i = 3;
             while i < args.len() {
                 match args[i].as_str() {
@@ -58,6 +83,10 @@ fn main() {
                         i += 1
                     }
                     "--stats" => stats = true,
+                    "--wav" => {
+                        wav = Some(args[i + 1].clone());
+                        i += 1
+                    }
                     "--input" => {
                         input = args[i + 1].replace("\\n", "\n");
                         i += 1
@@ -77,6 +106,14 @@ fn main() {
             while !vm.halted && done < max {
                 vm.time_ms = t0.elapsed().as_millis() as i64;
                 done += vm.run((max - done).min(1 << 20));
+                if wav.is_some() {
+                    let want = (vm.time_ms as f64 * tri27::sound::SR / 1000.0) as usize;
+                    if want > audio.len() {
+                        let n = audio.len();
+                        audio.resize(want, 0.0);
+                        vm.snd.render(&mut audio[n..]);
+                    }
+                }
                 if !vm.out.is_empty() {
                     let mut o = stdout.lock();
                     o.write_all(vm.out.as_bytes()).unwrap();
@@ -92,6 +129,11 @@ fn main() {
                 }
             }
             let dt = t0.elapsed().as_secs_f64();
+            if let Some(w) = &wav {
+                save_wav(w, &audio);
+                let peak = audio.iter().fold(0f32, |m, x| m.max(x.abs()));
+                eprintln!("[tri27] son : {} échantillons ({:.2}s), crête {:.3} → {w}", audio.len(), audio.len() as f64 / tri27::sound::SR, peak);
+            }
             if let Some(e) = &vm.error {
                 eprintln!("\n[tri27] ERREUR: {e}");
                 eprintln!("  {}", isa::disasm(vm.peek_word(vm.pc), vm.pc));

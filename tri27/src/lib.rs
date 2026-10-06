@@ -1,5 +1,6 @@
 pub mod asm;
 pub mod isa;
+pub mod sound;
 pub mod trit;
 pub mod vm;
 

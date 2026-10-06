@@ -7,7 +7,7 @@ static int POW3[9] = {1, 3, 9, 27, 81, 243, 729, 2187, 6561};
 static int tg_da, tg_db, tg_wev, tg_wod;
 
 /* police 5x7 classique : 5 colonnes par glyphe, bit 0 = ligne du haut (bit 7 = jambage) ; ASCII 32..126 */
-static const short FONT[475] = {
+const short TG_FONT[475] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x07, 0x00, 0x07, 0x00,
   0x14, 0x7F, 0x14, 0x7F, 0x14, 0x24, 0x2A, 0x7F, 0x2A, 0x12, 0x23, 0x13, 0x08, 0x64, 0x62,
   0x36, 0x49, 0x56, 0x20, 0x50, 0x00, 0x08, 0x07, 0x03, 0x00, 0x00, 0x1C, 0x22, 0x41, 0x00,
@@ -100,10 +100,12 @@ static void tg_span(int x0, int x1, int y, int pat) {
     while (x + 9 <= x1) { row[tx] = w; tx++; x += 9; }
     while (x < x1) { tg_set(row, x, pat); x++; }
   } else {
-    while (x < x1 && x % 9) { tg_set(row, x, (x + y) % 2 == 0 ? tg_da : tg_db); x++; }
+    /* trame 50 % façon System 7 : colonnes alternées (x seul), stables sur toutes
+       les lignes — donne des rayures verticales régulières. */
+    while (x < x1 && x % 9) { tg_set(row, x, x % 2 == 0 ? tg_da : tg_db); x++; }
     tx = x / 9;
-    while (x + 9 <= x1) { row[tx] = (tx + y) % 2 == 0 ? tg_wev : tg_wod; tx++; x += 9; }
-    while (x < x1) { tg_set(row, x, (x + y) % 2 == 0 ? tg_da : tg_db); x++; }
+    while (x + 9 <= x1) { row[tx] = (tx % 2 == 0) ? tg_wev : tg_wod; tx++; x += 9; }
+    while (x < x1) { tg_set(row, x, x % 2 == 0 ? tg_da : tg_db); x++; }
   }
 }
 
@@ -134,7 +136,7 @@ void tg_text(int x, int y, const char *s, int t) {
   int c;
   while ((c = *s++) != 0) {
     if (c >= 32 && c < 127 && x + 6 > tg_cx0 && x < tg_cx1 && y + 8 > tg_cy0 && y < tg_cy1) {
-      const short *g = FONT + (c - 32) * 5;
+      const short *g = TG_FONT + (c - 32) * 5;
       for (int col = 0; col < 5; col++) {
         int b = g[col];
         for (int r = 0; b; r++, b /= 2)

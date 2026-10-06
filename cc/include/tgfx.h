@@ -25,4 +25,5 @@ void tg_text(int x, int y, const char *s, int t);       /* police 5x7, pas de 6 
 int  tg_textw(const char *s);
 void tg_save(int tx, int y, int n, int h, char *dst);   /* copie n trytes × h lignes (tx = colonne tryte) */
 void tg_restore(int tx, int y, int n, int h, const char *src);
+extern const short TG_FONT[475]; /* police 5x7 pour dessin hors tgfx */
 #endif

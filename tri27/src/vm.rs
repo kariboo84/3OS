@@ -77,6 +77,8 @@ pub struct Vm {
     /// Copie RGBA de l'image au moment du FB_PRESENT (pour captures fiables),
     /// None tant qu'aucune image n'a été présentée. Taille du mode actif.
     pub present_rgba: Vec<u8>,
+    /// Activé par le CLI (--ppm) : sans lui, FB_PRESENT ne coûte rien côté hôte.
+    pub capture_present: bool,
     pub present_w: usize,
     pub present_h: usize,
     pub time_ms: i64,
@@ -108,6 +110,7 @@ impl Vm {
             frames: 0,
             frame_ready: false,
             present_rgba: Vec::new(),
+            capture_present: false,
             present_w: 0,
             present_h: 0,
             time_ms: 0,
@@ -180,6 +183,9 @@ impl Vm {
             mmio::FB_PRESENT => {
                 self.frames += 1;
                 self.frame_ready = true;
+                if !self.capture_present {
+                    return;
+                }
                 let (w, h) = self.fb_dims();
                 self.present_rgba.resize(w * h * 4, 0);
                 let mut tmp = std::mem::take(&mut self.present_rgba);

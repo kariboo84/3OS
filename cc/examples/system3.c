@@ -1,227 +1,248 @@
-/* system3.c — bureau « Système 3 » façon Mac System 7, en 3 niveaux (mode trit) :
- * barre de menus, 2 fenêtres (titre rayé, case de fermeture, texte), icônes
- * (disque 3OS, corbeille), curseur flèche qui suit la souris, fenêtre active
- * déplaçable en tirant sa barre de titre, touche C : bascule couleur/TRIT.
- * Entrées : souris MMIO (-10/-11/-12), KEY (-7), CONSOLE_IN (-2).
+/* system3.c — bureau « Système 3 » façon Mac System 7, en 3 niveaux (VMODE 1)
+ * ou en couleur TRGB (VMODE 2, touche C).
+ * Souris : déplacer, tirer une barre de titre, case de fermeture, clic sur le disque
+ * = rouvrir les fenêtres. Q / Échap : quitter.
+ *
+ * Curseur : le framebuffer contient TOUJOURS le curseur. Avant tout dessin on le
+ * retire (cur_hide = restaure le fond sauvegardé), après on le remet (cur_show =
+ * sauvegarde le fond à la position courante puis dessine), puis on présente.
+ * Pas de & | << >> (émulés, lents) : bitmaps en chaînes, bouton gauche = btn % 3.
  */
 #include <tri27io.h>
 #include <tgfx.h>
 
-static char fb[23040];          /* mode 1 */
-static char fbc[207360];        /* mode 2 */
-static char cursor_bg[8 * 64];  /* fond sous le curseur (8 lignes, en trytes) */
-static int cur_x = 300, cur_y = 200;
+static char fb[23040];          /* mode 1 : 64 trytes x 360 lignes */
+static char fbc[207360];        /* mode 2 : 576 x 360 trytes */
+static int mode = 1;
 
-typedef struct { int x, y, w, h, open; char *title; } Win;
-static Win wa = { 60, 50, 300, 160, 1, "Lisez-moi" };
-static Win wb = { 380, 220, 170, 110, 1, "Corbeille" };
+/* ---------- couleurs logiques ---------- */
+#define K_BLACK 0
+#define K_GRAY  1
+#define K_WHITE 2
+#define K_TITLE 3
+#define K_DESK  4
+#define K_ACCENT 5
+static int col(int k) {
+  if (mode == 1) {
+    if (k == K_BLACK) return TG_BLACK;
+    if (k == K_WHITE) return TG_WHITE;
+    return TG_GRAY;
+  }
+  if (k == K_BLACK) return TRGB(-13, -13, -13);
+  if (k == K_GRAY) return TRGB(2, 2, 2);
+  if (k == K_WHITE) return TRGB(13, 13, 13);
+  if (k == K_TITLE) return TRGB(-9, -6, 6);
+  if (k == K_DESK) return TRGB(-4, 0, 5);
+  return TRGB(8, 2, -8);
+}
 
-static int px(int x, int y) { return x + y * TRIT_W; }
-
-/* --- dessin (mode courant) --- */
-static int g_mode; /* 1 ou 2 */
-#define C_TITLE_T  TRGB(0, 0, 6)      /* bleu profond façon Système 7 couleur */
-#define C_TITLE    TRGB(0, 2, 8)
-#define C_DESKTOP  TRGB(0, 3, 8)
-#define C_WIN      TRGB(13, 13, 13)
-#define C_DISK     TRGB(1, 7, 1)
-#define C_TRASH    TRGB(6, 6, 6)
-#define C_ICONSEL  TRGB(4, 2, 9)
-
-static void putpixel(int x, int y, int c) {
-  if (x < 0 || x >= TRIT_W || y < 0 || y >= TRIT_H) return;
-  if (g_mode == 1) tg_pixel(x, y, c); else fbc[px(x, y)] = c;
+/* ---------- primitives selon le mode ---------- */
+static void pset(int x, int y, int k) {
+  if (x < 0 || x >= 576 || y < 0 || y >= 360) return;
+  if (mode == 1) tg_pixel(x, y, col(k)); else fbc[y * 576 + x] = col(k);
 }
-static void fill(int x, int y, int w, int h, int c) {
-  if (g_mode == 1) { tg_fillrect(x, y, w, h, c); return; }
-  if (x < 0) { w += x; x = 0; }
-  if (y < 0) { h += y; y = 0; }
-  if (x + w > TRIT_W) w = TRIT_W - x;
-  if (y + h > TRIT_H) h = TRIT_H - y;
-  for (int r = y; r < y + h; r++)
-    for (int q = x; q < x + w; q++) fbc[px(q, r)] = c;
-}
-static void box(int x, int y, int w, int h, int c) {
-  if (g_mode == 1) { tg_rect(x, y, w, h, c); return; }
-  fill(x, y, w, 1, c); fill(x, y + h - 1, w, 1, c);
-  fill(x, y + 1, 1, h - 2, c); fill(x + w - 1, y + 1, 1, h - 2, c);
-}
-static void dither(int x, int y, int w, int h, int a, int b) {
-  if (g_mode == 1) { tg_fillrect(x, y, w, h, TG_DITHER(a, b)); return; }
-  for (int r = y; r < y + h; r++)
-    for (int q = x; q < x + w; q++) fbc[px(q, r)] = ((q + r) % 2 == 0) ? a : b;
-}
-static void text(int x, int y, const char *s, int c) {
-  if (g_mode == 1) { tg_text(x, y, s, c); return; }
-  for (int i = 0; s[i]; i++) {
-    const short *glyph = TG_FONT + (s[i] - 32) * 5;
-    for (int col = 0; col < 5; col++) {
-      int b = glyph[col];
-      for (int r = 0; b; r++, b /= 2)
-        if (b % 2) putpixel(x + col, y + r, c);
-    }
-    x += 6;
+static void fill(int x, int y, int w, int h, int k) {
+  if (mode == 1) { tg_fillrect(x, y, w, h, col(k)); return; }
+  int x1 = x + w, y1 = y + h;
+  if (x < 0) x = 0;
+  if (y < 0) y = 0;
+  if (x1 > 576) x1 = 576;
+  if (y1 > 360) y1 = 360;
+  if (x >= x1) return;
+  int c = col(k);
+  for (int r = y; r < y1; r++) {
+    char *p = fbc + r * 576 + x, *e = fbc + r * 576 + x1;
+    while (p < e) *p++ = c;
   }
 }
+static void frame(int x, int y, int w, int h, int k) {
+  fill(x, y, w, 1, k); fill(x, y + h - 1, w, 1, k);
+  fill(x, y, 1, h, k); fill(x + w - 1, y, 1, h, k);
+}
+/* rayures verticales 1 px (barres de titre System 7) */
+static void stripes(int x, int y, int w, int h, int ka, int kb) {
+  if (mode == 1) { tg_fillrect(x, y, w, h, TG_DITHER(col(ka), col(kb))); return; }
+  for (int q = x; q < x + w; q++) fill(q, y, 1, h, (q % 2 == 0) ? ka : kb);
+}
+static void text(int x, int y, const char *s, int k) {
+  if (mode == 1) { tg_text(x, y, s, col(k)); return; }
+  for (; *s; s++, x += 6) {
+    int c = *s;
+    if (c < 32 || c > 126) continue;
+    const short *g = TG_FONT + (c - 32) * 5;
+    for (int cx = 0; cx < 5; cx++)
+      for (int b = g[cx], r = 0; b; b /= 2, r++)
+        if (b % 2) pset(x + cx, y + r, k);
+  }
+}
+static void present(void) { FB_PRESENT = 0; }
 
-/* --- curseur flèche 8x12 (1 = noir), point chaude en (0,0) --- */
-static const char CUR[12] = {
-  0x10, 0x18, 0x14, 0x12, 0x11, 0x19, 0x15, 0x0B, 0x04, 0x04, 0x02, 0x00
+/* ---------- curseur flèche 8x12 ---------- */
+static const char *ARROW[12] = {
+  "X.......", "XX......", "XoX.....", "XooX....", "XoooX...", "XooooX..",
+  "XoooooX.", "XooooXXX", "XoXooX..", "XX.XooX.", "X..XooX.", "....XX..",
 };
-static void save_cursor(void) {
-  if (g_mode == 2) return; /* en couleur, on redessine tout (petit écran) */
-  tg_save(cur_x / 9, cur_y, 8, 12, cursor_bg);
+static int cx = 288, cy = 180, shown = 0, sx, sy;
+static char bg_t[12 * 2];       /* mode 1 : 2 trytes x 12 lignes */
+static char bg_c[12 * 8];       /* mode 2 : 8 x 12 pixels */
+
+static void cur_hide(void) {
+  if (!shown) return;
+  if (mode == 1) tg_restore(sx / 9, sy, 2, 12, bg_t);
+  else
+    for (int r = 0; r < 12; r++)
+      for (int q = 0; q < 8; q++)
+        if (sy + r < 360 && sx + q < 576) fbc[(sy + r) * 576 + sx + q] = bg_c[r * 8 + q];
+  shown = 0;
 }
-static void draw_cursor(void) {
-  for (int r = 0; r < 12; r++) {
-    int bits = CUR[r];
-    for (int q = 0; q < 8; q++)
-      if (bits & (1 << (7 - q))) putpixel(cur_x + q, cur_y + r, TG_BLACK);
-  }
-}
-static void restore_cursor(void) {
-  if (g_mode == 2) return;
-  tg_restore(cur_x / 9, cur_y, 8, 12, cursor_bg);
+static void cur_show(void) {
+  sx = cx; sy = cy;
+  if (mode == 1) tg_save(sx / 9, sy, 2, 12, bg_t);
+  else
+    for (int r = 0; r < 12; r++)
+      for (int q = 0; q < 8; q++)
+        if (sy + r < 360 && sx + q < 576) bg_c[r * 8 + q] = fbc[(sy + r) * 576 + sx + q];
+  for (int r = 0; r < 12; r++)
+    for (int q = 0; q < 8; q++) {
+      char c = ARROW[r][q];
+      if (c == 'X') pset(cx + q, cy + r, K_BLACK);
+      else if (c == 'o') pset(cx + q, cy + r, K_WHITE);
+    }
+  shown = 1;
 }
 
-/* --- icônes --- */
-static void icon_disk(int x, int y, int sel) {
-  box(x, y, 40, 34, TG_BLACK);
-  fill(x + 1, y + 1, 38, 32, TG_WHITE);
-  fill(x + 1, y + 1, 38, 10, TG_DITHER(TG_BLACK, TG_WHITE));
-  fill(x + 6, y + 22, 28, 4, TG_BLACK);
-  if (g_mode == 2) {
-    box(x, y, 40, 34, C_ICONSEL);
-    fill(x + 1, y + 1, 38, 10, C_TITLE);
-    fill(x + 6, y + 22, 28, 4, C_DISK);
+/* ---------- bureau ---------- */
+typedef struct { int x, y, w, h, open; const char *title; } Win;
+static Win win[2] = {
+  { 60, 50, 300, 160, 1, "Lisez-moi" },
+  { 320, 200, 170, 110, 1, "Corbeille" },
+};
+static int top = 0;   /* fenêtre au premier plan */
+
+static void draw_window(int j, int active) {
+  Win *w = &win[j];
+  if (!w->open) return;
+  frame(w->x, w->y, w->w, w->h, K_BLACK);
+  fill(w->x + 1, w->y + 1, w->w - 2, 12, K_WHITE);
+  if (active) {
+    if (mode == 1) stripes(w->x + 2, w->y + 3, w->w - 4, 8, K_BLACK, K_WHITE);
+    else fill(w->x + 1, w->y + 1, w->w - 2, 12, K_TITLE);
+    fill(w->x + 6, w->y + 2, 11, 10, mode == 1 ? K_WHITE : K_TITLE);
+    frame(w->x + 7, w->y + 3, 9, 8, mode == 1 ? K_BLACK : K_WHITE);
   }
-  text(x + 2, y + 40, sel ? "3OS" : "3OS", TG_BLACK);
+  int tw = tg_textw(w->title) + 8, tx = w->x + (w->w - tw) / 2;
+  fill(tx, w->y + 2, tw, 10, (mode == 2 && active) ? K_TITLE : K_WHITE);
+  text(tx + 4, w->y + 3, w->title, (mode == 2 && active) ? K_WHITE : K_BLACK);
+  fill(w->x, w->y + 13, w->w, 1, K_BLACK);
+  fill(w->x + 1, w->y + 14, w->w - 2, w->h - 15, K_WHITE);
+  fill(w->x + 2, w->y + w->h, w->w, 1, K_BLACK);         /* ombre portée */
+  fill(w->x + w->w, w->y + 2, 1, w->h - 1, K_BLACK);
+  int x = w->x + 10, y = w->y + 22;
+  if (j == 0) {
+    text(x, y, "3OS - bureau Systeme 3", K_BLACK);
+    text(x, y + 16, "Machine ternaire equilibree TRI-27.", K_BLACK);
+    text(x, y + 28, "Tirez une barre de titre a la souris.", K_BLACK);
+    text(x, y + 40, "C : couleur / trits.  Q : quitter.", K_BLACK);
+    text(x, y + 56, "Pixel = 1 trit : noir, gris, blanc.", K_BLACK);
+    text(x, y + 68, "Le Mac avait 1 bit. Ici : 1,58.", K_BLACK);
+  } else {
+    text(x, y, "(vide)", K_GRAY);
+  }
+}
+
+static void icon_disk(int x, int y) {
+  frame(x, y, 34, 30, K_BLACK);
+  fill(x + 1, y + 1, 32, 28, mode == 1 ? K_WHITE : K_ACCENT);
+  fill(x + 6, y + 4, 22, 8, K_WHITE);
+  frame(x + 6, y + 4, 22, 8, K_BLACK);
+  fill(x + 8, y + 20, 18, 4, K_BLACK);
+  text(x + 8, y + 34, "3OS", K_BLACK);
 }
 static void icon_trash(int x, int y) {
-  box(x, y, 34, 40, TG_BLACK);
-  fill(x + 1, y + 1, 32, 4, TG_GRAY);
-  for (int r = 6; r < 39; r += 3) fill(x + 4, y + r, 26, 1, TG_BLACK);
-  fill(x + 1, y + 1, 32, 3, TG_WHITE);
-  text(x + 1, y + 44, "Corbeille", TG_BLACK);
+  fill(x + 2, y, 26, 4, K_BLACK);
+  frame(x + 4, y + 4, 22, 28, K_BLACK);
+  fill(x + 5, y + 5, 20, 26, mode == 1 ? K_WHITE : K_GRAY);
+  for (int q = x + 9; q < x + 24; q += 5) fill(q, y + 8, 1, 20, K_BLACK);
+  text(x - 12, y + 36, "Corbeille", K_BLACK);
 }
 
-/* --- fenêtres --- */
-static void draw_win(Win *wn, int active) {
-  if (!wn->open) return;
-  int t = active ? TG_BLACK : TG_GRAY;
-  box(wn->x, wn->y, wn->w, wn->h, TG_BLACK);
-  fill(wn->x + 1, wn->y + 1, wn->w - 2, 12, TG_WHITE);
-  dither(wn->x + 1, wn->y + 1, wn->w - 2, 12, TG_BLACK, TG_WHITE);
-  /* case de fermeture à gauche */
-  fill(wn->x + 3, wn->y + 3, 10, 8, TG_WHITE);
-  box(wn->x + 3, wn->y + 3, 10, 8, TG_BLACK);
-  fill(wn->x + 5, wn->y + 7, 6, 1, TG_BLACK);
-  text(wn->x + 18, wn->y + 3, wn->title, TG_BLACK);
-  fill(wn->x + 1, wn->y + 14, wn->w - 2, wn->h - 15, TG_WHITE);
-  if (g_mode == 2) {
-    fill(wn->x + 1, wn->y + 1, wn->w - 2, 12, active ? C_TITLE_T : C_TITLE);
-    fill(wn->x + 1, wn->y + 14, wn->w - 2, wn->h - 15, C_WIN);
-    text(wn->x + 18, wn->y + 3, wn->title, C_WIN);
-  }
+static void menubar(void) {
+  fill(0, 0, 576, 18, K_WHITE);
+  fill(0, 18, 576, 1, K_BLACK);
+  fill(13, 4, 3, 3, K_BLACK);        /* logo ∴ */
+  fill(9, 11, 3, 3, K_BLACK);
+  fill(17, 11, 3, 3, K_BLACK);
+  text(32, 6, "Fichier   Edition   Presentation   Special", K_BLACK);
+  text(530, 6, mode == 1 ? "TRIT" : "TRGB", K_GRAY);
 }
 
-static void draw_all(int active_a) {
-  if (g_mode == 1) { tg_noclip(); fill(0, 0, TRIT_W, TRIT_H, TG_GRAY); }
-  else fill(0, 0, TRIT_W, TRIT_H, C_DESKTOP);
-  /* barre de menus */
-  fill(0, 0, TRIT_W, 18, TG_WHITE);
-  if (g_mode == 2) fill(0, 0, TRIT_W, 18, C_TITLE_T);
-  /* logo : petit triangle ternaire ∴ (3 points) */
-  for (int q = 0; q < 3; q++) { putpixel(8 + q, 5, TG_BLACK); putpixel(8 + q, 12, TG_BLACK); }
-  putpixel(9, 8, TG_BLACK); putpixel(9, 11, TG_BLACK); putpixel(10, 11, TG_BLACK);
-  text(20, 4, "Fichier  Edition  Presentation  Special", TG_BLACK);
-  if (g_mode == 2) text(20, 4, "Fichier  Edition  Presentation  Special", C_WIN);
-  /* icônes */
-  icon_disk(500, 40, 0);
-  icon_trash(505, 290);
-  /* fenêtres puis contenus */
-  draw_win(&wa, active_a);
-  draw_win(&wb, !active_a);
-  text(wa.x + 10, wa.y + 24, "3OS v0.3 — bureau System 3", TG_BLACK);
-  text(wa.x + 10, wa.y + 40, "Machine ternaire equilibree TRI-27.", TG_BLACK);
-  text(wa.x + 10, wa.y + 52, "Tirez la barre de titre avec la souris.", TG_BLACK);
-  text(wa.x + 10, wa.y + 64, "Touche C : couleur / trit. Q : quitter.", TG_BLACK);
-  text(wa.x + 10, wa.y + 80, "Ternaire : -1, 0, +1. 27 trits par mot.", TG_BLACK);
-  text(wa.x + 10, wa.y + 96, "Trit par pixel : le Mac 1-bit, mais 3.", TG_BLACK);
-  text(wa.x + 10, wa.y + 120, "     ...      ..       ..", TG_BLACK);
-  text(wb.x + 10, wb.y + 24, "(vide)", TG_BLACK);
+static void draw_all(void) {
+  fill(0, 19, 576, 341, mode == 1 ? K_GRAY : K_DESK);
+  menubar();
+  icon_disk(510, 40);
+  icon_trash(520, 295);
+  draw_window(1 - top, 0);
+  draw_window(top, 1);
 }
 
-static void present(void) {
-  if (g_mode == 1) { tg_clip(0, 18, TRIT_W, TRIT_H - 18); save_cursor(); draw_cursor(); tg_noclip(); tg_present(); restore_cursor(); }
-  else { draw_cursor(); FB_PRESENT = 0; }
+static void set_mode(int m) {
+  mode = m;
+  shown = 0;
+  if (mode == 1) tg_init(fb);
+  else { VMODE = 2; FB_ADDR = (long)fbc; }
+  draw_all();
+  cur_show();
+  present();
 }
 
-static int hit(Win *wn, int mx, int my) {
-  return wn->open && mx >= wn->x && mx < wn->x + wn->w && my >= wn->y && my < wn->y + 13;
-}
-static int in_close(Win *wn, int mx, int my) {
-  return wn->open && mx >= wn->x + 3 && mx < wn->x + 13 && my >= wn->y + 3 && my < wn->y + 11;
+static int in(int x, int y, int rx, int ry, int rw, int rh) {
+  return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
 }
 
 int main(void) {
-  g_mode = 1;
-  tg_init(fb);
-  draw_all(1);
-  present();
-
-  int dragging = 0, dx = 0, dy = 0, mx = 0, my = 0, btn = 0, frames = 0;
-  long t0 = TIME_MS, tlast = t0;
-  long last_repaint = 0;
+  set_mode(1);
+  int drag = -1, dx = 0, dy = 0, prev_left = 0;
   for (;;) {
-    /* événements */
-    mx = MOUSE_X; my = MOUSE_Y; btn = MOUSE_BTN;
-    int k = KEY_EVENT;
-    while (k) {
-      int code = k > 0 ? k : -k;
-      if (k > 0 && (code == 67 || code == 99)) { /* C : bascule couleur */
-        restore_cursor();
-        g_mode = (g_mode == 1) ? 2 : 1;
-        if (g_mode == 1) tg_init(fb); else { VMODE = 2; FB_ADDR = (long)fbc; }
-        draw_all(1);
-        present();
-      }
-      if (k > 0 && (code == 81 || code == 27)) { /* Q / Échap */
-        return 0;
-      }
-      k = KEY_EVENT;
+    int k;
+    while ((k = KEY_EVENT) != 0) {
+      if (k == 67) { cur_hide(); set_mode(mode == 1 ? 2 : 1); }     /* C */
+      if (k == 81 || k == 27) return 0;                            /* Q, Échap */
     }
-    if (mx != cur_x || my != cur_y) {
-      restore_cursor();
-      cur_x = mx; cur_y = my;
-      draw_cursor();
-      if (g_mode == 1) tg_present();
-      else FB_PRESENT = 0;
-      frames++;
-    }
-    if (btn & 1 && !dragging) {
-      if (hit(&wa, mx, my)) { dragging = 1; dx = mx - wa.x; dy = my - wa.y; }
-      else if (in_close(&wb, mx, my)) { wb.open = 0; draw_all(1); present(); }
-      else if (in_close(&wa, mx, my)) { wa.open = 0; draw_all(0); present(); }
-    }
-    if ((btn & 1) && dragging) {
-      int nx = mx - dx, ny = my - dy;
-      if (nx < 0) nx = 0; if (ny < 18) ny = 18;
-      if (nx > TRIT_W - wa.w) nx = TRIT_W - wa.w;
-      if (ny > TRIT_H - 20) ny = TRIT_H - 20;
-      if (nx != wa.x || ny != wa.y) {
-        restore_cursor();
-        wa.x = nx; wa.y = ny;
-        draw_all(1);
-        present();
-      }
-    }
-    if (!(btn & 1)) dragging = 0;
+    while (CONSOLE_IN >= 0) {}
+    int mx = MOUSE_X, my = MOUSE_Y, left = MOUSE_BTN % 3;
+    int dirty = 0;
 
-    long t = TIME_MS;
-    tlast = t;
-    (void)last_repaint; (void)frames;
-    if (t - t0 > 4000) break; /* démo : 4 s puis fin */
+    if (left && !prev_left) {                                      /* appui */
+      for (int i = 0; i < 2; i++) {
+        int j = (i == 0) ? top : 1 - top;
+        Win *w = &win[j];
+        if (!w->open || !in(mx, my, w->x, w->y, w->w, w->h)) continue;
+        if (j == top && in(mx, my, w->x + 6, w->y + 2, 11, 10)) { w->open = 0; dirty = 1; }
+        else {
+          if (j != top) { top = j; dirty = 1; }
+          if (my < w->y + 13) { drag = j; dx = mx - w->x; dy = my - w->y; }
+        }
+        break;
+      }
+      if (in(mx, my, 510, 40, 34, 44)) { win[0].open = 1; win[1].open = 1; dirty = 1; }
+    }
+    if (!left) drag = -1;
+    if (drag >= 0) {
+      Win *w = &win[drag];
+      int nx = mx - dx, ny = my - dy;
+      if (ny < 20) ny = 20;
+      if (ny > 345) ny = 345;
+      if (nx < 20 - w->w) nx = 20 - w->w;
+      if (nx > 556) nx = 556;
+      if (nx != w->x || ny != w->y) { w->x = nx; w->y = ny; dirty = 1; }
+    }
+    prev_left = left;
+
+    if (dirty) { cur_hide(); cx = mx; cy = my; draw_all(); cur_show(); present(); }
+    else if (mx != cx || my != cy) { cur_hide(); cx = mx; cy = my; cur_show(); present(); }
+    else {
+      long t = TIME_MS + 16;                                       /* attendre ~1 image */
+      while (TIME_MS < t && MOUSE_X == cx && MOUSE_Y == cy) {}
+    }
   }
-  return frames;
 }

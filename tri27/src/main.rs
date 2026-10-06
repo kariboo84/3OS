@@ -113,6 +113,7 @@ fn main() {
             vm.load(0, &img.trytes);
             vm.reset_cpu(img.entry);
             vm.input.extend(input.chars().map(|c| c as i64));
+            vm.capture_present = ppm.is_some();
             let t0 = Instant::now();
             let stdout = std::io::stdout();
             let mut done = 0u64;

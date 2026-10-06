@@ -19,7 +19,11 @@
   #right { display: flex; flex-direction: column; gap: 8px; }
   #screen { width: 960px; height: 600px; image-rendering: pixelated; background: #000; border: 1px solid #2a2f37; outline: none; }
   #screen:focus { border-color: #4a8fd0; }
-  #console { width: 960px; height: 180px; overflow: auto; margin: 0; background: #0b0d10; border: 1px solid #2a2f37; border-radius: 4px; padding: 8px; font: 13px/1.35 Consolas, monospace; color: #e8e8e8; white-space: pre-wrap; }
+  #console { width: 960px; height: 180px; overflow: auto; margin: 0; background: #0b0d10; border: 1px solid #2a2f37; border-radius: 4px; padding: 8px; font: 13px/1.35 Consolas, monospace; color: #e8e8e8; white-space: pre-wrap; outline: none; cursor: text; }
+  #console:focus { border-color: #4a8fd0; }
+  #console:focus::after { content: "\2588"; color: #7ee787; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  #termhint { font: 12px Consolas, monospace; color: #7ee787; }
   #stats { font: 12px Consolas, monospace; color: #8b949e; }
   #status.err { color: #ff7b72; }
   #status.ok { color: #7ee787; }
@@ -39,12 +43,13 @@
 <main>
   <div id="left">
     <textarea id="src" spellcheck="false"></textarea>
-    <div class="hint">Cliquer sur l'écran pour lui donner le focus : touches → KEY (−7), caractères → CONSOLE_IN (−2).</div>
+    <div class="hint">Clavier : cliquer sur l'écran ou dans la console. Touches → KEY (−7), caractères → CONSOLE_IN (−2).</div>
   </div>
   <div id="right">
     <canvas id="screen" width="320" height="200" tabindex="0"></canvas>
     <div id="stats">—</div>
-    <pre id="console"></pre>
+    <div id="termhint">▸ Clique dans la console ci-dessous et tape (ex. help puis Entrée). Le curseur vert clignote quand elle a le focus.</div>
+    <pre id="console" tabindex="0"></pre>
   </div>
 </main>
 <script src="app.js"></script>

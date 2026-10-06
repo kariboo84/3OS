@@ -117,7 +117,7 @@ function assembleAndRun() {
   drawFrame();
   setStatus('En cours', 'ok');
   $('btnPause').textContent = 'Pause';
-  canvas.focus();
+  conEl.focus();
   return true;
 }
 
@@ -166,7 +166,7 @@ function tick(ts) {
 }
 
 // ---- clavier : codes = KeyboardEvent.keyCode (flèches 37..40, lettres 65..90, Entrée 13, Échap 27) ----
-canvas.addEventListener('keydown', (e) => {
+function onKeyDown(e) {
   if (!W) return;
   if (!e.repeat && e.keyCode) W.push_key(e.keyCode);
   if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) W.push_char(e.key.codePointAt(0));
@@ -175,13 +175,18 @@ canvas.addEventListener('keydown', (e) => {
   else if (e.key === 'Tab') W.push_char(9);
   else if (e.key === 'Escape') W.push_char(27);
   e.preventDefault();
-});
-canvas.addEventListener('keyup', (e) => {
+}
+function onKeyUp(e) {
   if (!W) return;
   if (e.keyCode) W.push_key(-e.keyCode);
   e.preventDefault();
-});
-canvas.addEventListener('mousedown', () => canvas.focus());
+}
+// l'écran ET la console acceptent le clavier (la console sert de terminal)
+for (const el of [canvas, conEl]) {
+  el.addEventListener('keydown', onKeyDown);
+  el.addEventListener('keyup', onKeyUp);
+  el.addEventListener('mousedown', () => setTimeout(() => el.focus(), 0));
+}
 
 $('btnRun').onclick = () => { if (W) assembleAndRun(); };
 $('btnPause').onclick = () => {
@@ -189,7 +194,7 @@ $('btnPause').onclick = () => {
   running = !running;
   $('btnPause').textContent = running ? 'Pause' : 'Reprendre';
   setStatus(running ? 'En cours' : 'En pause', running ? 'ok' : '');
-  if (running) canvas.focus();
+  if (running) conEl.focus();
 };
 $('btnReset').onclick = () => {
   if (!loaded) return;
@@ -200,7 +205,7 @@ $('btnReset').onclick = () => {
   drawFrame();
   $('btnPause').textContent = 'Pause';
   setStatus('En cours', 'ok');
-  canvas.focus();
+  conEl.focus();
 };
 
 // ---- exemples : ../examples/index.json (optionnel) ----

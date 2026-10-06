@@ -130,7 +130,7 @@ Si TVEC=0 : ECALL est servi par l'hôte (0 exit(a0), 1 putc(a0), 2 print_int(a0)
 | −6 | FB_PRESENT | écriture : présenter l'image |
 | −7 | KEY | lecture : événement clavier suivant (+code = appui, −code = relâche, 0 = rien) |
 | −8 | TIME_MS | lecture : millisecondes depuis le démarrage |
-| −9 | VMODE | lecture/écriture : mode vidéo, 0 = TRGB 320×200 (défaut), 1 = TRIT 576×360 |
+| −9 | VMODE | lecture/écriture : mode vidéo, 0 = TRGB 320×200 (défaut), 1 = TRIT 576×360, 2 = TRGB 576×360 |
 | −10 | MOUSE_X | lecture : x souris, pixels du mode courant, borné à 0…largeur−1 |
 | −11 | MOUSE_Y | lecture : y souris, borné à 0…hauteur−1 |
 | −12 | MOUSE_BTN | lecture : trit 0 = bouton gauche, trit 1 = bouton droit (chacun 0/1) ; valeur = gauche + 3·droit |
@@ -141,6 +141,7 @@ Framebuffer : 320×200 trytes, ligne par ligne. Couleur **TRGB** : un tryte = 3 
 **Mode TRIT** (VMODE = 1) : 576×360 pixels, **1 trit par pixel**. FB_ADDR pointe sur 64 trytes par ligne × 360 lignes
 = 23 040 trytes. Le pixel x d'une ligne est le trit (x mod 9) du tryte (x div 9) ; trit 0 = pixel le plus à gauche.
 Trit −1 = noir (0,0,0), 0 = gris (170,170,170), +1 = blanc (255,255,255). Tryte tout −1 = −9841, tout +1 = +9841.
+**Mode 2** (VMODE = 2) : TRGB 576×360, 1 tryte par pixel (codage TRGB du mode 0), 576 trytes par ligne × 360 = 207 360 trytes.
 Changer VMODE rebornes la souris aux dimensions du nouveau mode.
 
 Souris : l'hôte fixe la position (pixels du mode courant) et l'état des boutons ; la page web convertit les

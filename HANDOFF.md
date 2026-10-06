@@ -6,7 +6,7 @@ Charger d'abord le skill `tri27-3os`.
 - TRI-27 : SPEC, VM Rust (~300 M instr/s), assembleur, WASM + page web, son TSG-3, 3OS v0.1 (asm), chibicc porté (34/41 PASS), backend optimisé (b1698e8), Tetris en C.
 - e52b96b (Sonnet) : VMODE=1 trit 576x360, souris MMIO (-10 X, -11 Y, -12 BTN), canvas adaptatif, fix doublon clavier.
 
-## En cours, NON commité, NON vérifié (dans l'arbre de travail)
+## En cours, commité en WIP (NON vérifié) — retour arrière : `git reset --hard stable-avant-relais`
 - SPEC.md, cc/include/tri27io.h, tri27/src/vm.rs, web/tri27.wasm : ajout VMODE=2 (TRGB 576x360) probablement partiel.
 - cc/include/tgfx.h, cc/lib/tgfx.c : bibliothèque graphique C (mode trit/couleur), inachevée.
 → Relire `git diff`, terminer, vérifier, commiter.

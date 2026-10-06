@@ -166,7 +166,7 @@ impl Vm {
             }
             mmio::FB_ADDR => self.fb_addr = v,
             mmio::VMODE => {
-                self.vmode = if v == 1 { 1 } else { 0 };
+                self.vmode = if v == 1 || v == 2 { v } else { 0 };
                 self.set_mouse(self.mouse_x, self.mouse_y, self.mouse_btn);
             }
             mmio::FB_PRESENT => {
@@ -500,7 +500,7 @@ impl Vm {
 
     /// Dimensions du mode vidéo courant.
     pub fn fb_dims(&self) -> (usize, usize) {
-        if self.vmode == 1 { (TRIT_W, TRIT_H) } else { (FB_W, FB_H) }
+        if self.vmode >= 1 { (TRIT_W, TRIT_H) } else { (FB_W, FB_H) }
     }
 
     /// Fixe la souris (pixels du mode courant, bornés ; btn = gauche + 3·droit).

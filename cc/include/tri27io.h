@@ -13,13 +13,15 @@
 #define KEY_EVENT   TRI27_MMIO(-7)   /* +code appui, -code relâche, 0 rien (codes KeyboardEvent.keyCode) */
 #define TIME_MS     TRI27_MMIO(-8)
 
-#define VMODE       TRI27_MMIO(-9)   /* 0 = TRGB 320x200, 1 = TRIT 576x360 (1 trit/pixel) */
+#define VMODE       TRI27_MMIO(-9)   /* 0 = TRGB 320x200, 1 = TRIT 576x360 (1 trit/pixel), 2 = TRGB 576x360 */
 #define MOUSE_X     TRI27_MMIO(-10)
 #define MOUSE_Y     TRI27_MMIO(-11)
 #define MOUSE_BTN   TRI27_MMIO(-12)  /* gauche + 3*droit (chacun 0/1) */
 
 #define TRIT_W 576
 #define TRIT_H 360
+#define TRGB_HI_W 576
+#define TRGB_HI_H 360
 #define FB_W 320
 #define FB_H 200
 

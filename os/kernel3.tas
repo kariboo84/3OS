@@ -3837,58 +3837,6 @@ __builtin_tdot:
   ret
 
   .align 1
-__tu3.L..29:
-  .tryte 95
-  .tryte 95
-  .tryte 116
-  .tryte 114
-  .tryte 105
-  .tryte 95
-  .tryte 117
-  .tryte 115
-  .tryte 104
-  .tryte 114
-  .tryte 0
-  .align 1
-__tu3.L..28:
-  .tryte 95
-  .tryte 95
-  .tryte 116
-  .tryte 114
-  .tryte 105
-  .tryte 95
-  .tryte 117
-  .tryte 115
-  .tryte 104
-  .tryte 114
-  .tryte 0
-  .align 1
-__tu3.L..27:
-  .tryte 95
-  .tryte 95
-  .tryte 116
-  .tryte 114
-  .tryte 105
-  .tryte 95
-  .tryte 117
-  .tryte 109
-  .tryte 111
-  .tryte 100
-  .tryte 0
-  .align 1
-__tu3.L..26:
-  .tryte 95
-  .tryte 95
-  .tryte 116
-  .tryte 114
-  .tryte 105
-  .tryte 95
-  .tryte 117
-  .tryte 109
-  .tryte 111
-  .tryte 100
-  .tryte 0
-  .align 1
 __tu3.L..25:
   .tryte 95
   .tryte 95
@@ -3897,9 +3845,9 @@ __tu3.L..25:
   .tryte 105
   .tryte 95
   .tryte 117
-  .tryte 100
-  .tryte 105
-  .tryte 118
+  .tryte 115
+  .tryte 104
+  .tryte 114
   .tryte 0
   .align 1
 __tu3.L..24:
@@ -3910,32 +3858,84 @@ __tu3.L..24:
   .tryte 105
   .tryte 95
   .tryte 117
+  .tryte 115
+  .tryte 104
+  .tryte 114
+  .tryte 0
+  .align 1
+__tu3.L..23:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 117
+  .tryte 109
+  .tryte 111
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu3.L..22:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 117
+  .tryte 109
+  .tryte 111
+  .tryte 100
+  .tryte 0
+  .align 1
+__tu3.L..21:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
+  .tryte 117
   .tryte 100
   .tryte 105
   .tryte 118
   .tryte 0
   .align 1
-__tu3.L..19:
+__tu3.L..20:
+  .tryte 95
+  .tryte 95
+  .tryte 116
+  .tryte 114
+  .tryte 105
+  .tryte 95
   .tryte 117
   .tryte 100
   .tryte 105
   .tryte 118
-  .tryte 114
-  .tryte 101
-  .tryte 109
-  .tryte 0
-  .align 1
-__tu3.L..18:
-  .tryte 117
-  .tryte 100
-  .tryte 105
-  .tryte 118
-  .tryte 114
-  .tryte 101
-  .tryte 109
   .tryte 0
   .align 1
 __tu3.L..15:
+  .tryte 117
+  .tryte 100
+  .tryte 105
+  .tryte 118
+  .tryte 114
+  .tryte 101
+  .tryte 109
+  .tryte 0
+  .align 1
+__tu3.L..14:
+  .tryte 117
+  .tryte 100
+  .tryte 105
+  .tryte 118
+  .tryte 114
+  .tryte 101
+  .tryte 109
+  .tryte 0
+  .align 1
+__tu3.L..13:
   .tryte 95
   .tryte 95
   .tryte 116
@@ -3947,7 +3947,7 @@ __tu3.L..15:
   .tryte 114
   .tryte 0
   .align 1
-__tu3.L..14:
+__tu3.L..12:
   .tryte 95
   .tryte 95
   .tryte 116
@@ -3982,6 +3982,134 @@ __tu3.L..10:
   .tryte 104
   .tryte 108
   .tryte 0
+  .align 3
+__tu3.L.static.powers:
+  .tryte 1
+  .tryte 0
+  .tryte 0
+  .tryte 2
+  .tryte 0
+  .tryte 0
+  .tryte 4
+  .tryte 0
+  .tryte 0
+  .tryte 8
+  .tryte 0
+  .tryte 0
+  .tryte 16
+  .tryte 0
+  .tryte 0
+  .tryte 32
+  .tryte 0
+  .tryte 0
+  .tryte 64
+  .tryte 0
+  .tryte 0
+  .tryte 128
+  .tryte 0
+  .tryte 0
+  .tryte 256
+  .tryte 0
+  .tryte 0
+  .tryte 512
+  .tryte 0
+  .tryte 0
+  .tryte 1024
+  .tryte 0
+  .tryte 0
+  .tryte 2048
+  .tryte 0
+  .tryte 0
+  .tryte 4096
+  .tryte 0
+  .tryte 0
+  .tryte 8192
+  .tryte 0
+  .tryte 0
+  .tryte -3299
+  .tryte 1
+  .tryte 0
+  .tryte -6598
+  .tryte 2
+  .tryte 0
+  .tryte 6487
+  .tryte 3
+  .tryte 0
+  .tryte -6709
+  .tryte 7
+  .tryte 0
+  .tryte 6265
+  .tryte 13
+  .tryte 0
+  .tryte -7153
+  .tryte 27
+  .tryte 0
+  .tryte 5377
+  .tryte 53
+  .tryte 0
+  .tryte -8929
+  .tryte 107
+  .tryte 0
+  .tryte 1825
+  .tryte 213
+  .tryte 0
+  .tryte 3650
+  .tryte 426
+  .tryte 0
+  .tryte 7300
+  .tryte 852
+  .tryte 0
+  .tryte -5083
+  .tryte 1705
+  .tryte 0
+  .tryte 9517
+  .tryte 3409
+  .tryte 0
+  .tryte -649
+  .tryte 6819
+  .tryte 0
+  .tryte -1298
+  .tryte -6045
+  .tryte 1
+  .tryte -2596
+  .tryte 7593
+  .tryte 1
+  .tryte -5192
+  .tryte -4497
+  .tryte 3
+  .tryte 9299
+  .tryte -8995
+  .tryte 6
+  .tryte -1085
+  .tryte 1694
+  .tryte 11
+  .tryte -2170
+  .tryte 3388
+  .tryte 22
+  .tryte -4340
+  .tryte 6776
+  .tryte 44
+  .tryte -8680
+  .tryte -6131
+  .tryte 89
+  .tryte 2323
+  .tryte 7420
+  .tryte 177
+  .tryte 4646
+  .tryte -4843
+  .tryte 355
+  .tryte 9292
+  .tryte -9686
+  .tryte 710
+  .tryte -1099
+  .tryte 312
+  .tryte 1419
+  .tryte -2198
+  .tryte 624
+  .tryte 2838
+  .tryte -4396
+  .tryte 1248
+  .tryte 5676
   .align 1
 __tu3.L..9:
   .tryte 95
@@ -4068,15 +4196,790 @@ __tu3.L..0:
   .tryte 111
   .tryte 112
   .tryte 0
+  .align 1
+__tu3.L.static.xor_table:
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 4
+  .tryte 5
+  .tryte 6
+  .tryte 7
+  .tryte 8
+  .tryte 9
+  .tryte 10
+  .tryte 11
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 1
+  .tryte 0
+  .tryte 3
+  .tryte 2
+  .tryte 5
+  .tryte 4
+  .tryte 7
+  .tryte 6
+  .tryte 9
+  .tryte 8
+  .tryte 11
+  .tryte 10
+  .tryte 13
+  .tryte 12
+  .tryte 15
+  .tryte 14
+  .tryte 2
+  .tryte 3
+  .tryte 0
+  .tryte 1
+  .tryte 6
+  .tryte 7
+  .tryte 4
+  .tryte 5
+  .tryte 10
+  .tryte 11
+  .tryte 8
+  .tryte 9
+  .tryte 14
+  .tryte 15
+  .tryte 12
+  .tryte 13
+  .tryte 3
+  .tryte 2
+  .tryte 1
+  .tryte 0
+  .tryte 7
+  .tryte 6
+  .tryte 5
+  .tryte 4
+  .tryte 11
+  .tryte 10
+  .tryte 9
+  .tryte 8
+  .tryte 15
+  .tryte 14
+  .tryte 13
+  .tryte 12
+  .tryte 4
+  .tryte 5
+  .tryte 6
+  .tryte 7
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 8
+  .tryte 9
+  .tryte 10
+  .tryte 11
+  .tryte 5
+  .tryte 4
+  .tryte 7
+  .tryte 6
+  .tryte 1
+  .tryte 0
+  .tryte 3
+  .tryte 2
+  .tryte 13
+  .tryte 12
+  .tryte 15
+  .tryte 14
+  .tryte 9
+  .tryte 8
+  .tryte 11
+  .tryte 10
+  .tryte 6
+  .tryte 7
+  .tryte 4
+  .tryte 5
+  .tryte 2
+  .tryte 3
+  .tryte 0
+  .tryte 1
+  .tryte 14
+  .tryte 15
+  .tryte 12
+  .tryte 13
+  .tryte 10
+  .tryte 11
+  .tryte 8
+  .tryte 9
+  .tryte 7
+  .tryte 6
+  .tryte 5
+  .tryte 4
+  .tryte 3
+  .tryte 2
+  .tryte 1
+  .tryte 0
+  .tryte 15
+  .tryte 14
+  .tryte 13
+  .tryte 12
+  .tryte 11
+  .tryte 10
+  .tryte 9
+  .tryte 8
+  .tryte 8
+  .tryte 9
+  .tryte 10
+  .tryte 11
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 4
+  .tryte 5
+  .tryte 6
+  .tryte 7
+  .tryte 9
+  .tryte 8
+  .tryte 11
+  .tryte 10
+  .tryte 13
+  .tryte 12
+  .tryte 15
+  .tryte 14
+  .tryte 1
+  .tryte 0
+  .tryte 3
+  .tryte 2
+  .tryte 5
+  .tryte 4
+  .tryte 7
+  .tryte 6
+  .tryte 10
+  .tryte 11
+  .tryte 8
+  .tryte 9
+  .tryte 14
+  .tryte 15
+  .tryte 12
+  .tryte 13
+  .tryte 2
+  .tryte 3
+  .tryte 0
+  .tryte 1
+  .tryte 6
+  .tryte 7
+  .tryte 4
+  .tryte 5
+  .tryte 11
+  .tryte 10
+  .tryte 9
+  .tryte 8
+  .tryte 15
+  .tryte 14
+  .tryte 13
+  .tryte 12
+  .tryte 3
+  .tryte 2
+  .tryte 1
+  .tryte 0
+  .tryte 7
+  .tryte 6
+  .tryte 5
+  .tryte 4
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 8
+  .tryte 9
+  .tryte 10
+  .tryte 11
+  .tryte 4
+  .tryte 5
+  .tryte 6
+  .tryte 7
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 13
+  .tryte 12
+  .tryte 15
+  .tryte 14
+  .tryte 9
+  .tryte 8
+  .tryte 11
+  .tryte 10
+  .tryte 5
+  .tryte 4
+  .tryte 7
+  .tryte 6
+  .tryte 1
+  .tryte 0
+  .tryte 3
+  .tryte 2
+  .tryte 14
+  .tryte 15
+  .tryte 12
+  .tryte 13
+  .tryte 10
+  .tryte 11
+  .tryte 8
+  .tryte 9
+  .tryte 6
+  .tryte 7
+  .tryte 4
+  .tryte 5
+  .tryte 2
+  .tryte 3
+  .tryte 0
+  .tryte 1
+  .tryte 15
+  .tryte 14
+  .tryte 13
+  .tryte 12
+  .tryte 11
+  .tryte 10
+  .tryte 9
+  .tryte 8
+  .tryte 7
+  .tryte 6
+  .tryte 5
+  .tryte 4
+  .tryte 3
+  .tryte 2
+  .tryte 1
+  .tryte 0
+  .align 1
+__tu3.L.static.or_table:
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 4
+  .tryte 5
+  .tryte 6
+  .tryte 7
+  .tryte 8
+  .tryte 9
+  .tryte 10
+  .tryte 11
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 1
+  .tryte 1
+  .tryte 3
+  .tryte 3
+  .tryte 5
+  .tryte 5
+  .tryte 7
+  .tryte 7
+  .tryte 9
+  .tryte 9
+  .tryte 11
+  .tryte 11
+  .tryte 13
+  .tryte 13
+  .tryte 15
+  .tryte 15
+  .tryte 2
+  .tryte 3
+  .tryte 2
+  .tryte 3
+  .tryte 6
+  .tryte 7
+  .tryte 6
+  .tryte 7
+  .tryte 10
+  .tryte 11
+  .tryte 10
+  .tryte 11
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 3
+  .tryte 3
+  .tryte 3
+  .tryte 3
+  .tryte 7
+  .tryte 7
+  .tryte 7
+  .tryte 7
+  .tryte 11
+  .tryte 11
+  .tryte 11
+  .tryte 11
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 4
+  .tryte 5
+  .tryte 6
+  .tryte 7
+  .tryte 4
+  .tryte 5
+  .tryte 6
+  .tryte 7
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 5
+  .tryte 5
+  .tryte 7
+  .tryte 7
+  .tryte 5
+  .tryte 5
+  .tryte 7
+  .tryte 7
+  .tryte 13
+  .tryte 13
+  .tryte 15
+  .tryte 15
+  .tryte 13
+  .tryte 13
+  .tryte 15
+  .tryte 15
+  .tryte 6
+  .tryte 7
+  .tryte 6
+  .tryte 7
+  .tryte 6
+  .tryte 7
+  .tryte 6
+  .tryte 7
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 7
+  .tryte 7
+  .tryte 7
+  .tryte 7
+  .tryte 7
+  .tryte 7
+  .tryte 7
+  .tryte 7
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 8
+  .tryte 9
+  .tryte 10
+  .tryte 11
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 8
+  .tryte 9
+  .tryte 10
+  .tryte 11
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 9
+  .tryte 9
+  .tryte 11
+  .tryte 11
+  .tryte 13
+  .tryte 13
+  .tryte 15
+  .tryte 15
+  .tryte 9
+  .tryte 9
+  .tryte 11
+  .tryte 11
+  .tryte 13
+  .tryte 13
+  .tryte 15
+  .tryte 15
+  .tryte 10
+  .tryte 11
+  .tryte 10
+  .tryte 11
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 10
+  .tryte 11
+  .tryte 10
+  .tryte 11
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 11
+  .tryte 11
+  .tryte 11
+  .tryte 11
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 11
+  .tryte 11
+  .tryte 11
+  .tryte 11
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
+  .tryte 13
+  .tryte 13
+  .tryte 15
+  .tryte 15
+  .tryte 13
+  .tryte 13
+  .tryte 15
+  .tryte 15
+  .tryte 13
+  .tryte 13
+  .tryte 15
+  .tryte 15
+  .tryte 13
+  .tryte 13
+  .tryte 15
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 14
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .tryte 15
+  .align 1
+__tu3.L.static.and_table:
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 0
+  .tryte 2
+  .tryte 2
+  .tryte 0
+  .tryte 0
+  .tryte 2
+  .tryte 2
+  .tryte 0
+  .tryte 0
+  .tryte 2
+  .tryte 2
+  .tryte 0
+  .tryte 0
+  .tryte 2
+  .tryte 2
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 4
+  .tryte 4
+  .tryte 4
+  .tryte 4
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 4
+  .tryte 4
+  .tryte 4
+  .tryte 4
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 4
+  .tryte 5
+  .tryte 4
+  .tryte 5
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 4
+  .tryte 5
+  .tryte 4
+  .tryte 5
+  .tryte 0
+  .tryte 0
+  .tryte 2
+  .tryte 2
+  .tryte 4
+  .tryte 4
+  .tryte 6
+  .tryte 6
+  .tryte 0
+  .tryte 0
+  .tryte 2
+  .tryte 2
+  .tryte 4
+  .tryte 4
+  .tryte 6
+  .tryte 6
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 4
+  .tryte 5
+  .tryte 6
+  .tryte 7
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 4
+  .tryte 5
+  .tryte 6
+  .tryte 7
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 8
+  .tryte 8
+  .tryte 8
+  .tryte 8
+  .tryte 8
+  .tryte 8
+  .tryte 8
+  .tryte 8
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 8
+  .tryte 9
+  .tryte 8
+  .tryte 9
+  .tryte 8
+  .tryte 9
+  .tryte 8
+  .tryte 9
+  .tryte 0
+  .tryte 0
+  .tryte 2
+  .tryte 2
+  .tryte 0
+  .tryte 0
+  .tryte 2
+  .tryte 2
+  .tryte 8
+  .tryte 8
+  .tryte 10
+  .tryte 10
+  .tryte 8
+  .tryte 8
+  .tryte 10
+  .tryte 10
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 8
+  .tryte 9
+  .tryte 10
+  .tryte 11
+  .tryte 8
+  .tryte 9
+  .tryte 10
+  .tryte 11
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 0
+  .tryte 4
+  .tryte 4
+  .tryte 4
+  .tryte 4
+  .tryte 8
+  .tryte 8
+  .tryte 8
+  .tryte 8
+  .tryte 12
+  .tryte 12
+  .tryte 12
+  .tryte 12
+  .tryte 0
+  .tryte 1
+  .tryte 0
+  .tryte 1
+  .tryte 4
+  .tryte 5
+  .tryte 4
+  .tryte 5
+  .tryte 8
+  .tryte 9
+  .tryte 8
+  .tryte 9
+  .tryte 12
+  .tryte 13
+  .tryte 12
+  .tryte 13
+  .tryte 0
+  .tryte 0
+  .tryte 2
+  .tryte 2
+  .tryte 4
+  .tryte 4
+  .tryte 6
+  .tryte 6
+  .tryte 8
+  .tryte 8
+  .tryte 10
+  .tryte 10
+  .tryte 12
+  .tryte 12
+  .tryte 14
+  .tryte 14
+  .tryte 0
+  .tryte 1
+  .tryte 2
+  .tryte 3
+  .tryte 4
+  .tryte 5
+  .tryte 6
+  .tryte 7
+  .tryte 8
+  .tryte 9
+  .tryte 10
+  .tryte 11
+  .tryte 12
+  .tryte 13
+  .tryte 14
+  .tryte 15
   .align 3
 __tri_ushr:
 ; REGVARS s10 s9
   push ra
   push fp
   mv fp, sp
-  addi sp, sp, -15
-  stw s10, -12(fp)
-  stw s9, -15(fp)
+  addi sp, sp, -18
+  stw s1, -12(fp)
+  stw s10, -15(fp)
+  stw s9, -18(fp)
   stw sp, -3(fp)
   mv s9, a0
   mv s10, a1
@@ -4090,29 +4993,38 @@ __tu3.L.bskip2:
   j __tu3.L.end1
 __tu3.L.else1:
 __tu3.L.end1:
-  j __tu3.L.cond7
-__tu3.L.begin7:
+  mv a0, s10
+  bnez a0, __tu3.L.else7
+  mv a0, s9
+  j __tu3.L.return.__tri_ushr
+  j __tu3.L.end7
+__tu3.L.else7:
+__tu3.L.end7:
+  blt s9, zero, __tu3.L.else14
+  muli a0, s10, 3
+  mv a1, a0
+  ldw a0, __tu3.L.static.powers(a1)
+  div a0, s9, a0
+  j __tu3.L.return.__tri_ushr
+  j __tu3.L.end14
+__tu3.L.else14:
+__tu3.L.end14:
   addi sp, sp, -18
   mv a0, s9
   stw a0, 0(sp)
-  li a0, 2
+  muli a0, s10, 3
+  mv a1, a0
+  ldw a0, __tu3.L.static.powers(a1)
   stw a0, 3(sp)
   ldw a0, 0(sp)
   ldw a1, 3(sp)
   jal ra, __tri_udiv
   addi sp, sp, 18
-  mv s9, a0
-__tu3.L..31:
-__tu3.L.cond7:
-  mv a0, s10
-  addi s10, s10, -1
-  bnez a0, __tu3.L.begin7
-__tu3.L..30:
-  mv a0, s9
   j __tu3.L.return.__tri_ushr
 __tu3.L.return.__tri_ushr:
-  ldw s10, -12(fp)
-  ldw s9, -15(fp)
+  ldw s1, -12(fp)
+  ldw s10, -15(fp)
+  ldw s9, -18(fp)
   mv sp, fp
   pop fp
   pop ra
@@ -4201,28 +5113,28 @@ __tu3.L.static.udivrem:
   mv s6, a1
   mv s5, a2
   mv a0, s6
-  bnez a0, __tu3.L.else51
+  bnez a0, __tu3.L.else67
   addi sp, sp, -18
   jal ra, abort
   addi sp, sp, 18
-  j __tu3.L.end51
-__tu3.L.else51:
-__tu3.L.end51:
+  j __tu3.L.end67
+__tu3.L.else67:
+__tu3.L.end67:
   mv s7, zero
   mv s7, zero
-  j __tu3.L.cond62
-__tu3.L.begin62:
+  j __tu3.L.cond78
+__tu3.L.begin78:
   mv s10, zero
   mv s10, s6
   mv s9, zero
   li a0, 1
   mv s9, a0
-  j __tu3.L.cond73
-__tu3.L.begin73:
+  j __tu3.L.cond89
+__tu3.L.begin89:
   add s10, s10, s10
   add s9, s9, s9
-__tu3.L..23:
-__tu3.L.cond73:
+__tu3.L..19:
+__tu3.L.cond89:
   li a1, 3812798742493
   mv a0, s10
   li t0, 3812798742493
@@ -4230,7 +5142,7 @@ __tu3.L.cond73:
   sub a1, a1, t0
   slt a0, a1, a0
   seq a0, a0, zero
-  beqz a0, __tu3.L.bskip77
+  beqz a0, __tu3.L.bskip93
   mv a0, s8
   mv a1, a0
   add a0, s10, s10
@@ -4239,13 +5151,13 @@ __tu3.L.cond73:
   sub a1, a1, t0
   slt a0, a1, a0
   seq a0, a0, zero
-  bnez a0, __tu3.L.begin73
-__tu3.L.bskip77:
-__tu3.L..22:
+  bnez a0, __tu3.L.begin89
+__tu3.L.bskip93:
+__tu3.L..18:
   sub s8, s8, s10
   add s7, s7, s9
-__tu3.L..21:
-__tu3.L.cond62:
+__tu3.L..17:
+__tu3.L.cond78:
   mv a0, s8
   mv a1, a0
   mv a0, s6
@@ -4254,8 +5166,8 @@ __tu3.L.cond62:
   sub a1, a1, t0
   slt a0, a1, a0
   seq a0, a0, zero
-  bnez a0, __tu3.L.begin62
-__tu3.L..20:
+  bnez a0, __tu3.L.begin78
+__tu3.L..16:
   mv a0, s5
   stw s8, 0(a0)
   mv a0, s7
@@ -4284,35 +5196,28 @@ __tri_shr:
   stw s9, -21(fp)
   stw s8, -24(fp)
   stw sp, -6(fp)
-  mv s10, a0
+  mv s8, a0
   mv s9, a1
-  blt s9, zero, __tu3.L.bskip105
+  blt s9, zero, __tu3.L.bskip121
   li a0, 41
-  bge a0, s9, __tu3.L.else104
-__tu3.L.bskip105:
+  bge a0, s9, __tu3.L.else120
+__tu3.L.bskip121:
   addi sp, sp, -18
   jal ra, abort
   addi sp, sp, 18
-  j __tu3.L.end104
-__tu3.L.else104:
-__tu3.L.end104:
-  j __tu3.L.cond110
-__tu3.L.begin110:
-  mv s8, zero
-  li a1, 2
-  mod s8, s10, a1
-  slti a0, s8, 0
-  mv s1, a0
-  divi a0, s10, 2
-  sub a0, a0, s1
+  j __tu3.L.end120
+__tu3.L.else120:
+__tu3.L.end120:
+  mv s10, zero
+  muli a0, s9, 3
+  mv a1, a0
+  ldw a0, __tu3.L.static.powers(a1)
   mv s10, a0
-__tu3.L..17:
-__tu3.L.cond110:
-  mv a0, s9
-  addi s9, s9, -1
-  bnez a0, __tu3.L.begin110
-__tu3.L..16:
-  mv a0, s10
+  mod a0, s8, s10
+  slti a0, a0, 0
+  mv a1, a0
+  div a0, s8, s10
+  sub a0, a0, a1
   j __tu3.L.return.__tri_shr
 __tu3.L.return.__tri_shr:
   ldw s1, -15(fp)
@@ -4329,37 +5234,32 @@ __tri_shl:
   push ra
   push fp
   mv fp, sp
-  addi sp, sp, -15
-  stw s10, -12(fp)
-  stw s9, -15(fp)
+  addi sp, sp, -18
+  stw s1, -12(fp)
+  stw s10, -15(fp)
+  stw s9, -18(fp)
   stw sp, -3(fp)
   mv s9, a0
   mv s10, a1
-  blt s10, zero, __tu3.L.bskip133
+  blt s10, zero, __tu3.L.bskip150
   li a0, 41
-  bge a0, s10, __tu3.L.else132
-__tu3.L.bskip133:
+  bge a0, s10, __tu3.L.else149
+__tu3.L.bskip150:
   addi sp, sp, -18
   jal ra, abort
   addi sp, sp, 18
-  j __tu3.L.end132
-__tu3.L.else132:
-__tu3.L.end132:
-  j __tu3.L.cond138
-__tu3.L.begin138:
-  li a1, 2
-  mul s9, s9, a1
-__tu3.L..13:
-__tu3.L.cond138:
-  mv a0, s10
-  addi s10, s10, -1
-  bnez a0, __tu3.L.begin138
-__tu3.L..12:
-  mv a0, s9
+  j __tu3.L.end149
+__tu3.L.else149:
+__tu3.L.end149:
+  muli a0, s10, 3
+  mv a1, a0
+  ldw a0, __tu3.L.static.powers(a1)
+  mul a0, s9, a0
   j __tu3.L.return.__tri_shl
 __tu3.L.return.__tri_shl:
-  ldw s10, -12(fp)
-  ldw s9, -15(fp)
+  ldw s1, -12(fp)
+  ldw s10, -15(fp)
+  ldw s9, -18(fp)
   mv sp, fp
   pop fp
   pop ra
@@ -4381,7 +5281,7 @@ __tri_xor:
   stw a0, 0(sp)
   mv a0, s9
   stw a0, 3(sp)
-  li a0, 2
+  addi a0, zero, __tu3.L.static.xor_table
   stw a0, 6(sp)
   ldw a0, 0(sp)
   ldw a1, 3(sp)
@@ -4413,7 +5313,7 @@ __tri_or:
   stw a0, 0(sp)
   mv a0, s9
   stw a0, 3(sp)
-  li a0, 1
+  addi a0, zero, __tu3.L.static.or_table
   stw a0, 6(sp)
   ldw a0, 0(sp)
   ldw a1, 3(sp)
@@ -4445,7 +5345,8 @@ __tri_and:
   stw a0, 0(sp)
   mv a0, s9
   stw a0, 3(sp)
-  stw zero, 6(sp)
+  addi a0, zero, __tu3.L.static.and_table
+  stw a0, 6(sp)
   ldw a0, 0(sp)
   ldw a1, 3(sp)
   ldw a2, 6(sp)
@@ -4465,103 +5366,144 @@ __tu3.L.static.bitop:
   push ra
   push fp
   mv fp, sp
-  addi sp, sp, -45
-  stw s10, -30(fp)
-  stw s9, -33(fp)
-  stw s8, -36(fp)
-  stw s7, -39(fp)
-  stw s6, -42(fp)
-  stw s5, -45(fp)
-  stw sp, -18(fp)
-  mv s6, a0
-  mv s5, a1
-  stw a2, -27(fp)
-  stw zero, -15(fp)
-  mv s7, zero
-  li a0, 1
-  mv s7, a0
-  mv s8, zero
-  mv s8, zero
-  j __tu3.L.cond186
-__tu3.L.begin186:
-  mv s9, zero
-  li a1, 2
-  mod s9, s6, a1
-  mv s10, zero
-  li a1, 2
-  mod s10, s5, a1
-  bge s9, zero, __tu3.L.else202
-  addi s9, s9, 2
-  j __tu3.L.end202
-__tu3.L.else202:
-__tu3.L.end202:
-  bge s10, zero, __tu3.L.else205
-  addi s10, s10, 2
-  j __tu3.L.end205
-__tu3.L.else205:
-__tu3.L.end205:
-  li a1, 41
-  bne s8, a1, __tu3.L.else208
-  mv a0, s7
+  addi sp, sp, -57
+  stw s1, -39(fp)
+  stw s10, -42(fp)
+  stw s9, -45(fp)
+  stw s8, -48(fp)
+  stw s7, -51(fp)
+  stw s6, -54(fp)
+  stw s5, -57(fp)
+  stw sp, -27(fp)
+  mv s8, a0
+  mv s7, a1
+  stw a2, -36(fp)
+  li a0, 3812798742493
   neg a0, a0
+  bne s8, a0, __tu3.L.else196
+  li a0, 3812798742493
+  mv s8, a0
+  j __tu3.L.end196
+__tu3.L.else196:
+__tu3.L.end196:
+  li a0, 3812798742493
+  neg a0, a0
+  bne s7, a0, __tu3.L.else206
+  li a0, 3812798742493
   mv s7, a0
-  j __tu3.L.end208
-__tu3.L.else208:
-__tu3.L.end208:
-  ldw a0, -27(fp)
-  bne a0, zero, __tu3.L.bskip219
-  mv a0, s9
-  beqz a0, __tu3.L.bskip219
-  mv a0, s10
-  bnez a0, __tu3.L.bskip217
-__tu3.L.bskip219:
-  ldw a0, -27(fp)
-  li a1, 1
-  bne a0, a1, __tu3.L.bskip228
-  mv a0, s9
-  bnez a0, __tu3.L.bskip217
-  mv a0, s10
-  bnez a0, __tu3.L.bskip217
-__tu3.L.bskip228:
-  ldw a0, -27(fp)
-  li a1, 2
-  bne a0, a1, __tu3.L.else216
-  beq s9, s10, __tu3.L.else216
-__tu3.L.bskip217:
-  ldw a0, -15(fp)
-  add a0, a0, s7
-  stw a0, -15(fp)
-  j __tu3.L.end216
-__tu3.L.else216:
-__tu3.L.end216:
-  sub a0, s6, s9
-  li a1, 2
-  div s6, a0, a1
-  sub a0, s5, s10
-  li a1, 2
-  div s5, a0, a1
-  li a1, 41
-  beq s8, a1, __tu3.L.else254
-  li a1, 2
-  mul s7, s7, a1
-  j __tu3.L.end254
-__tu3.L.else254:
-__tu3.L.end254:
+  j __tu3.L.end206
+__tu3.L.else206:
+__tu3.L.end206:
+  stw zero, -24(fp)
+  mv s6, zero
+  li a0, 1
+  mv s6, a0
+  mv s5, zero
+  mv s5, zero
+  j __tu3.L.cond225
+__tu3.L.begin225:
+  mv s9, zero
+  li a1, 16
+  mod s9, s8, a1
+  mv s10, zero
+  li a1, 16
+  mod s10, s7, a1
+  bge s9, zero, __tu3.L.else241
+  addi s9, s9, 16
+  j __tu3.L.end241
+__tu3.L.else241:
+__tu3.L.end241:
+  bge s10, zero, __tu3.L.else244
+  addi s10, s10, 16
+  j __tu3.L.end244
+__tu3.L.else244:
+__tu3.L.end244:
+  muli a0, s9, 16
+  add a0, a0, s10
+  mv a1, a0
+  ldw a0, -36(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  mul a0, a0, s6
+  mv a1, a0
+  ldw a0, -24(fp)
+  add a0, a0, a1
+  stw a0, -24(fp)
+  modi a0, s8, 16
+  slti a0, a0, 0
+  mv s1, a0
+  divi a0, s8, 16
+  sub a0, a0, s1
+  mv s8, a0
+  modi a0, s7, 16
+  slti a0, a0, 0
+  mv s1, a0
+  divi a0, s7, 16
+  sub a0, a0, s1
+  mv s7, a0
+  li a1, 16
+  mul s6, s6, a1
 __tu3.L..3:
-  addi s8, s8, 1
-__tu3.L.cond186:
-  li a1, 42
-  blt s8, a1, __tu3.L.begin186
+  addi s5, s5, 1
+__tu3.L.cond225:
+  li a1, 10
+  blt s5, a1, __tu3.L.begin225
 __tu3.L..2:
-  ldw a0, -15(fp)
+  stw zero, -9(fp)
+  modi a0, s8, 4
+  stw a0, -9(fp)
+  stw zero, -6(fp)
+  modi a0, s7, 4
+  stw a0, -6(fp)
+  ldw a0, -9(fp)
+  bge a0, zero, __tu3.L.else303
+  ldw a0, -9(fp)
+  addi a0, a0, 4
+  stw a0, -9(fp)
+  j __tu3.L.end303
+__tu3.L.else303:
+__tu3.L.end303:
+  ldw a0, -6(fp)
+  bge a0, zero, __tu3.L.else313
+  ldw a0, -6(fp)
+  addi a0, a0, 4
+  stw a0, -6(fp)
+  j __tu3.L.end313
+__tu3.L.else313:
+__tu3.L.end313:
+  stw zero, -3(fp)
+  ldw a0, -6(fp)
+  mv s1, a0
+  ldw a0, -9(fp)
+  muli a0, a0, 16
+  add a0, a0, s1
+  mv a1, a0
+  ldw a0, -36(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  stw a0, -3(fp)
+  li a1, 2
+  blt a0, a1, __tu3.L.else344
+  ldw a0, -3(fp)
+  addi a0, a0, -4
+  stw a0, -3(fp)
+  j __tu3.L.end344
+__tu3.L.else344:
+__tu3.L.end344:
+  ldw a0, -3(fp)
+  mul a0, a0, s6
+  mv a1, a0
+  ldw a0, -24(fp)
+  add a0, a0, a1
   j __tu3.L.return..L.static.bitop
 __tu3.L.return..L.static.bitop:
-  ldw s10, -30(fp)
-  ldw s9, -33(fp)
-  ldw s8, -36(fp)
-  ldw s7, -39(fp)
-  ldw s6, -42(fp)
-  ldw s5, -45(fp)
+  ldw s1, -39(fp)
+  ldw s10, -42(fp)
+  ldw s9, -45(fp)
+  ldw s8, -48(fp)
+  ldw s7, -51(fp)
+  ldw s6, -54(fp)
+  ldw s5, -57(fp)
   mv sp, fp
   pop fp
   pop ra

@@ -259,3 +259,28 @@ pub extern "C" fn disk_alloc(n: usize) -> *mut i16 {
     s.vm.disk = vec![0; n];
     s.vm.disk.as_mut_ptr()
 }
+
+/// Le programme a demandé la saisie de texte (MMIO TEXT_IN) : la page envoie aussi les caractères.
+#[no_mangle]
+pub extern "C" fn text_input() -> i32 {
+    st().vm.text_input as i32
+}
+
+/// Disque modifié depuis le dernier appel (remis à faux) : la page le sauvegarde.
+#[no_mangle]
+pub extern "C" fn disk_take_dirty() -> i32 {
+    let s = st();
+    let d = s.vm.disk_dirty;
+    s.vm.disk_dirty = false;
+    d as i32
+}
+
+#[no_mangle]
+pub extern "C" fn disk_ptr() -> *const i16 {
+    st().vm.disk.as_ptr()
+}
+
+#[no_mangle]
+pub extern "C" fn disk_len() -> usize {
+    st().vm.disk.len()
+}

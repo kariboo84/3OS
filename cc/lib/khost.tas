@@ -22,3 +22,15 @@ __builtin_sht:
 wfi:
   wfi
   ret
+__builtin_tcons:
+  cons a0, a0, a1
+  ret
+__builtin_tany:
+  any a0, a0, a1
+  ret
+__builtin_tsum:
+  tsum a0, a0
+  ret
+__builtin_tdot:
+  tdot a0, a0, a1
+  ret

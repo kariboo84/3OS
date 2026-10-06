@@ -134,15 +134,38 @@ function audioPump() {
   }
 }
 
-let diskImage = null;
-// promesse gardée : un lancement attend la fin du téléchargement du disque
+let diskImage = null, diskKey = null;
+// Le disque modifié par 3OS est gardé dans le navigateur (localStorage), lié à la version
+// du disque servi (taille + date) : un nouveau disque du serveur remplace l'ancienne copie.
+function b64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+function unb64(s) { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
 const diskReady = fetch('3os.t3d', { cache: 'no-store' })
-  .then(r => r.ok ? r.arrayBuffer() : null)
-  .then(b => { if (b && b.byteLength) diskImage = new Int16Array(b); })
+  .then(r => r.ok ? r.arrayBuffer().then(b => ({ b, v: (r.headers.get('Last-Modified') || '') + ':' + b.byteLength })) : null)
+  .then(res => {
+    if (!res || !res.b.byteLength) return;
+    diskKey = '3os.disk:' + res.v;
+    diskImage = new Int16Array(res.b);
+    try {
+      const saved = localStorage.getItem(diskKey);
+      if (saved) { diskImage = new Int16Array(unb64(saved).buffer); appendConsole('[web] disque restauré depuis le navigateur (vos modifications)\n'); }
+      for (const k of Object.keys(localStorage)) if (k.startsWith('3os.disk:') && k !== diskKey) localStorage.removeItem(k);
+    } catch (_) {}
+  })
   .catch(() => {})
   .then(() => {
-    if (!diskImage) appendConsole('[web] disque 3os.t3d introuvable : 3OS v0.3 ne pourra pas démarrer\n');
+    if (!diskImage) appendConsole('[web] disque 3os.t3d introuvable : 3OS ne pourra pas démarrer\n');
   });
+function saveDisk() {
+  if (!W || !diskKey || !W.disk_take_dirty()) return;
+  const n = W.disk_len();
+  diskImage = new Int16Array(W.memory.buffer, W.disk_ptr(), n).slice();
+  try { localStorage.setItem(diskKey, b64(new Uint8Array(diskImage.buffer))); }
+  catch (e) { appendConsole('[web] sauvegarde du disque impossible : ' + e.message + '\n'); }
+}
+function resetDisk() {
+  if (diskKey) localStorage.removeItem(diskKey);
+  location.reload();
+}
 
 async function assembleAndRun() {
   await diskReady;
@@ -199,6 +222,7 @@ function tick(ts) {
     const f = W.frames();
     if (f !== lastFrames) { framesWin += f - lastFrames; lastFrames = f; drawFrame(); }
     audioPump();
+    saveDisk();
     finishIfHalted();
   } else {
     lastTs = null;
@@ -224,6 +248,12 @@ function onKeyDown(e) {
   // écran focus → KEY_EVENT seulement ; console focus → caractères seulement
   if (e.currentTarget === canvas) {
     if (!e.repeat && e.keyCode) W.push_key(e.keyCode);
+    // saisie de texte demandée par le programme (MMIO TEXT_IN) : caractères aussi, répétition comprise
+    if (W.text_input()) {
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) W.push_char(e.key.codePointAt(0));
+      else if (e.key === 'Enter') W.push_char(10);
+      else if (e.key === 'Backspace') W.push_char(8);
+    }
     e.preventDefault();
     return;
   }
@@ -261,6 +291,7 @@ canvas.addEventListener('mouseup', sendMouse);
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
 $('btnRun').onclick = () => { if (W) assembleAndRun(); };  // async : attend le disque
+if ($('btnDisk')) $('btnDisk').onclick = () => { if (confirm('Revenir au disque d\'origine (vos fichiers modifiés seront perdus) ?')) resetDisk(); };
 $('btnPause').onclick = () => {
   if (!loaded || W.halted()) return;
   running = !running;

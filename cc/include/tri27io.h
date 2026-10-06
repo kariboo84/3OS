@@ -20,6 +20,7 @@ void wfi(void);
 #define MOUSE_X     TRI27_MMIO(-10)
 #define MOUSE_Y     TRI27_MMIO(-11)
 #define MOUSE_BTN   TRI27_MMIO(-12)  /* gauche + 3*droit (chacun 0/1) */
+#define TEXT_INPUT  TRI27_MMIO(-13)  /* 1 : recevoir les caractères (CONSOLE_IN) même écran focalisé */
 
 #define TRIT_W 576
 #define TRIT_H 360

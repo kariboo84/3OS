@@ -25,6 +25,8 @@ pub mod mmio {
     pub const MOUSE_X: i64 = -10;
     pub const MOUSE_Y: i64 = -11;
     pub const MOUSE_BTN: i64 = -12;
+    /// 1 = le programme veut des caractères (saisie de texte) même écran focalisé.
+    pub const TEXT_IN: i64 = -13;
     pub const DISK_SECTOR: i64 = -20;
     pub const DISK_ADDR: i64 = -21;
     pub const DISK_CMD: i64 = -22;
@@ -104,6 +106,7 @@ pub struct Vm {
     pub disk_dirty: bool,
     /// WFI exécuté : run() rend la main à l'hôte jusqu'au prochain appel.
     pub waiting: bool,
+    pub text_input: bool,
     #[cfg(feature = "prof")]
     pub prof_op: [u64; 256],
     #[cfg(feature = "prof")]
@@ -150,6 +153,7 @@ impl Vm {
             disk_status: 0,
             disk_dirty: false,
             waiting: false,
+            text_input: false,
             #[cfg(feature = "prof")]
             prof_op: [0; 256],
             #[cfg(feature = "prof")]
@@ -258,6 +262,7 @@ impl Vm {
             mmio::MOUSE_X => self.mouse_x,
             mmio::MOUSE_Y => self.mouse_y,
             mmio::MOUSE_BTN => self.mouse_btn,
+            mmio::TEXT_IN => self.text_input as i64,
             mmio::DISK_SECTOR => self.disk_sector,
             mmio::DISK_ADDR => self.disk_addr,
             mmio::DISK_STATUS => self.disk_status,
@@ -294,6 +299,7 @@ impl Vm {
                     None => v,
                 }
             }
+            mmio::TEXT_IN => self.text_input = v != 0,
             mmio::DISK_SECTOR => self.disk_sector = v,
             mmio::DISK_ADDR => self.disk_addr = v,
             mmio::DISK_CMD => self.disk_cmd(v),
@@ -564,6 +570,8 @@ impl Vm {
             }
             op::NEG => set!(-r!(s1)),
             op::SXT => set!(wrap9(r!(s1))),
+            op::TSUM => set!(tsum(r!(s1))),
+            op::TDOT => set!(tdot(r!(s1), r!(s2))),
             op::MIN => set!(tmin(r!(s1), r!(s2))),
             op::MAX => set!(tmax(r!(s1), r!(s2))),
             op::TMUL => set!(tmul(r!(s1), r!(s2))),

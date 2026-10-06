@@ -16,5 +16,8 @@ long sys_readdir(long i, char *name);
 long sys_readfile(const char *name, char *buf, long max);
 /* Nombre de processus vivants. */
 long sys_procs(void);
+/* Réécrit le fichier de données `name` (len <= capacité réservée par mkdisk) ;
+ * renvoie len ou -1 (introuvable, programme, trop long). Persistant sur le disque. */
+long sys_writefile(const char *name, const char *buf, long len);
 
 #endif

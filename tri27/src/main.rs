@@ -78,6 +78,7 @@ fn save_disk(path: &str, d: &[i16]) {
 }
 
 /// Disque 3FS (SPEC §9) : secteur 0 = répertoire, fichiers contigus à partir du secteur 1.
+/// Entrée (30 trytes) : nom 16, secteur 3, longueur 3, entrée 3 (−1 = donnée), capacité 3.
 fn mkdisk(out: &str, items: &[String]) {
     const MAGIC: i64 = 27027;
     const ENT: usize = 30;
@@ -94,10 +95,15 @@ fn mkdisk(out: &str, items: &[String]) {
     put_word(&mut disk, 0, MAGIC);
     put_word(&mut disk, 3, items.len() as i64);
     for (n, it) in items.iter().enumerate() {
-        let (name, path) = it.split_once('=').unwrap_or_else(|| {
-            eprintln!("mkdisk : attendu nom=fichier, reçu {it}");
+        let (name, spec) = it.split_once('=').unwrap_or_else(|| {
+            eprintln!("mkdisk : attendu nom=fichier[:capacité], reçu {it}");
             std::process::exit(2)
         });
+        // capacité réservée (trytes) pour les fichiers réinscriptibles : nom=fichier:2187
+        let (path, cap_req) = match spec.rsplit_once(':') {
+            Some((p, c)) if c.chars().all(|x| x.is_ascii_digit()) && !c.is_empty() => (p, c.parse::<usize>().unwrap()),
+            _ => (spec, 0),
+        };
         let (data, entry): (Vec<i16>, i64) = if path.ends_with(".tas") {
             let img = load(path);
             (img.trytes, img.entry)
@@ -118,7 +124,10 @@ fn mkdisk(out: &str, items: &[String]) {
         put_word(&mut disk, base + 16, start as i64);
         put_word(&mut disk, base + 19, data.len() as i64);
         put_word(&mut disk, base + 22, entry);
+        let cap = (data.len().max(cap_req).max(1) + SECTOR - 1) / SECTOR * SECTOR;
+        put_word(&mut disk, base + 25, cap as i64);
         disk.extend_from_slice(&data);
+        disk.resize(start * SECTOR + cap, 0);
         let pad = (SECTOR - disk.len() % SECTOR) % SECTOR;
         disk.extend(std::iter::repeat(0).take(pad));
         eprintln!("  {name:<15} secteur {start:>5}  {:>7} trytes  entrée {entry}", data.len());

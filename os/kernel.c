@@ -72,6 +72,17 @@ static void disk_read(long sector, long phys) {
   DISK_ADDR = phys;
   DISK_CMD = 1;
 }
+static void disk_write(long sector, long phys) {
+  DISK_SECTOR = sector;
+  DISK_ADDR = phys;
+  DISK_CMD = 2;
+}
+static void put_word(char *p, long v) {      /* mot équilibré sur 3 trytes */
+  long t0 = v % 19683; if (t0 > 9841) t0 -= 19683; if (t0 < -9841) t0 += 19683;
+  long r = (v - t0) / 19683;
+  long t1 = r % 19683; if (t1 > 9841) t1 -= 19683; if (t1 < -9841) t1 += 19683;
+  p[0] = t0; p[1] = t1; p[2] = (r - t1) / 19683;
+}
 static long dir_count(void) { return word_at(dir) == 27027 ? word_at(dir + 3) : 0; }
 static char *dir_entry(long i) { return dir + 6 + i * 30; }
 static int name_eq(char *a, const char *b) {
@@ -110,6 +121,7 @@ static void set_fg(long n) {
     o->fbaddr = FB_ADDR > 0 ? FB_ADDR - o->ubase : 0;
   }
   silence();
+  TRI27_MMIO(-13) = 0;                        /* saisie de texte : au nouveau premier plan de la redemander */
   for (int i = 0; i < NPROC; i++) procs[i].ioperm = 0;
   fg = n;
   if (fg >= 0) { procs[fg].ioperm = 1; apply_display(); }
@@ -178,7 +190,7 @@ static void kill(struct proc *p, const char *why, long val) {
 static long dev_read(long a) {
   int f = pid(cur) == fg;
   if (a == -2 || a == -7) return f ? TRI27_MMIO(a) : (a == -2 ? -1 : 0);   /* CONSOLE_IN, KEY */
-  if (a == -10 || a == -11 || a == -12) return f ? TRI27_MMIO(a) : 0;      /* souris */
+  if (a == -10 || a == -11 || a == -12 || a == -13) return f ? TRI27_MMIO(a) : 0;  /* souris, saisie */
   if (a == -4 || a == -8) return TRI27_MMIO(a);                            /* CYCLES, TIME_MS */
   if (a == -5) return cur->fbaddr;
   if (a == -9) return cur->vmode;
@@ -192,6 +204,7 @@ static void dev_write(long a, long v) {
   if (a == -5) { cur->fbaddr = v; if (f) apply_display(); return; }
   if (a == -9) { cur->vmode = v; if (f) apply_display(); return; }
   if (a == -6) { if (f) FB_PRESENT = 0; return; }
+  if (a == -13) { if (f) TRI27_MMIO(-13) = v; return; }
   if (a <= -100 && a >= -202) { if (f) TRI27_MMIO(a) = v; return; }
 }
 
@@ -262,6 +275,26 @@ static void syscall(long n) {
       for (long j = 0; j < SECT && k * SECT + j < len; j++) dst[k * SECT + j] = sec[j];
     }
     R(p, A0) = len;
+    return;
+  }
+  if (n == 15) {                                   /* writefile(nom, buf, len) : réécrit dans la capacité */
+    char *s = uptr(p, a0, 16), *src = uptr(p, a1, a2), name[16];
+    long e;
+    if (!s || !src || a2 < 0) { R(p, A0) = -1; return; }
+    for (int k = 0; k < 16; k++) name[k] = s[k];
+    name[15] = 0;
+    if ((e = dir_find(name)) < 0) { R(p, A0) = -1; return; }
+    char *d = dir_entry(e);
+    long start = word_at(d + 16), cap = word_at(d + 25);
+    if (word_at(d + 22) >= 0 || a2 > cap) { R(p, A0) = -1; return; }   /* programmes protégés */
+    static char sec[SECT];
+    for (long k = 0; k * SECT < a2 || k == 0; k++) {
+      for (long j = 0; j < SECT; j++) sec[j] = k * SECT + j < a2 ? src[k * SECT + j] : 0;
+      disk_write(start + k, (long)sec);
+    }
+    put_word(d + 19, a2);
+    disk_write(0, (long)dir);
+    R(p, A0) = a2;
     return;
   }
   if (n == 14) {

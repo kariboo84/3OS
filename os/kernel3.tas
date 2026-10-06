@@ -110,7 +110,7 @@ ram_size:    .word 0
 kstack_top:  .space 3
 
   .align 1
-__tu1.L..104:
+__tu1.L..115:
   .tryte 100
   .tryte 111
   .tryte 110
@@ -119,7 +119,7 @@ __tu1.L..104:
   .tryte 101
   .tryte 0
   .align 1
-__tu1.L..103:
+__tu1.L..114:
   .tryte 112
   .tryte 114
   .tryte 111
@@ -131,7 +131,7 @@ __tu1.L..103:
   .tryte 101
   .tryte 0
   .align 1
-__tu1.L..102:
+__tu1.L..113:
   .tryte 32
   .tryte 32
   .tryte 37
@@ -158,7 +158,7 @@ __tu1.L..102:
   .tryte 10
   .tryte 0
   .align 1
-__tu1.L..99:
+__tu1.L..110:
   .tryte 100
   .tryte 105
   .tryte 115
@@ -197,7 +197,7 @@ __tu1.L..99:
   .tryte 10
   .tryte 0
   .align 1
-__tu1.L..98:
+__tu1.L..109:
   .tryte 91
   .tryte 51
   .tryte 79
@@ -220,7 +220,7 @@ __tu1.L..98:
   .tryte 10
   .tryte 0
   .align 1
-__tu1.L..97:
+__tu1.L..108:
   .tryte 82
   .tryte 65
   .tryte 77
@@ -269,7 +269,7 @@ __tu1.L..97:
   .tryte 10
   .tryte 0
   .align 1
-__tu1.L..96:
+__tu1.L..107:
   .tryte 51
   .tryte 79
   .tryte 83
@@ -305,7 +305,7 @@ __tu1.L..96:
   .tryte 10
   .tryte 0
   .align 1
-__tu1.L..95:
+__tu1.L..106:
   .tryte 107
   .tryte 109
   .tryte 97
@@ -313,7 +313,7 @@ __tu1.L..95:
   .tryte 110
   .tryte 0
   .align 1
-__tu1.L..94:
+__tu1.L..105:
   .tryte 107
   .tryte 109
   .tryte 97
@@ -321,7 +321,7 @@ __tu1.L..94:
   .tryte 110
   .tryte 0
   .align 1
-__tu1.L..93:
+__tu1.L..104:
   .tryte 91
   .tryte 51
   .tryte 79
@@ -367,7 +367,7 @@ __tu1.L..93:
   .tryte 10
   .tryte 0
   .align 1
-__tu1.L..92:
+__tu1.L..103:
   .tryte 104
   .tryte 101
   .tryte 108
@@ -375,7 +375,7 @@ __tu1.L..92:
   .tryte 111
   .tryte 0
   .align 1
-__tu1.L..91:
+__tu1.L..102:
   .tryte 115
   .tryte 121
   .tryte 115
@@ -385,7 +385,7 @@ __tu1.L..91:
   .tryte 51
   .tryte 0
   .align 1
-__tu1.L..90:
+__tu1.L..101:
   .tryte 98
   .tryte 111
   .tryte 111
@@ -397,7 +397,7 @@ __tu1.L..90:
   .tryte 116
   .tryte 0
   .align 1
-__tu1.L..89:
+__tu1.L..100:
   .tryte 98
   .tryte 111
   .tryte 111
@@ -409,7 +409,7 @@ __tu1.L..89:
   .tryte 116
   .tryte 0
   .align 1
-__tu1.L..88:
+__tu1.L..99:
   .tryte 112
   .tryte 105
   .tryte 101
@@ -417,7 +417,7 @@ __tu1.L..88:
   .tryte 101
   .tryte 0
   .align 1
-__tu1.L..87:
+__tu1.L..98:
   .tryte 105
   .tryte 110
   .tryte 115
@@ -440,7 +440,7 @@ __tu1.L..87:
   .tryte 101
   .tryte 0
   .align 1
-__tu1.L..86:
+__tu1.L..97:
   .tryte 100
   .tryte 105
   .tryte 118
@@ -460,7 +460,7 @@ __tu1.L..86:
   .tryte 111
   .tryte 0
   .align 1
-__tu1.L..85:
+__tu1.L..96:
   .tryte 102
   .tryte 97
   .tryte 117
@@ -476,7 +476,7 @@ __tu1.L..85:
   .tryte 101
   .tryte 0
   .align 1
-__tu1.L..84:
+__tu1.L..95:
   .tryte 107
   .tryte 116
   .tryte 114
@@ -484,7 +484,7 @@ __tu1.L..84:
   .tryte 112
   .tryte 0
   .align 1
-__tu1.L..83:
+__tu1.L..94:
   .tryte 107
   .tryte 116
   .tryte 114
@@ -492,7 +492,7 @@ __tu1.L..83:
   .tryte 112
   .tryte 0
   .align 1
-__tu1.L..80:
+__tu1.L..91:
   .tryte 117
   .tryte 115
   .tryte 101
@@ -503,7 +503,7 @@ __tu1.L..80:
   .tryte 105
   .tryte 0
   .align 1
-__tu1.L..79:
+__tu1.L..90:
   .tryte 117
   .tryte 115
   .tryte 101
@@ -514,7 +514,7 @@ __tu1.L..79:
   .tryte 105
   .tryte 0
   .align 1
-__tu1.L..78:
+__tu1.L..89:
   .tryte 97
   .tryte 112
   .tryte 112
@@ -538,16 +538,19 @@ __tu1.L..78:
   .tryte 117
   .tryte 0
   .align 1
-__tu1.L..71:
+__tu1.L..82:
   .space 729
   .align 1
-__tu1.L..64:
+__tu1.L..75:
+  .space 729
+  .align 1
+__tu1.L..68:
   .tryte 37
   .tryte 108
   .tryte 100
   .tryte 0
   .align 1
-__tu1.L..63:
+__tu1.L..67:
   .tryte 115
   .tryte 121
   .tryte 115
@@ -557,7 +560,7 @@ __tu1.L..63:
   .tryte 108
   .tryte 0
   .align 1
-__tu1.L..62:
+__tu1.L..66:
   .tryte 115
   .tryte 121
   .tryte 115
@@ -567,7 +570,7 @@ __tu1.L..62:
   .tryte 108
   .tryte 0
   .align 1
-__tu1.L..61:
+__tu1.L..65:
   .tryte 97
   .tryte 99
   .tryte 99
@@ -592,7 +595,7 @@ __tu1.L..61:
   .tryte 101
   .tryte 0
   .align 1
-__tu1.L..60:
+__tu1.L..64:
   .tryte 112
   .tryte 99
   .tryte 32
@@ -609,7 +612,7 @@ __tu1.L..60:
   .tryte 101
   .tryte 0
   .align 1
-__tu1.L..59:
+__tu1.L..63:
   .tryte 101
   .tryte 109
   .tryte 117
@@ -622,70 +625,70 @@ __tu1.L..59:
   .tryte 109
   .tryte 105
   .tryte 111
+  .tryte 0
+  .align 1
+__tu1.L..62:
+  .tryte 101
+  .tryte 109
+  .tryte 117
+  .tryte 108
+  .tryte 97
+  .tryte 116
+  .tryte 101
+  .tryte 95
+  .tryte 109
+  .tryte 109
+  .tryte 105
+  .tryte 111
+  .tryte 0
+  .align 1
+__tu1.L..61:
+  .tryte 100
+  .tryte 101
+  .tryte 118
+  .tryte 95
+  .tryte 119
+  .tryte 114
+  .tryte 105
+  .tryte 116
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..60:
+  .tryte 100
+  .tryte 101
+  .tryte 118
+  .tryte 95
+  .tryte 119
+  .tryte 114
+  .tryte 105
+  .tryte 116
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..59:
+  .tryte 100
+  .tryte 101
+  .tryte 118
+  .tryte 95
+  .tryte 114
+  .tryte 101
+  .tryte 97
+  .tryte 100
   .tryte 0
   .align 1
 __tu1.L..58:
+  .tryte 100
   .tryte 101
-  .tryte 109
-  .tryte 117
-  .tryte 108
-  .tryte 97
-  .tryte 116
-  .tryte 101
+  .tryte 118
   .tryte 95
-  .tryte 109
-  .tryte 109
-  .tryte 105
-  .tryte 111
+  .tryte 114
+  .tryte 101
+  .tryte 97
+  .tryte 100
   .tryte 0
   .align 1
 __tu1.L..57:
-  .tryte 100
-  .tryte 101
-  .tryte 118
-  .tryte 95
-  .tryte 119
-  .tryte 114
-  .tryte 105
-  .tryte 116
-  .tryte 101
-  .tryte 0
-  .align 1
-__tu1.L..56:
-  .tryte 100
-  .tryte 101
-  .tryte 118
-  .tryte 95
-  .tryte 119
-  .tryte 114
-  .tryte 105
-  .tryte 116
-  .tryte 101
-  .tryte 0
-  .align 1
-__tu1.L..55:
-  .tryte 100
-  .tryte 101
-  .tryte 118
-  .tryte 95
-  .tryte 114
-  .tryte 101
-  .tryte 97
-  .tryte 100
-  .tryte 0
-  .align 1
-__tu1.L..54:
-  .tryte 100
-  .tryte 101
-  .tryte 118
-  .tryte 95
-  .tryte 114
-  .tryte 101
-  .tryte 97
-  .tryte 100
-  .tryte 0
-  .align 1
-__tu1.L..53:
   .tryte 10
   .tryte 91
   .tryte 51
@@ -720,21 +723,21 @@ __tu1.L..53:
   .tryte 10
   .tryte 0
   .align 1
-__tu1.L..52:
+__tu1.L..56:
   .tryte 107
   .tryte 105
   .tryte 108
   .tryte 108
   .tryte 0
   .align 1
-__tu1.L..51:
+__tu1.L..55:
   .tryte 107
   .tryte 105
   .tryte 108
   .tryte 108
   .tryte 0
   .align 1
-__tu1.L..50:
+__tu1.L..54:
   .tryte 10
   .tryte 91
   .tryte 51
@@ -783,7 +786,7 @@ __tu1.L..50:
   .tryte 10
   .tryte 0
   .align 1
-__tu1.L..47:
+__tu1.L..51:
   .tryte 112
   .tryte 114
   .tryte 111
@@ -793,216 +796,264 @@ __tu1.L..47:
   .tryte 120
   .tryte 105
   .tryte 116
+  .tryte 0
+  .align 1
+__tu1.L..50:
+  .tryte 112
+  .tryte 114
+  .tryte 111
+  .tryte 99
+  .tryte 95
+  .tryte 101
+  .tryte 120
+  .tryte 105
+  .tryte 116
+  .tryte 0
+  .align 1
+__tu1.L..47:
+  .tryte 115
+  .tryte 99
+  .tryte 104
+  .tryte 101
+  .tryte 100
+  .tryte 117
+  .tryte 108
+  .tryte 101
   .tryte 0
   .align 1
 __tu1.L..46:
+  .tryte 115
+  .tryte 99
+  .tryte 104
+  .tryte 101
+  .tryte 100
+  .tryte 117
+  .tryte 108
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..37:
+  .tryte 115
   .tryte 112
-  .tryte 114
-  .tryte 111
-  .tryte 99
-  .tryte 95
-  .tryte 101
-  .tryte 120
-  .tryte 105
-  .tryte 116
+  .tryte 97
+  .tryte 119
+  .tryte 110
   .tryte 0
   .align 1
-__tu1.L..43:
+__tu1.L..36:
   .tryte 115
-  .tryte 99
-  .tryte 104
-  .tryte 101
-  .tryte 100
-  .tryte 117
-  .tryte 108
-  .tryte 101
-  .tryte 0
-  .align 1
-__tu1.L..42:
-  .tryte 115
-  .tryte 99
-  .tryte 104
-  .tryte 101
-  .tryte 100
-  .tryte 117
-  .tryte 108
-  .tryte 101
+  .tryte 112
+  .tryte 97
+  .tryte 119
+  .tryte 110
   .tryte 0
   .align 1
 __tu1.L..33:
   .tryte 115
-  .tryte 112
-  .tryte 97
-  .tryte 119
-  .tryte 110
+  .tryte 101
+  .tryte 116
+  .tryte 95
+  .tryte 102
+  .tryte 103
   .tryte 0
   .align 1
 __tu1.L..32:
   .tryte 115
-  .tryte 112
-  .tryte 97
-  .tryte 119
-  .tryte 110
+  .tryte 101
+  .tryte 116
+  .tryte 95
+  .tryte 102
+  .tryte 103
   .tryte 0
   .align 1
 __tu1.L..29:
   .tryte 115
+  .tryte 105
+  .tryte 108
   .tryte 101
-  .tryte 116
-  .tryte 95
-  .tryte 102
-  .tryte 103
+  .tryte 110
+  .tryte 99
+  .tryte 101
   .tryte 0
   .align 1
 __tu1.L..28:
   .tryte 115
+  .tryte 105
+  .tryte 108
   .tryte 101
-  .tryte 116
+  .tryte 110
+  .tryte 99
+  .tryte 101
+  .tryte 0
+  .align 1
+__tu1.L..27:
+  .tryte 97
+  .tryte 112
+  .tryte 112
+  .tryte 108
+  .tryte 121
   .tryte 95
-  .tryte 102
-  .tryte 103
+  .tryte 100
+  .tryte 105
+  .tryte 115
+  .tryte 112
+  .tryte 108
+  .tryte 97
+  .tryte 121
   .tryte 0
   .align 1
-__tu1.L..25:
-  .tryte 115
-  .tryte 105
+__tu1.L..26:
+  .tryte 97
+  .tryte 112
+  .tryte 112
   .tryte 108
-  .tryte 101
-  .tryte 110
-  .tryte 99
-  .tryte 101
-  .tryte 0
-  .align 1
-__tu1.L..24:
-  .tryte 115
+  .tryte 121
+  .tryte 95
+  .tryte 100
   .tryte 105
+  .tryte 115
+  .tryte 112
   .tryte 108
-  .tryte 101
-  .tryte 110
-  .tryte 99
-  .tryte 101
+  .tryte 97
+  .tryte 121
   .tryte 0
   .align 1
 __tu1.L..23:
-  .tryte 97
-  .tryte 112
-  .tryte 112
-  .tryte 108
-  .tryte 121
-  .tryte 95
   .tryte 100
   .tryte 105
-  .tryte 115
-  .tryte 112
-  .tryte 108
-  .tryte 97
-  .tryte 121
+  .tryte 114
+  .tryte 95
+  .tryte 102
+  .tryte 105
+  .tryte 110
+  .tryte 100
   .tryte 0
   .align 1
 __tu1.L..22:
-  .tryte 97
-  .tryte 112
-  .tryte 112
-  .tryte 108
-  .tryte 121
-  .tryte 95
   .tryte 100
   .tryte 105
-  .tryte 115
-  .tryte 112
-  .tryte 108
-  .tryte 97
-  .tryte 121
+  .tryte 114
+  .tryte 95
+  .tryte 102
+  .tryte 105
+  .tryte 110
+  .tryte 100
   .tryte 0
   .align 1
 __tu1.L..19:
-  .tryte 100
-  .tryte 105
-  .tryte 114
-  .tryte 95
-  .tryte 102
-  .tryte 105
   .tryte 110
-  .tryte 100
+  .tryte 97
+  .tryte 109
+  .tryte 101
+  .tryte 95
+  .tryte 101
+  .tryte 113
   .tryte 0
   .align 1
 __tu1.L..18:
+  .tryte 110
+  .tryte 97
+  .tryte 109
+  .tryte 101
+  .tryte 95
+  .tryte 101
+  .tryte 113
+  .tryte 0
+  .align 1
+__tu1.L..17:
   .tryte 100
   .tryte 105
   .tryte 114
   .tryte 95
-  .tryte 102
-  .tryte 105
+  .tryte 101
   .tryte 110
+  .tryte 116
+  .tryte 114
+  .tryte 121
+  .tryte 0
+  .align 1
+__tu1.L..16:
   .tryte 100
+  .tryte 105
+  .tryte 114
+  .tryte 95
+  .tryte 101
+  .tryte 110
+  .tryte 116
+  .tryte 114
+  .tryte 121
   .tryte 0
   .align 1
 __tu1.L..15:
-  .tryte 110
-  .tryte 97
-  .tryte 109
-  .tryte 101
+  .tryte 100
+  .tryte 105
+  .tryte 114
   .tryte 95
-  .tryte 101
-  .tryte 113
+  .tryte 99
+  .tryte 111
+  .tryte 117
+  .tryte 110
+  .tryte 116
   .tryte 0
   .align 1
 __tu1.L..14:
-  .tryte 110
-  .tryte 97
-  .tryte 109
-  .tryte 101
+  .tryte 100
+  .tryte 105
+  .tryte 114
   .tryte 95
-  .tryte 101
-  .tryte 113
+  .tryte 99
+  .tryte 111
+  .tryte 117
+  .tryte 110
+  .tryte 116
   .tryte 0
   .align 1
 __tu1.L..13:
-  .tryte 100
-  .tryte 105
-  .tryte 114
-  .tryte 95
-  .tryte 101
-  .tryte 110
+  .tryte 112
+  .tryte 117
   .tryte 116
+  .tryte 95
+  .tryte 119
+  .tryte 111
   .tryte 114
-  .tryte 121
+  .tryte 100
   .tryte 0
   .align 1
 __tu1.L..12:
-  .tryte 100
-  .tryte 105
-  .tryte 114
-  .tryte 95
-  .tryte 101
-  .tryte 110
+  .tryte 112
+  .tryte 117
   .tryte 116
+  .tryte 95
+  .tryte 119
+  .tryte 111
   .tryte 114
-  .tryte 121
+  .tryte 100
   .tryte 0
   .align 1
 __tu1.L..11:
   .tryte 100
   .tryte 105
-  .tryte 114
+  .tryte 115
+  .tryte 107
   .tryte 95
-  .tryte 99
-  .tryte 111
-  .tryte 117
-  .tryte 110
+  .tryte 119
+  .tryte 114
+  .tryte 105
   .tryte 116
+  .tryte 101
   .tryte 0
   .align 1
 __tu1.L..10:
   .tryte 100
   .tryte 105
-  .tryte 114
+  .tryte 115
+  .tryte 107
   .tryte 95
-  .tryte 99
-  .tryte 111
-  .tryte 117
-  .tryte 110
+  .tryte 119
+  .tryte 114
+  .tryte 105
   .tryte 116
+  .tryte 101
   .tryte 0
   .align 1
 __tu1.L..9:
@@ -1122,12 +1173,12 @@ kmain:
 __tu1.L.else9:
 __tu1.L.end9:
   addi sp, sp, -18
-  addi a0, zero, __tu1.L..96
+  addi a0, zero, __tu1.L..107
   stw a0, 0(sp)
   jal ra, printf
   addi sp, sp, 18
   addi sp, sp, -18
-  addi a0, zero, __tu1.L..97
+  addi a0, zero, __tu1.L..108
   stw a0, 0(sp)
   ldw a0, ram_size(zero)
   stw a0, 3(sp)
@@ -1144,7 +1195,7 @@ __tu1.L.end9:
   li a1, 1
   bge a0, a1, __tu1.L.else24
   addi sp, sp, -18
-  addi a0, zero, __tu1.L..98
+  addi a0, zero, __tu1.L..109
   stw a0, 0(sp)
   jal ra, printf
   addi sp, sp, 18
@@ -1170,7 +1221,7 @@ __tu1.L.end24:
   addi sp, sp, 18
   mv s8, a0
   addi sp, sp, -18
-  addi a0, zero, __tu1.L..99
+  addi a0, zero, __tu1.L..110
   stw a0, 0(sp)
   li a0, 24
   neg a0, a0
@@ -1195,7 +1246,7 @@ __tu1.L.begin69:
   addi sp, sp, 18
   mv s9, a0
   addi sp, sp, -18
-  addi a0, zero, __tu1.L..102
+  addi a0, zero, __tu1.L..113
   stw a0, 0(sp)
   mv a0, s9
   stw a0, 3(sp)
@@ -1211,10 +1262,10 @@ __tu1.L.begin69:
   jal ra, __tu1.L.static.word_at
   addi sp, sp, 18
   blt a0, zero, __tu1.L.else95
-  addi a0, zero, __tu1.L..103
+  addi a0, zero, __tu1.L..114
   j __tu1.L.end95
 __tu1.L.else95:
-  addi a0, zero, __tu1.L..104
+  addi a0, zero, __tu1.L..115
 __tu1.L.end95:
   stw a0, 9(sp)
   ldw a0, 0(sp)
@@ -1223,11 +1274,11 @@ __tu1.L.end95:
   ldw a3, 9(sp)
   jal ra, printf
   addi sp, sp, 18
-__tu1.L..101:
+__tu1.L..112:
   addi s10, s10, 1
 __tu1.L.cond69:
   blt s10, s8, __tu1.L.begin69
-__tu1.L..100:
+__tu1.L..111:
   addi sp, sp, -18
   jal ra, __tu1.L.static.boot_init
   addi sp, sp, 18
@@ -1304,7 +1355,7 @@ __tu1.L.else145:
   addi sp, sp, -18
   ldw a0, cur(zero)
   stw a0, 0(sp)
-  addi a0, zero, __tu1.L..85
+  addi a0, zero, __tu1.L..96
   stw a0, 3(sp)
   mv a0, s9
   stw a0, 6(sp)
@@ -1320,7 +1371,7 @@ __tu1.L.else153:
   addi sp, sp, -18
   ldw a0, cur(zero)
   stw a0, 0(sp)
-  addi a0, zero, __tu1.L..86
+  addi a0, zero, __tu1.L..97
   stw a0, 3(sp)
   stw zero, 6(sp)
   ldw a0, 0(sp)
@@ -1335,7 +1386,7 @@ __tu1.L.else163:
   addi sp, sp, -18
   ldw a0, cur(zero)
   stw a0, 0(sp)
-  addi a0, zero, __tu1.L..87
+  addi a0, zero, __tu1.L..98
   stw a0, 3(sp)
   mv a0, s9
   stw a0, 6(sp)
@@ -1349,7 +1400,7 @@ __tu1.L.else173:
   addi sp, sp, -18
   ldw a0, cur(zero)
   stw a0, 0(sp)
-  addi a0, zero, __tu1.L..88
+  addi a0, zero, __tu1.L..99
   stw a0, 3(sp)
   mv a0, s10
   stw a0, 6(sp)
@@ -1417,12 +1468,12 @@ __tu1.L.begin204:
   j __tu1.L.end210
 __tu1.L.else210:
 __tu1.L.end210:
-__tu1.L..82:
+__tu1.L..93:
   addi s10, s10, 1
 __tu1.L.cond204:
   li a1, 24
   blt s10, a1, __tu1.L.begin204
-__tu1.L..81:
+__tu1.L..92:
   addi sp, sp, -18
   jal ra, wfi
   addi sp, sp, 18
@@ -1441,46 +1492,46 @@ __tu1.L.static.syscall:
   push ra
   push fp
   mv fp, sp
-  addi sp, sp, -132
-  stw s1, -111(fp)
-  stw s2, -114(fp)
-  stw s10, -117(fp)
-  stw s9, -120(fp)
-  stw s8, -123(fp)
-  stw s7, -126(fp)
-  stw s6, -129(fp)
-  stw s5, -132(fp)
-  stw sp, -105(fp)
-  stw a0, -108(fp)
-  stw zero, -102(fp)
+  addi sp, sp, -177
+  stw s1, -156(fp)
+  stw s2, -159(fp)
+  stw s10, -162(fp)
+  stw s9, -165(fp)
+  stw s8, -168(fp)
+  stw s7, -171(fp)
+  stw s6, -174(fp)
+  stw s5, -177(fp)
+  stw sp, -150(fp)
+  stw a0, -153(fp)
+  stw zero, -147(fp)
   ldw a0, cur(zero)
-  stw a0, -102(fp)
-  stw zero, -99(fp)
-  ldw a0, -102(fp)
+  stw a0, -147(fp)
+  stw zero, -144(fp)
+  ldw a0, -147(fp)
   ldw a0, 42(a0)
-  stw a0, -99(fp)
-  stw zero, -96(fp)
-  ldw a0, -102(fp)
+  stw a0, -144(fp)
+  stw zero, -141(fp)
+  ldw a0, -147(fp)
   ldw a0, 45(a0)
-  stw a0, -96(fp)
-  stw zero, -93(fp)
-  ldw a0, -102(fp)
+  stw a0, -141(fp)
+  mv s6, zero
+  ldw a0, -147(fp)
   ldw a0, 48(a0)
-  stw a0, -93(fp)
-  ldw a0, -102(fp)
-  stw a0, -90(fp)
+  mv s6, a0
+  ldw a0, -147(fp)
+  stw a0, -135(fp)
   addi a0, a0, 81
   mv s1, a0
-  ldw a0, -90(fp)
+  ldw a0, -135(fp)
   ldw a0, 81(a0)
   addi a0, a0, 3
   stw a0, 0(s1)
-  ldw a0, -108(fp)
+  ldw a0, -153(fp)
   bne a0, zero, __tu1.L.else293
   addi sp, sp, -18
-  ldw a0, -102(fp)
+  ldw a0, -147(fp)
   stw a0, 0(sp)
-  ldw a0, -99(fp)
+  ldw a0, -144(fp)
   stw a0, 3(sp)
   ldw a0, 0(sp)
   ldw a1, 3(sp)
@@ -1490,25 +1541,25 @@ __tu1.L.static.syscall:
   j __tu1.L.end293
 __tu1.L.else293:
 __tu1.L.end293:
-  ldw a0, -108(fp)
+  ldw a0, -153(fp)
   li a1, 1
   bne a0, a1, __tu1.L.else305
   li a0, 1
   neg a0, a0
   mv s1, a0
-  ldw a0, -99(fp)
+  ldw a0, -144(fp)
   stw a0, 0(s1)
   j __tu1.L.return..L.static.syscall
   j __tu1.L.end305
 __tu1.L.else305:
 __tu1.L.end305:
-  ldw a0, -108(fp)
+  ldw a0, -153(fp)
   li a1, 2
   bne a0, a1, __tu1.L.else320
   addi sp, sp, -18
-  addi a0, zero, __tu1.L..64
+  addi a0, zero, __tu1.L..68
   stw a0, 0(sp)
-  ldw a0, -99(fp)
+  ldw a0, -144(fp)
   stw a0, 3(sp)
   ldw a0, 0(sp)
   ldw a1, 3(sp)
@@ -1518,14 +1569,14 @@ __tu1.L.end305:
   j __tu1.L.end320
 __tu1.L.else320:
 __tu1.L.end320:
-  ldw a0, -108(fp)
+  ldw a0, -153(fp)
   li a1, 10
   bne a0, a1, __tu1.L.else331
-  stw zero, -87(fp)
+  stw zero, -132(fp)
   addi sp, sp, -18
-  ldw a0, -102(fp)
+  ldw a0, -147(fp)
   stw a0, 0(sp)
-  ldw a0, -99(fp)
+  ldw a0, -144(fp)
   stw a0, 3(sp)
   li a0, 16
   stw a0, 6(sp)
@@ -1534,9 +1585,9 @@ __tu1.L.end320:
   ldw a2, 6(sp)
   jal ra, __tu1.L.static.uptr
   addi sp, sp, 18
-  stw a0, -87(fp)
+  stw a0, -132(fp)
   bnez a0, __tu1.L.else354
-  ldw a0, -102(fp)
+  ldw a0, -147(fp)
   addi a0, a0, 42
   li a1, -1
   stw a1, 0(a0)
@@ -1544,37 +1595,37 @@ __tu1.L.end320:
   j __tu1.L.end354
 __tu1.L.else354:
 __tu1.L.end354:
-  stw zero, -66(fp)
+  stw zero, -111(fp)
   j __tu1.L.cond365
 __tu1.L.begin365:
-  ldw a1, -66(fp)
-  addi a0, fp, -82
+  ldw a1, -111(fp)
+  addi a0, fp, -127
   add a0, a0, a1
   mv s1, a0
-  ldw a1, -66(fp)
-  ldw a0, -87(fp)
+  ldw a1, -111(fp)
+  ldw a0, -132(fp)
   add a0, a0, a1
   ldt a0, 0(a0)
   sxt a0, a0
   stt a0, 0(s1)
-__tu1.L..66:
-  ldw a0, -66(fp)
+__tu1.L..70:
+  ldw a0, -111(fp)
   addi a0, a0, 1
-  stw a0, -66(fp)
+  stw a0, -111(fp)
 __tu1.L.cond365:
-  ldw a0, -66(fp)
+  ldw a0, -111(fp)
   li a1, 16
   blt a0, a1, __tu1.L.begin365
-__tu1.L..65:
-  addi a0, fp, -82
+__tu1.L..69:
+  addi a0, fp, -127
   addi a0, a0, 15
   stt zero, 0(a0)
-  stw zero, -63(fp)
+  stw zero, -108(fp)
   addi sp, sp, -18
-  addi a0, fp, -82
+  addi a0, fp, -127
   stw a0, 0(sp)
   addi sp, sp, -18
-  ldw a0, -102(fp)
+  ldw a0, -147(fp)
   stw a0, 0(sp)
   jal ra, __tu1.L.static.pid
   addi sp, sp, 18
@@ -1583,9 +1634,9 @@ __tu1.L..65:
   ldw a1, 3(sp)
   jal ra, __tu1.L.static.spawn
   addi sp, sp, 18
-  stw a0, -63(fp)
+  stw a0, -108(fp)
   bnez a0, __tu1.L.else416
-  ldw a0, -102(fp)
+  ldw a0, -147(fp)
   addi a0, a0, 42
   li a1, -1
   stw a1, 0(a0)
@@ -1593,20 +1644,20 @@ __tu1.L..65:
   j __tu1.L.end416
 __tu1.L.else416:
 __tu1.L.end416:
-  ldw a0, -102(fp)
+  ldw a0, -147(fp)
   addi a0, a0, 93
   li a1, 2
   stw a1, 0(a0)
   addi sp, sp, -18
   addi sp, sp, -18
-  ldw a0, -63(fp)
+  ldw a0, -108(fp)
   stw a0, 0(sp)
   jal ra, __tu1.L.static.pid
   addi sp, sp, 18
   stw a0, 0(sp)
   jal ra, __tu1.L.static.set_fg
   addi sp, sp, 18
-  ldw a0, -63(fp)
+  ldw a0, -108(fp)
   stw a0, cur(zero)
   addi sp, sp, -18
   li a0, 4
@@ -1620,7 +1671,7 @@ __tu1.L.end416:
   j __tu1.L.end331
 __tu1.L.else331:
 __tu1.L.end331:
-  ldw a0, -108(fp)
+  ldw a0, -153(fp)
   li a1, 11
   bne a0, a1, __tu1.L.else451
   addi sp, sp, -18
@@ -1630,14 +1681,14 @@ __tu1.L.end331:
   j __tu1.L.end451
 __tu1.L.else451:
 __tu1.L.end451:
-  ldw a0, -108(fp)
+  ldw a0, -153(fp)
   li a1, 12
   bne a0, a1, __tu1.L.else459
-  stw zero, -60(fp)
+  stw zero, -105(fp)
   addi sp, sp, -18
-  ldw a0, -102(fp)
+  ldw a0, -147(fp)
   stw a0, 0(sp)
-  ldw a0, -96(fp)
+  ldw a0, -141(fp)
   stw a0, 3(sp)
   li a0, 16
   stw a0, 6(sp)
@@ -1646,79 +1697,245 @@ __tu1.L.end451:
   ldw a2, 6(sp)
   jal ra, __tu1.L.static.uptr
   addi sp, sp, 18
-  stw a0, -60(fp)
-  ldw a0, -99(fp)
+  stw a0, -105(fp)
+  ldw a0, -144(fp)
   blt a0, zero, __tu1.L.bskip480
-  ldw a0, -99(fp)
+  ldw a0, -144(fp)
   mv s1, a0
   addi sp, sp, -18
   jal ra, __tu1.L.static.dir_count
   addi sp, sp, 18
   mv a1, s1
   bge a1, a0, __tu1.L.bskip480
-  ldw a0, -60(fp)
+  ldw a0, -105(fp)
   bnez a0, __tu1.L.else479
 __tu1.L.bskip480:
-  ldw a0, -102(fp)
+  ldw a0, -147(fp)
   addi a0, a0, 42
   stw zero, 0(a0)
   j __tu1.L.return..L.static.syscall
   j __tu1.L.end479
 __tu1.L.else479:
 __tu1.L.end479:
-  stw zero, -57(fp)
+  stw zero, -102(fp)
   addi sp, sp, -18
-  ldw a0, -99(fp)
+  ldw a0, -144(fp)
   stw a0, 0(sp)
   jal ra, __tu1.L.static.dir_entry
   addi sp, sp, 18
-  stw a0, -57(fp)
-  mv s5, zero
-  mv s5, zero
+  stw a0, -102(fp)
+  stw zero, -99(fp)
   j __tu1.L.cond511
 __tu1.L.begin511:
-  ldw a0, -60(fp)
-  add a0, a0, s5
+  ldw a1, -99(fp)
+  ldw a0, -105(fp)
+  add a0, a0, a1
   mv s1, a0
-  ldw a0, -57(fp)
-  add a0, a0, s5
+  ldw a1, -99(fp)
+  ldw a0, -102(fp)
+  add a0, a0, a1
   ldt a0, 0(a0)
   sxt a0, a0
   stt a0, 0(s1)
-__tu1.L..68:
-  addi s5, s5, 1
+__tu1.L..72:
+  ldw a0, -99(fp)
+  addi a0, a0, 1
+  stw a0, -99(fp)
 __tu1.L.cond511:
+  ldw a0, -99(fp)
   li a1, 16
-  blt s5, a1, __tu1.L.begin511
-__tu1.L..67:
-  ldw a0, -102(fp)
+  blt a0, a1, __tu1.L.begin511
+__tu1.L..71:
+  ldw a0, -147(fp)
   addi a0, a0, 42
   mv s1, a0
   addi sp, sp, -18
-  ldw a0, -57(fp)
+  ldw a0, -102(fp)
   addi a0, a0, 22
   stw a0, 0(sp)
   jal ra, __tu1.L.static.word_at
   addi sp, sp, 18
-  blt a0, zero, __tu1.L.else535
+  blt a0, zero, __tu1.L.else550
   li a0, 1
-  j __tu1.L.end535
-__tu1.L.else535:
+  j __tu1.L.end550
+__tu1.L.else550:
   li a0, 2
-__tu1.L.end535:
+__tu1.L.end550:
   stw a0, 0(s1)
   j __tu1.L.return..L.static.syscall
   j __tu1.L.end459
 __tu1.L.else459:
 __tu1.L.end459:
-  ldw a0, -108(fp)
+  ldw a0, -153(fp)
   li a1, 13
-  bne a0, a1, __tu1.L.else548
+  bne a0, a1, __tu1.L.else563
+  stw zero, -96(fp)
+  addi sp, sp, -18
+  ldw a0, -147(fp)
+  stw a0, 0(sp)
+  ldw a0, -144(fp)
+  stw a0, 3(sp)
+  li a0, 16
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.uptr
+  addi sp, sp, 18
+  stw a0, -96(fp)
+  stw zero, -93(fp)
+  addi sp, sp, -18
+  ldw a0, -147(fp)
+  stw a0, 0(sp)
+  ldw a0, -141(fp)
+  stw a0, 3(sp)
+  mv a0, s6
+  stw a0, 6(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  ldw a2, 6(sp)
+  jal ra, __tu1.L.static.uptr
+  addi sp, sp, 18
+  stw a0, -93(fp)
+  ldw a0, -96(fp)
+  beqz a0, __tu1.L.bskip604
+  ldw a0, -93(fp)
+  bnez a0, __tu1.L.else603
+__tu1.L.bskip604:
+  ldw a0, -147(fp)
+  addi a0, a0, 42
+  li a1, -1
+  stw a1, 0(a0)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end603
+__tu1.L.else603:
+__tu1.L.end603:
+  stw zero, -69(fp)
+  j __tu1.L.cond618
+__tu1.L.begin618:
+  ldw a1, -69(fp)
+  addi a0, fp, -88
+  add a0, a0, a1
+  mv s1, a0
+  ldw a1, -69(fp)
+  ldw a0, -96(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  sxt a0, a0
+  stt a0, 0(s1)
+__tu1.L..74:
+  ldw a0, -69(fp)
+  addi a0, a0, 1
+  stw a0, -69(fp)
+__tu1.L.cond618:
+  ldw a0, -69(fp)
+  li a1, 16
+  blt a0, a1, __tu1.L.begin618
+__tu1.L..73:
+  addi a0, fp, -88
+  addi a0, a0, 15
+  stt zero, 0(a0)
+  addi sp, sp, -18
+  addi a0, fp, -88
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.dir_find
+  addi sp, sp, 18
+  stw a0, -72(fp)
+  bge a0, zero, __tu1.L.else654
+  ldw a0, -147(fp)
+  addi a0, a0, 42
+  li a1, -1
+  stw a1, 0(a0)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end654
+__tu1.L.else654:
+__tu1.L.end654:
+  stw zero, -66(fp)
+  addi sp, sp, -18
+  ldw a0, -72(fp)
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.dir_entry
+  addi sp, sp, 18
+  stw a0, -66(fp)
+  stw zero, -63(fp)
+  addi sp, sp, -18
+  ldw a0, -66(fp)
+  addi a0, a0, 16
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  stw a0, -63(fp)
+  mv s5, zero
+  addi sp, sp, -18
+  ldw a0, -66(fp)
+  addi a0, a0, 19
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  mv s5, a0
+  bge s6, s5, __tu1.L.else703
+  mv s5, s6
+  j __tu1.L.end703
+__tu1.L.else703:
+__tu1.L.end703:
+  mv s7, zero
+  mv s7, zero
+  j __tu1.L.cond707
+__tu1.L.begin707:
+  addi sp, sp, -18
+  ldw a0, -63(fp)
+  add a0, a0, s7
+  stw a0, 0(sp)
+  addi a0, zero, __tu1.L..75
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.disk_read
+  addi sp, sp, 18
+  mv s9, zero
+  mv s9, zero
+  j __tu1.L.cond723
+__tu1.L.begin723:
+  muli a0, s7, 729
+  add a0, a0, s9
+  mv a1, a0
+  ldw a0, -93(fp)
+  add a0, a0, a1
+  mv s1, a0
+  ldt a0, __tu1.L..75(s9)
+  sxt a0, a0
+  stt a0, 0(s1)
+__tu1.L..79:
+  addi s9, s9, 1
+__tu1.L.cond723:
+  li a1, 729
+  bge s9, a1, __tu1.L.bskip745
+  muli a0, s7, 729
+  add a0, a0, s9
+  blt a0, s5, __tu1.L.begin723
+__tu1.L.bskip745:
+__tu1.L..78:
+__tu1.L..77:
+  addi s7, s7, 1
+__tu1.L.cond707:
+  muli a0, s7, 729
+  blt a0, s5, __tu1.L.begin707
+__tu1.L..76:
+  ldw a0, -147(fp)
+  addi a0, a0, 42
+  stw s5, 0(a0)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end563
+__tu1.L.else563:
+__tu1.L.end563:
+  ldw a0, -153(fp)
+  li a1, 15
+  bne a0, a1, __tu1.L.else761
   stw zero, -51(fp)
   addi sp, sp, -18
-  ldw a0, -102(fp)
+  ldw a0, -147(fp)
   stw a0, 0(sp)
-  ldw a0, -99(fp)
+  ldw a0, -144(fp)
   stw a0, 3(sp)
   li a0, 16
   stw a0, 6(sp)
@@ -1728,51 +1945,56 @@ __tu1.L.end459:
   jal ra, __tu1.L.static.uptr
   addi sp, sp, 18
   stw a0, -51(fp)
-  mv s7, zero
+  stw zero, -48(fp)
   addi sp, sp, -18
-  ldw a0, -102(fp)
+  ldw a0, -147(fp)
   stw a0, 0(sp)
-  ldw a0, -96(fp)
+  ldw a0, -141(fp)
   stw a0, 3(sp)
-  ldw a0, -93(fp)
+  mv a0, s6
   stw a0, 6(sp)
   ldw a0, 0(sp)
   ldw a1, 3(sp)
   ldw a2, 6(sp)
   jal ra, __tu1.L.static.uptr
   addi sp, sp, 18
-  mv s7, a0
+  stw a0, -48(fp)
   ldw a0, -51(fp)
-  beqz a0, __tu1.L.bskip589
-  mv a0, s7
-  bnez a0, __tu1.L.else588
-__tu1.L.bskip589:
-  ldw a0, -102(fp)
+  beqz a0, __tu1.L.bskip802
+  ldw a0, -48(fp)
+  beqz a0, __tu1.L.bskip802
+  bge s6, zero, __tu1.L.else801
+__tu1.L.bskip802:
+  ldw a0, -147(fp)
   addi a0, a0, 42
   li a1, -1
   stw a1, 0(a0)
   j __tu1.L.return..L.static.syscall
-  j __tu1.L.end588
-__tu1.L.else588:
-__tu1.L.end588:
-  mv s6, zero
-  mv s6, zero
-  j __tu1.L.cond603
-__tu1.L.begin603:
+  j __tu1.L.end801
+__tu1.L.else801:
+__tu1.L.end801:
+  stw zero, -24(fp)
+  j __tu1.L.cond818
+__tu1.L.begin818:
+  ldw a1, -24(fp)
   addi a0, fp, -43
-  add a0, a0, s6
+  add a0, a0, a1
   mv s1, a0
+  ldw a1, -24(fp)
   ldw a0, -51(fp)
-  add a0, a0, s6
+  add a0, a0, a1
   ldt a0, 0(a0)
   sxt a0, a0
   stt a0, 0(s1)
-__tu1.L..70:
-  addi s6, s6, 1
-__tu1.L.cond603:
+__tu1.L..81:
+  ldw a0, -24(fp)
+  addi a0, a0, 1
+  stw a0, -24(fp)
+__tu1.L.cond818:
+  ldw a0, -24(fp)
   li a1, 16
-  blt s6, a1, __tu1.L.begin603
-__tu1.L..69:
+  blt a0, a1, __tu1.L.begin818
+__tu1.L..80:
   addi a0, fp, -43
   addi a0, a0, 15
   stt zero, 0(a0)
@@ -1782,15 +2004,15 @@ __tu1.L..69:
   jal ra, __tu1.L.static.dir_find
   addi sp, sp, 18
   stw a0, -27(fp)
-  bge a0, zero, __tu1.L.else624
-  ldw a0, -102(fp)
+  bge a0, zero, __tu1.L.else854
+  ldw a0, -147(fp)
   addi a0, a0, 42
   li a1, -1
   stw a1, 0(a0)
   j __tu1.L.return..L.static.syscall
-  j __tu1.L.end624
-__tu1.L.else624:
-__tu1.L.end624:
+  j __tu1.L.end854
+__tu1.L.else854:
+__tu1.L.end854:
   stw zero, -21(fp)
   addi sp, sp, -18
   ldw a0, -27(fp)
@@ -1806,112 +2028,148 @@ __tu1.L.end624:
   jal ra, __tu1.L.static.word_at
   addi sp, sp, 18
   stw a0, -18(fp)
+  stw zero, -15(fp)
+  addi sp, sp, -18
+  ldw a0, -21(fp)
+  addi a0, a0, 25
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  stw a0, -15(fp)
+  addi sp, sp, -18
+  ldw a0, -21(fp)
+  addi a0, a0, 22
+  stw a0, 0(sp)
+  jal ra, __tu1.L.static.word_at
+  addi sp, sp, 18
+  bge a0, zero, __tu1.L.bskip904
+  ldw a0, -15(fp)
+  bge a0, s6, __tu1.L.else903
+__tu1.L.bskip904:
+  ldw a0, -147(fp)
+  addi a0, a0, 42
+  li a1, -1
+  stw a1, 0(a0)
+  j __tu1.L.return..L.static.syscall
+  j __tu1.L.end903
+__tu1.L.else903:
+__tu1.L.end903:
   mv s8, zero
+  mv s8, zero
+  j __tu1.L.cond923
+__tu1.L.begin923:
+  mv s10, zero
+  mv s10, zero
+  j __tu1.L.cond930
+__tu1.L.begin930:
+  addi a0, s10, __tu1.L..82
+  mv s1, a0
+  muli a0, s8, 729
+  add a0, a0, s10
+  bge a0, s6, __tu1.L.else942
+  muli a0, s8, 729
+  add a0, a0, s10
+  mv a1, a0
+  ldw a0, -48(fp)
+  add a0, a0, a1
+  ldt a0, 0(a0)
+  j __tu1.L.end942
+__tu1.L.else942:
+  li a0, 0
+__tu1.L.end942:
+  sxt a0, a0
+  stt a0, 0(s1)
+__tu1.L..86:
+  addi s10, s10, 1
+__tu1.L.cond930:
+  li a1, 729
+  blt s10, a1, __tu1.L.begin930
+__tu1.L..85:
+  addi sp, sp, -18
+  ldw a0, -18(fp)
+  add a0, a0, s8
+  stw a0, 0(sp)
+  addi a0, zero, __tu1.L..82
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.disk_write
+  addi sp, sp, 18
+__tu1.L..84:
+  addi s8, s8, 1
+__tu1.L.cond923:
+  muli a0, s8, 729
+  blt a0, s6, __tu1.L.begin923
+  beq s8, zero, __tu1.L.begin923
+__tu1.L..83:
   addi sp, sp, -18
   ldw a0, -21(fp)
   addi a0, a0, 19
   stw a0, 0(sp)
-  jal ra, __tu1.L.static.word_at
-  addi sp, sp, 18
-  mv s8, a0
-  ldw a0, -93(fp)
-  bge a0, s8, __tu1.L.else673
-  ldw a0, -93(fp)
-  mv s8, a0
-  j __tu1.L.end673
-__tu1.L.else673:
-__tu1.L.end673:
-  mv s9, zero
-  mv s9, zero
-  j __tu1.L.cond682
-__tu1.L.begin682:
-  addi sp, sp, -18
-  ldw a0, -18(fp)
-  add a0, a0, s9
-  stw a0, 0(sp)
-  addi a0, zero, __tu1.L..71
+  mv a0, s6
   stw a0, 3(sp)
   ldw a0, 0(sp)
   ldw a1, 3(sp)
-  jal ra, __tu1.L.static.disk_read
+  jal ra, __tu1.L.static.put_word
   addi sp, sp, 18
-  mv s10, zero
-  mv s10, zero
-  j __tu1.L.cond698
-__tu1.L.begin698:
-  muli a0, s9, 729
-  add a0, a0, s10
-  add a0, s7, a0
-  mv s1, a0
-  ldt a0, __tu1.L..71(s10)
-  sxt a0, a0
-  stt a0, 0(s1)
-__tu1.L..75:
-  addi s10, s10, 1
-__tu1.L.cond698:
-  li a1, 729
-  bge s10, a1, __tu1.L.bskip718
-  muli a0, s9, 729
-  add a0, a0, s10
-  blt a0, s8, __tu1.L.begin698
-__tu1.L.bskip718:
-__tu1.L..74:
-__tu1.L..73:
-  addi s9, s9, 1
-__tu1.L.cond682:
-  muli a0, s9, 729
-  blt a0, s8, __tu1.L.begin682
-__tu1.L..72:
-  ldw a0, -102(fp)
+  addi sp, sp, -18
+  stw zero, 0(sp)
+  addi a0, zero, __tu1.L.static.dir
+  stw a0, 3(sp)
+  ldw a0, 0(sp)
+  ldw a1, 3(sp)
+  jal ra, __tu1.L.static.disk_write
+  addi sp, sp, 18
+  ldw a0, -147(fp)
   addi a0, a0, 42
-  stw s8, 0(a0)
+  stw s6, 0(a0)
   j __tu1.L.return..L.static.syscall
-  j __tu1.L.end548
-__tu1.L.else548:
-__tu1.L.end548:
-  ldw a0, -108(fp)
+  j __tu1.L.end761
+__tu1.L.else761:
+__tu1.L.end761:
+  ldw a0, -153(fp)
   li a1, 14
-  bne a0, a1, __tu1.L.else734
+  bne a0, a1, __tu1.L.else997
   stw zero, -6(fp)
   stw zero, -3(fp)
-  j __tu1.L.cond744
-__tu1.L.begin744:
+  j __tu1.L.cond1007
+__tu1.L.begin1007:
   ldw a0, -3(fp)
   muli a0, a0, 123
   mv a1, a0
   addi a0, a1, procs
   ldw a0, 93(a0)
-  beq a0, zero, __tu1.L.else750
+  beq a0, zero, __tu1.L.else1013
   ldw a0, -6(fp)
   addi a0, a0, 1
   stw a0, -6(fp)
-  j __tu1.L.end750
-__tu1.L.else750:
-__tu1.L.end750:
-__tu1.L..77:
+  j __tu1.L.end1013
+__tu1.L.else1013:
+__tu1.L.end1013:
+__tu1.L..88:
   ldw a0, -3(fp)
   addi a0, a0, 1
   stw a0, -3(fp)
-__tu1.L.cond744:
+__tu1.L.cond1007:
   ldw a0, -3(fp)
   li a1, 24
-  blt a0, a1, __tu1.L.begin744
-__tu1.L..76:
-  ldw a0, -102(fp)
+  blt a0, a1, __tu1.L.begin1007
+__tu1.L..87:
+  ldw a0, -147(fp)
   addi a0, a0, 42
   mv s1, a0
   ldw a0, -6(fp)
   stw a0, 0(s1)
   j __tu1.L.return..L.static.syscall
-  j __tu1.L.end734
-__tu1.L.else734:
-__tu1.L.end734:
+  j __tu1.L.end997
+__tu1.L.else997:
+__tu1.L.end997:
   addi sp, sp, -18
-  ldw a0, -102(fp)
+  ldw a0, -147(fp)
   stw a0, 0(sp)
-  addi a0, zero, __tu1.L..78
+  addi a0, zero, __tu1.L..89
   stw a0, 3(sp)
-  ldw a0, -108(fp)
+  ldw a0, -153(fp)
   stw a0, 6(sp)
   ldw a0, 0(sp)
   ldw a1, 3(sp)
@@ -1919,14 +2177,14 @@ __tu1.L.end734:
   jal ra, __tu1.L.static.kill
   addi sp, sp, 18
 __tu1.L.return..L.static.syscall:
-  ldw s1, -111(fp)
-  ldw s2, -114(fp)
-  ldw s10, -117(fp)
-  ldw s9, -120(fp)
-  ldw s8, -123(fp)
-  ldw s7, -126(fp)
-  ldw s6, -129(fp)
-  ldw s5, -132(fp)
+  ldw s1, -156(fp)
+  ldw s2, -159(fp)
+  ldw s10, -162(fp)
+  ldw s9, -165(fp)
+  ldw s8, -168(fp)
+  ldw s7, -171(fp)
+  ldw s6, -174(fp)
+  ldw s5, -177(fp)
   mv sp, fp
   pop fp
   pop ra
@@ -1962,11 +2220,11 @@ __tu1.L.static.emulate_mmio:
   jal ra, __tu1.L.static.uptr
   addi sp, sp, 18
   stw a0, -24(fp)
-  bnez a0, __tu1.L.else809
+  bnez a0, __tu1.L.else1072
   addi sp, sp, -18
   ldw a0, cur(zero)
   stw a0, 0(sp)
-  addi a0, zero, __tu1.L..60
+  addi a0, zero, __tu1.L..64
   stw a0, 3(sp)
   ldw a0, cur(zero)
   ldw a0, 81(a0)
@@ -1977,9 +2235,9 @@ __tu1.L.static.emulate_mmio:
   jal ra, __tu1.L.static.kill
   addi sp, sp, 18
   j __tu1.L.return..L.static.emulate_mmio
-  j __tu1.L.end809
-__tu1.L.else809:
-__tu1.L.end809:
+  j __tu1.L.end1072
+__tu1.L.else1072:
+__tu1.L.end1072:
   mv s8, zero
   addi sp, sp, -18
   ldw a0, -24(fp)
@@ -2024,10 +2282,10 @@ __tu1.L.end809:
   addi a0, a0, 3
   stw a0, 0(s1)
   li a1, 23
-  beq s10, a1, __tu1.L.bskip883
+  beq s10, a1, __tu1.L.bskip1146
   li a1, 24
-  bne s10, a1, __tu1.L.else882
-__tu1.L.bskip883:
+  bne s10, a1, __tu1.L.else1145
+__tu1.L.bskip1146:
   mv s7, zero
   addi sp, sp, -18
   ldw a0, -30(fp)
@@ -2036,7 +2294,7 @@ __tu1.L.bskip883:
   addi sp, sp, 18
   mv s7, a0
   li a1, 23
-  bne s10, a1, __tu1.L.else897
+  bne s10, a1, __tu1.L.else1160
   addi sp, sp, -18
   mv a0, s7
   stw a0, 0(sp)
@@ -2047,26 +2305,26 @@ __tu1.L.bskip883:
   jal ra, __tu1.L.static.bal
   addi sp, sp, 18
   mv s7, a0
-  j __tu1.L.end897
-__tu1.L.else897:
-__tu1.L.end897:
-  beq s6, zero, __tu1.L.else907
+  j __tu1.L.end1160
+__tu1.L.else1160:
+__tu1.L.end1160:
+  beq s6, zero, __tu1.L.else1170
   addi a0, s6, 13
   muli a0, a0, 3
   mv s1, a0
   mv a0, s9
   add a0, a0, s1
   stw s7, 0(a0)
-  j __tu1.L.end907
-__tu1.L.else907:
-__tu1.L.end907:
-  j __tu1.L.end882
-__tu1.L.else882:
+  j __tu1.L.end1170
+__tu1.L.else1170:
+__tu1.L.end1170:
+  j __tu1.L.end1145
+__tu1.L.else1145:
   li a1, 25
-  beq s10, a1, __tu1.L.bskip919
+  beq s10, a1, __tu1.L.bskip1182
   li a1, 26
-  bne s10, a1, __tu1.L.else918
-__tu1.L.bskip919:
+  bne s10, a1, __tu1.L.else1181
+__tu1.L.bskip1182:
   addi sp, sp, -18
   ldw a0, -30(fp)
   stw a0, 0(sp)
@@ -2081,8 +2339,8 @@ __tu1.L.bskip919:
   ldw a1, 3(sp)
   jal ra, __tu1.L.static.dev_write
   addi sp, sp, 18
-  j __tu1.L.end918
-__tu1.L.else918:
+  j __tu1.L.end1181
+__tu1.L.else1181:
   mv a0, s9
   mv s5, a0
   mv a0, s5
@@ -2095,7 +2353,7 @@ __tu1.L.else918:
   addi sp, sp, -18
   mv a0, s9
   stw a0, 0(sp)
-  addi a0, zero, __tu1.L..61
+  addi a0, zero, __tu1.L..65
   stw a0, 3(sp)
   ldw a0, -30(fp)
   stw a0, 6(sp)
@@ -2104,8 +2362,8 @@ __tu1.L.else918:
   ldw a2, 6(sp)
   jal ra, __tu1.L.static.kill
   addi sp, sp, 18
-__tu1.L.end918:
-__tu1.L.end882:
+__tu1.L.end1181:
+__tu1.L.end1145:
 __tu1.L.return..L.static.emulate_mmio:
   ldw s1, -33(fp)
   ldw s10, -36(fp)
@@ -2143,16 +2401,16 @@ __tu1.L.static.dev_write:
   seq a0, a0, s1
   mv s9, a0
   li a1, -1
-  bne s10, a1, __tu1.L.else973
+  bne s10, a1, __tu1.L.else1236
   li a0, 1
   neg a0, a0
   stw s8, 0(a0)
   j __tu1.L.return..L.static.dev_write
-  j __tu1.L.end973
-__tu1.L.else973:
-__tu1.L.end973:
+  j __tu1.L.end1236
+__tu1.L.else1236:
+__tu1.L.end1236:
   li a1, -3
-  bne s10, a1, __tu1.L.else983
+  bne s10, a1, __tu1.L.else1246
   addi sp, sp, -18
   ldw a0, cur(zero)
   stw a0, 0(sp)
@@ -2163,72 +2421,86 @@ __tu1.L.end973:
   jal ra, __tu1.L.static.proc_exit
   addi sp, sp, 18
   j __tu1.L.return..L.static.dev_write
-  j __tu1.L.end983
-__tu1.L.else983:
-__tu1.L.end983:
+  j __tu1.L.end1246
+__tu1.L.else1246:
+__tu1.L.end1246:
   li a1, -5
-  bne s10, a1, __tu1.L.else993
+  bne s10, a1, __tu1.L.else1256
   ldw a0, cur(zero)
   addi a0, a0, 102
   stw s8, 0(a0)
   mv a0, s9
-  beqz a0, __tu1.L.else998
+  beqz a0, __tu1.L.else1261
   addi sp, sp, -18
   jal ra, __tu1.L.static.apply_display
   addi sp, sp, 18
-  j __tu1.L.end998
-__tu1.L.else998:
-__tu1.L.end998:
+  j __tu1.L.end1261
+__tu1.L.else1261:
+__tu1.L.end1261:
   j __tu1.L.return..L.static.dev_write
-  j __tu1.L.end993
-__tu1.L.else993:
-__tu1.L.end993:
+  j __tu1.L.end1256
+__tu1.L.else1256:
+__tu1.L.end1256:
   li a1, -9
-  bne s10, a1, __tu1.L.else1004
+  bne s10, a1, __tu1.L.else1267
   ldw a0, cur(zero)
   addi a0, a0, 99
   stw s8, 0(a0)
   mv a0, s9
-  beqz a0, __tu1.L.else1009
+  beqz a0, __tu1.L.else1272
   addi sp, sp, -18
   jal ra, __tu1.L.static.apply_display
   addi sp, sp, 18
-  j __tu1.L.end1009
-__tu1.L.else1009:
-__tu1.L.end1009:
+  j __tu1.L.end1272
+__tu1.L.else1272:
+__tu1.L.end1272:
   j __tu1.L.return..L.static.dev_write
-  j __tu1.L.end1004
-__tu1.L.else1004:
-__tu1.L.end1004:
+  j __tu1.L.end1267
+__tu1.L.else1267:
+__tu1.L.end1267:
   li a1, -6
-  bne s10, a1, __tu1.L.else1015
+  bne s10, a1, __tu1.L.else1278
   mv a0, s9
-  beqz a0, __tu1.L.else1018
+  beqz a0, __tu1.L.else1281
   li a0, 6
   neg a0, a0
   stw zero, 0(a0)
-  j __tu1.L.end1018
-__tu1.L.else1018:
-__tu1.L.end1018:
+  j __tu1.L.end1281
+__tu1.L.else1281:
+__tu1.L.end1281:
   j __tu1.L.return..L.static.dev_write
-  j __tu1.L.end1015
-__tu1.L.else1015:
-__tu1.L.end1015:
-  li a1, -100
-  blt a1, s10, __tu1.L.else1028
-  li a0, -202
-  blt s10, a0, __tu1.L.else1028
+  j __tu1.L.end1278
+__tu1.L.else1278:
+__tu1.L.end1278:
+  li a1, -13
+  bne s10, a1, __tu1.L.else1291
   mv a0, s9
-  beqz a0, __tu1.L.else1033
+  beqz a0, __tu1.L.else1294
+  li a0, 13
+  neg a0, a0
+  stw s8, 0(a0)
+  j __tu1.L.end1294
+__tu1.L.else1294:
+__tu1.L.end1294:
+  j __tu1.L.return..L.static.dev_write
+  j __tu1.L.end1291
+__tu1.L.else1291:
+__tu1.L.end1291:
+  li a1, -100
+  blt a1, s10, __tu1.L.else1304
+  li a0, -202
+  blt s10, a0, __tu1.L.else1304
+  mv a0, s9
+  beqz a0, __tu1.L.else1309
   mv a0, s10
   stw s8, 0(a0)
-  j __tu1.L.end1033
-__tu1.L.else1033:
-__tu1.L.end1033:
+  j __tu1.L.end1309
+__tu1.L.else1309:
+__tu1.L.end1309:
   j __tu1.L.return..L.static.dev_write
-  j __tu1.L.end1028
-__tu1.L.else1028:
-__tu1.L.end1028:
+  j __tu1.L.end1304
+__tu1.L.else1304:
+__tu1.L.end1304:
 __tu1.L.return..L.static.dev_write:
   ldw s1, -15(fp)
   ldw s10, -18(fp)
@@ -2261,85 +2533,87 @@ __tu1.L.static.dev_read:
   seq a0, a0, s1
   mv s9, a0
   li a1, -2
-  beq s10, a1, __tu1.L.bskip1057
+  beq s10, a1, __tu1.L.bskip1333
   li a1, -7
-  bne s10, a1, __tu1.L.else1056
-__tu1.L.bskip1057:
+  bne s10, a1, __tu1.L.else1332
+__tu1.L.bskip1333:
   mv a0, s9
-  beqz a0, __tu1.L.else1062
+  beqz a0, __tu1.L.else1338
   mv a0, s10
   ldw a0, 0(a0)
-  j __tu1.L.end1062
-__tu1.L.else1062:
+  j __tu1.L.end1338
+__tu1.L.else1338:
   li a1, -2
-  bne s10, a1, __tu1.L.else1071
+  bne s10, a1, __tu1.L.else1347
   li a0, 1
   neg a0, a0
-  j __tu1.L.end1071
-__tu1.L.else1071:
+  j __tu1.L.end1347
+__tu1.L.else1347:
   li a0, 0
-__tu1.L.end1071:
-__tu1.L.end1062:
+__tu1.L.end1347:
+__tu1.L.end1338:
   j __tu1.L.return..L.static.dev_read
-  j __tu1.L.end1056
-__tu1.L.else1056:
-__tu1.L.end1056:
+  j __tu1.L.end1332
+__tu1.L.else1332:
+__tu1.L.end1332:
   li a1, -10
-  beq s10, a1, __tu1.L.bskip1080
+  beq s10, a1, __tu1.L.bskip1356
   li a1, -11
-  beq s10, a1, __tu1.L.bskip1080
+  beq s10, a1, __tu1.L.bskip1356
   li a1, -12
-  bne s10, a1, __tu1.L.else1079
-__tu1.L.bskip1080:
+  beq s10, a1, __tu1.L.bskip1356
+  li a1, -13
+  bne s10, a1, __tu1.L.else1355
+__tu1.L.bskip1356:
   mv a0, s9
-  beqz a0, __tu1.L.else1087
+  beqz a0, __tu1.L.else1365
   mv a0, s10
   ldw a0, 0(a0)
-  j __tu1.L.end1087
-__tu1.L.else1087:
+  j __tu1.L.end1365
+__tu1.L.else1365:
   li a0, 0
-__tu1.L.end1087:
+__tu1.L.end1365:
   j __tu1.L.return..L.static.dev_read
-  j __tu1.L.end1079
-__tu1.L.else1079:
-__tu1.L.end1079:
+  j __tu1.L.end1355
+__tu1.L.else1355:
+__tu1.L.end1355:
   li a1, -4
-  beq s10, a1, __tu1.L.bskip1098
+  beq s10, a1, __tu1.L.bskip1376
   li a1, -8
-  bne s10, a1, __tu1.L.else1097
-__tu1.L.bskip1098:
+  bne s10, a1, __tu1.L.else1375
+__tu1.L.bskip1376:
   mv a0, s10
   ldw a0, 0(a0)
   j __tu1.L.return..L.static.dev_read
-  j __tu1.L.end1097
-__tu1.L.else1097:
-__tu1.L.end1097:
+  j __tu1.L.end1375
+__tu1.L.else1375:
+__tu1.L.end1375:
   li a1, -5
-  bne s10, a1, __tu1.L.else1107
+  bne s10, a1, __tu1.L.else1385
   ldw a0, cur(zero)
   ldw a0, 102(a0)
   j __tu1.L.return..L.static.dev_read
-  j __tu1.L.end1107
-__tu1.L.else1107:
-__tu1.L.end1107:
+  j __tu1.L.end1385
+__tu1.L.else1385:
+__tu1.L.end1385:
   li a1, -9
-  bne s10, a1, __tu1.L.else1113
+  bne s10, a1, __tu1.L.else1391
   ldw a0, cur(zero)
   ldw a0, 99(a0)
   j __tu1.L.return..L.static.dev_read
-  j __tu1.L.end1113
-__tu1.L.else1113:
-__tu1.L.end1113:
+  j __tu1.L.end1391
+__tu1.L.else1391:
+__tu1.L.end1391:
   li a1, -100
-  blt a1, s10, __tu1.L.else1119
+  blt a1, s10, __tu1.L.else1397
   li a0, -202
-  blt s10, a0, __tu1.L.else1119
+  blt s10, a0, __tu1.L.else1397
   mv a0, s10
   ldw a0, 0(a0)
   j __tu1.L.return..L.static.dev_read
-  j __tu1.L.end1119
-__tu1.L.else1119:
-__tu1.L.end1119:
+  j __tu1.L.end1397
+__tu1.L.else1397:
+__tu1.L.end1397:
   li a0, 0
   j __tu1.L.return..L.static.dev_read
 __tu1.L.return..L.static.dev_read:
@@ -2365,7 +2639,7 @@ __tu1.L.static.kill:
   mv s9, a1
   mv s8, a2
   addi sp, sp, -18
-  addi a0, zero, __tu1.L..53
+  addi a0, zero, __tu1.L..57
   stw a0, 0(sp)
   mv a0, s10
   addi a0, a0, 105
@@ -2433,19 +2707,19 @@ __tu1.L.static.proc_exit:
   addi a0, a0, 90
   stw zero, 0(a0)
   ldw a0, __tu1.L.static.fg(zero)
-  bne a0, s6, __tu1.L.else1166
+  bne a0, s6, __tu1.L.else1444
   addi sp, sp, -18
   mv a0, s8
   ldw a0, 96(a0)
   stw a0, 0(sp)
   jal ra, __tu1.L.static.set_fg
   addi sp, sp, 18
-  j __tu1.L.end1166
-__tu1.L.else1166:
-__tu1.L.end1166:
+  j __tu1.L.end1444
+__tu1.L.else1444:
+__tu1.L.end1444:
   mv a0, s8
   ldw a0, 96(a0)
-  blt a0, zero, __tu1.L.else1175
+  blt a0, zero, __tu1.L.else1453
   mv s7, zero
   mv a0, s8
   ldw a0, 96(a0)
@@ -2456,7 +2730,7 @@ __tu1.L.end1166:
   mv a0, s7
   ldw a0, 93(a0)
   li a1, 2
-  bne a0, a1, __tu1.L.else1198
+  bne a0, a1, __tu1.L.else1476
   mv a0, s7
   addi a0, a0, 42
   stw s5, 0(a0)
@@ -2464,38 +2738,38 @@ __tu1.L.end1166:
   addi a0, a0, 93
   li a1, 1
   stw a1, 0(a0)
-  j __tu1.L.end1198
-__tu1.L.else1198:
-__tu1.L.end1198:
-  j __tu1.L.end1175
-__tu1.L.else1175:
-__tu1.L.end1175:
+  j __tu1.L.end1476
+__tu1.L.else1476:
+__tu1.L.end1476:
+  j __tu1.L.end1453
+__tu1.L.else1453:
+__tu1.L.end1453:
   mv s9, zero
   mv s9, zero
   mv s10, zero
   mv s10, zero
-  j __tu1.L.cond1216
-__tu1.L.begin1216:
+  j __tu1.L.cond1494
+__tu1.L.begin1494:
   muli a0, s10, 123
   mv a1, a0
   addi a0, a1, procs
   ldw a0, 93(a0)
-  beq a0, zero, __tu1.L.else1222
+  beq a0, zero, __tu1.L.else1500
   li a0, 1
   mv s9, a0
-  j __tu1.L.end1222
-__tu1.L.else1222:
-__tu1.L.end1222:
-__tu1.L..49:
+  j __tu1.L.end1500
+__tu1.L.else1500:
+__tu1.L.end1500:
+__tu1.L..53:
   addi s10, s10, 1
-__tu1.L.cond1216:
+__tu1.L.cond1494:
   li a1, 24
-  blt s10, a1, __tu1.L.begin1216
-__tu1.L..48:
+  blt s10, a1, __tu1.L.begin1494
+__tu1.L..52:
   mv a0, s9
-  bnez a0, __tu1.L.else1233
+  bnez a0, __tu1.L.else1511
   addi sp, sp, -18
-  addi a0, zero, __tu1.L..50
+  addi a0, zero, __tu1.L..54
   stw a0, 0(sp)
   jal ra, printf
   addi sp, sp, 18
@@ -2503,9 +2777,9 @@ __tu1.L..48:
   jal ra, __tu1.L.static.boot_init
   addi sp, sp, 18
   j __tu1.L.return..L.static.proc_exit
-  j __tu1.L.end1233
-__tu1.L.else1233:
-__tu1.L.end1233:
+  j __tu1.L.end1511
+__tu1.L.else1511:
+__tu1.L.end1511:
   addi sp, sp, -18
   jal ra, __tu1.L.static.schedule
   addi sp, sp, 18
@@ -2532,7 +2806,7 @@ __tu1.L.static.boot_init:
   stw sp, -6(fp)
   mv s10, zero
   addi sp, sp, -18
-  addi a0, zero, __tu1.L..91
+  addi a0, zero, __tu1.L..102
   stw a0, 0(sp)
   li a0, 1
   neg a0, a0
@@ -2543,9 +2817,9 @@ __tu1.L.static.boot_init:
   addi sp, sp, 18
   mv s10, a0
   mv a0, s10
-  bnez a0, __tu1.L.else1263
+  bnez a0, __tu1.L.else1541
   addi sp, sp, -18
-  addi a0, zero, __tu1.L..92
+  addi a0, zero, __tu1.L..103
   stw a0, 0(sp)
   li a0, 1
   neg a0, a0
@@ -2555,13 +2829,13 @@ __tu1.L.static.boot_init:
   jal ra, __tu1.L.static.spawn
   addi sp, sp, 18
   mv s10, a0
-  j __tu1.L.end1263
-__tu1.L.else1263:
-__tu1.L.end1263:
+  j __tu1.L.end1541
+__tu1.L.else1541:
+__tu1.L.end1541:
   mv a0, s10
-  bnez a0, __tu1.L.else1277
+  bnez a0, __tu1.L.else1555
   addi sp, sp, -18
-  addi a0, zero, __tu1.L..93
+  addi a0, zero, __tu1.L..104
   stw a0, 0(sp)
   jal ra, printf
   addi sp, sp, 18
@@ -2570,9 +2844,9 @@ __tu1.L.end1263:
   stw a0, 0(sp)
   jal ra, exit
   addi sp, sp, 18
-  j __tu1.L.end1277
-__tu1.L.else1277:
-__tu1.L.end1277:
+  j __tu1.L.end1555
+__tu1.L.else1555:
+__tu1.L.end1555:
   li a1, -1
   stw a1, __tu1.L.static.fg(zero)
   addi sp, sp, -18
@@ -2621,8 +2895,8 @@ __tu1.L.static.schedule:
   mv s10, zero
   li a0, 1
   mv s10, a0
-  j __tu1.L.cond1320
-__tu1.L.begin1320:
+  j __tu1.L.cond1598
+__tu1.L.begin1598:
   mv s9, zero
   add a0, s8, s10
   modi a0, a0, 24
@@ -2633,18 +2907,18 @@ __tu1.L.begin1320:
   mv a0, s9
   ldw a0, 93(a0)
   li a1, 1
-  bne a0, a1, __tu1.L.else1345
+  bne a0, a1, __tu1.L.else1623
   stw s9, cur(zero)
-  j __tu1.L..44
-  j __tu1.L.end1345
-__tu1.L.else1345:
-__tu1.L.end1345:
-__tu1.L..45:
+  j __tu1.L..48
+  j __tu1.L.end1623
+__tu1.L.else1623:
+__tu1.L.end1623:
+__tu1.L..49:
   addi s10, s10, 1
-__tu1.L.cond1320:
+__tu1.L.cond1598:
   li a1, 24
-  bge a1, s10, __tu1.L.begin1320
-__tu1.L..44:
+  bge a1, s10, __tu1.L.begin1598
+__tu1.L..48:
   addi sp, sp, -18
   li a0, 4
   neg a0, a0
@@ -2686,12 +2960,12 @@ __tu1.L.static.spawn:
   jal ra, __tu1.L.static.dir_find
   addi sp, sp, 18
   stw a0, -33(fp)
-  bge a0, zero, __tu1.L.else1376
+  bge a0, zero, __tu1.L.else1654
   li a0, 0
   j __tu1.L.return..L.static.spawn
-  j __tu1.L.end1376
-__tu1.L.else1376:
-__tu1.L.end1376:
+  j __tu1.L.end1654
+__tu1.L.else1654:
+__tu1.L.end1654:
   mv s5, zero
   addi sp, sp, -18
   ldw a0, -33(fp)
@@ -2720,51 +2994,51 @@ __tu1.L.end1376:
   jal ra, __tu1.L.static.word_at
   addi sp, sp, 18
   stw a0, -21(fp)
-  blt a0, zero, __tu1.L.bskip1423
+  blt a0, zero, __tu1.L.bskip1701
   ldw a0, -24(fp)
   li a1, 528441
-  bge a1, a0, __tu1.L.else1422
-__tu1.L.bskip1423:
+  bge a1, a0, __tu1.L.else1700
+__tu1.L.bskip1701:
   li a0, 0
   j __tu1.L.return..L.static.spawn
-  j __tu1.L.end1422
-__tu1.L.else1422:
-__tu1.L.end1422:
+  j __tu1.L.end1700
+__tu1.L.else1700:
+__tu1.L.end1700:
   mv s7, zero
   mv s7, zero
   mv s10, zero
   mv s10, zero
-  j __tu1.L.cond1439
-__tu1.L.begin1439:
+  j __tu1.L.cond1717
+__tu1.L.begin1717:
   muli a0, s10, 123
   mv a1, a0
   addi a0, a1, procs
   ldw a0, 93(a0)
-  bne a0, zero, __tu1.L.else1445
+  bne a0, zero, __tu1.L.else1723
   muli a0, s10, 123
   mv a1, a0
   addi a0, a1, procs
   mv s7, a0
-  j __tu1.L..34
-  j __tu1.L.end1445
-__tu1.L.else1445:
-__tu1.L.end1445:
-__tu1.L..35:
+  j __tu1.L..38
+  j __tu1.L.end1723
+__tu1.L.else1723:
+__tu1.L.end1723:
+__tu1.L..39:
   addi s10, s10, 1
-__tu1.L.cond1439:
+__tu1.L.cond1717:
   li a1, 24
-  bge s10, a1, __tu1.L.bskip1465
+  bge s10, a1, __tu1.L.bskip1743
   ldw a0, __tu1.L.static.nslots(zero)
-  blt s10, a0, __tu1.L.begin1439
-__tu1.L.bskip1465:
-__tu1.L..34:
+  blt s10, a0, __tu1.L.begin1717
+__tu1.L.bskip1743:
+__tu1.L..38:
   mv a0, s7
-  bnez a0, __tu1.L.else1470
+  bnez a0, __tu1.L.else1748
   li a0, 0
   j __tu1.L.return..L.static.spawn
-  j __tu1.L.end1470
-__tu1.L.else1470:
-__tu1.L.end1470:
+  j __tu1.L.end1748
+__tu1.L.else1748:
+__tu1.L.end1748:
   stw zero, -12(fp)
   addi sp, sp, -18
   mv a0, s7
@@ -2777,8 +3051,8 @@ __tu1.L.end1470:
   stw a0, -12(fp)
   mv s8, zero
   mv s8, zero
-  j __tu1.L.cond1491
-__tu1.L.begin1491:
+  j __tu1.L.cond1769
+__tu1.L.begin1769:
   addi sp, sp, -18
   ldw a0, -27(fp)
   add a0, a0, s8
@@ -2792,28 +3066,28 @@ __tu1.L.begin1491:
   ldw a1, 3(sp)
   jal ra, __tu1.L.static.disk_read
   addi sp, sp, 18
-__tu1.L..37:
+__tu1.L..41:
   addi s8, s8, 1
-__tu1.L.cond1491:
+__tu1.L.cond1769:
   ldw a1, -24(fp)
   muli a0, s8, 729
-  blt a0, a1, __tu1.L.begin1491
-__tu1.L..36:
+  blt a0, a1, __tu1.L.begin1769
+__tu1.L..40:
   mv s6, zero
   mv s6, zero
-  j __tu1.L.cond1514
-__tu1.L.begin1514:
+  j __tu1.L.cond1792
+__tu1.L.begin1792:
   muli a0, s6, 3
   mv s1, a0
   mv a0, s7
   add a0, a0, s1
   stw zero, 0(a0)
-__tu1.L..39:
+__tu1.L..43:
   addi s6, s6, 1
-__tu1.L.cond1514:
+__tu1.L.cond1792:
   li a1, 27
-  blt s6, a1, __tu1.L.begin1514
-__tu1.L..38:
+  blt s6, a1, __tu1.L.begin1792
+__tu1.L..42:
   mv a0, s7
   addi a0, a0, 36
   li a1, 531441
@@ -2852,8 +3126,8 @@ __tu1.L..38:
   stw zero, 0(a0)
   mv s9, zero
   mv s9, zero
-  j __tu1.L.cond1558
-__tu1.L.begin1558:
+  j __tu1.L.cond1836
+__tu1.L.begin1836:
   mv a0, s7
   addi a0, a0, 105
   add a0, a0, s9
@@ -2862,12 +3136,12 @@ __tu1.L.begin1558:
   ldt a0, 0(a0)
   sxt a0, a0
   stt a0, 0(s1)
-__tu1.L..41:
+__tu1.L..45:
   addi s9, s9, 1
-__tu1.L.cond1558:
+__tu1.L.cond1836:
   li a1, 16
-  blt s9, a1, __tu1.L.begin1558
-__tu1.L..40:
+  blt s9, a1, __tu1.L.begin1836
+__tu1.L..44:
   mv a0, s7
   j __tu1.L.return..L.static.spawn
 __tu1.L.return..L.static.spawn:
@@ -2897,13 +3171,13 @@ __tu1.L.static.set_fg:
   stw sp, -9(fp)
   mv s8, a0
   ldw a0, __tu1.L.static.fg(zero)
-  blt a0, zero, __tu1.L.else1578
+  blt a0, zero, __tu1.L.else1856
   ldw a0, __tu1.L.static.fg(zero)
   muli a0, a0, 123
   mv a1, a0
   addi a0, a1, procs
   ldw a0, 93(a0)
-  beq a0, zero, __tu1.L.else1578
+  beq a0, zero, __tu1.L.else1856
   mv s9, zero
   ldw a0, __tu1.L.static.fg(zero)
   muli a0, a0, 123
@@ -2923,7 +3197,7 @@ __tu1.L.static.set_fg:
   li a0, 5
   neg a0, a0
   ldw a0, 0(a0)
-  bge zero, a0, __tu1.L.else1624
+  bge zero, a0, __tu1.L.else1902
   mv a0, s9
   ldw a0, 84(a0)
   mv s2, a0
@@ -2931,35 +3205,38 @@ __tu1.L.static.set_fg:
   neg a0, a0
   ldw a0, 0(a0)
   sub a0, a0, s2
-  j __tu1.L.end1624
-__tu1.L.else1624:
+  j __tu1.L.end1902
+__tu1.L.else1902:
   li a0, 0
-__tu1.L.end1624:
+__tu1.L.end1902:
   stw a0, 0(s1)
-  j __tu1.L.end1578
-__tu1.L.else1578:
-__tu1.L.end1578:
+  j __tu1.L.end1856
+__tu1.L.else1856:
+__tu1.L.end1856:
   addi sp, sp, -18
   jal ra, __tu1.L.static.silence
   addi sp, sp, 18
+  li a0, 13
+  neg a0, a0
+  stw zero, 0(a0)
   mv s10, zero
   mv s10, zero
-  j __tu1.L.cond1649
-__tu1.L.begin1649:
+  j __tu1.L.cond1933
+__tu1.L.begin1933:
   muli a0, s10, 123
   mv a1, a0
   addi a0, a1, procs
   addi a0, a0, 90
   stw zero, 0(a0)
-__tu1.L..31:
+__tu1.L..35:
   addi s10, s10, 1
-__tu1.L.cond1649:
+__tu1.L.cond1933:
   li a1, 24
-  blt s10, a1, __tu1.L.begin1649
-__tu1.L..30:
+  blt s10, a1, __tu1.L.begin1933
+__tu1.L..34:
   stw s8, __tu1.L.static.fg(zero)
   ldw a0, __tu1.L.static.fg(zero)
-  blt a0, zero, __tu1.L.else1663
+  blt a0, zero, __tu1.L.else1947
   ldw a0, __tu1.L.static.fg(zero)
   muli a0, a0, 123
   mv a1, a0
@@ -2970,9 +3247,9 @@ __tu1.L..30:
   addi sp, sp, -18
   jal ra, __tu1.L.static.apply_display
   addi sp, sp, 18
-  j __tu1.L.end1663
-__tu1.L.else1663:
-__tu1.L.end1663:
+  j __tu1.L.end1947
+__tu1.L.else1947:
+__tu1.L.end1947:
 __tu1.L.return..L.static.set_fg:
   ldw s1, -15(fp)
   ldw s2, -18(fp)
@@ -2994,20 +3271,20 @@ __tu1.L.static.silence:
   stw sp, -6(fp)
   mv s10, zero
   mv s10, zero
-  j __tu1.L.cond1679
-__tu1.L.begin1679:
+  j __tu1.L.cond1963
+__tu1.L.begin1963:
   li a0, 9
   mul a0, a0, s10
   li a1, -100
   sub a0, a1, a0
   addi a0, a0, -5
   stw zero, 0(a0)
-__tu1.L..27:
+__tu1.L..31:
   addi s10, s10, 1
-__tu1.L.cond1679:
+__tu1.L.cond1963:
   li a1, 9
-  blt s10, a1, __tu1.L.begin1679
-__tu1.L..26:
+  blt s10, a1, __tu1.L.begin1963
+__tu1.L..30:
 __tu1.L.return..L.static.silence:
   ldw s10, -9(fp)
   mv sp, fp
@@ -3027,11 +3304,11 @@ __tu1.L.static.apply_display:
   stw s8, -24(fp)
   stw sp, -12(fp)
   ldw a0, __tu1.L.static.fg(zero)
-  bge a0, zero, __tu1.L.else1695
+  bge a0, zero, __tu1.L.else1979
   j __tu1.L.return..L.static.apply_display
-  j __tu1.L.end1695
-__tu1.L.else1695:
-__tu1.L.end1695:
+  j __tu1.L.end1979
+__tu1.L.else1979:
+__tu1.L.end1979:
   mv s10, zero
   ldw a0, __tu1.L.static.fg(zero)
   muli a0, a0, 123
@@ -3052,25 +3329,25 @@ __tu1.L.end1695:
   mv a0, s10
   ldw a0, 99(a0)
   li a1, 1
-  bne a0, a1, __tu1.L.else1742
+  bne a0, a1, __tu1.L.else2026
   li a0, 23040
-  j __tu1.L.end1742
-__tu1.L.else1742:
+  j __tu1.L.end2026
+__tu1.L.else2026:
   mv a0, s10
   ldw a0, 99(a0)
   li a1, 2
-  bne a0, a1, __tu1.L.else1750
+  bne a0, a1, __tu1.L.else2034
   li a0, 207360
-  j __tu1.L.end1750
-__tu1.L.else1750:
+  j __tu1.L.end2034
+__tu1.L.else2034:
   li a0, 64000
-__tu1.L.end1750:
-__tu1.L.end1742:
+__tu1.L.end2034:
+__tu1.L.end2026:
   mv s8, a0
   li a0, 5
   neg a0, a0
   mv s1, a0
-  bge zero, s9, __tu1.L.else1767
+  bge zero, s9, __tu1.L.else2051
   addi sp, sp, -18
   mv a0, s10
   stw a0, 0(sp)
@@ -3083,14 +3360,14 @@ __tu1.L.end1742:
   ldw a2, 6(sp)
   jal ra, __tu1.L.static.uptr
   addi sp, sp, 18
-  beqz a0, __tu1.L.else1767
+  beqz a0, __tu1.L.else2051
   mv a0, s10
   ldw a0, 84(a0)
   add a0, a0, s9
-  j __tu1.L.end1767
-__tu1.L.else1767:
+  j __tu1.L.end2051
+__tu1.L.else2051:
   li a0, 0
-__tu1.L.end1767:
+__tu1.L.end2051:
   stw a0, 0(s1)
 __tu1.L.return..L.static.apply_display:
   ldw s1, -15(fp)
@@ -3114,8 +3391,8 @@ __tu1.L.static.dir_find:
   mv s9, a0
   mv s10, zero
   mv s10, zero
-  j __tu1.L.cond1786
-__tu1.L.begin1786:
+  j __tu1.L.cond2070
+__tu1.L.begin2070:
   addi sp, sp, -18
   addi sp, sp, -18
   mv a0, s10
@@ -3129,20 +3406,20 @@ __tu1.L.begin1786:
   ldw a1, 3(sp)
   jal ra, __tu1.L.static.name_eq
   addi sp, sp, 18
-  beqz a0, __tu1.L.else1792
+  beqz a0, __tu1.L.else2076
   mv a0, s10
   j __tu1.L.return..L.static.dir_find
-  j __tu1.L.end1792
-__tu1.L.else1792:
-__tu1.L.end1792:
-__tu1.L..21:
+  j __tu1.L.end2076
+__tu1.L.else2076:
+__tu1.L.end2076:
+__tu1.L..25:
   addi s10, s10, 1
-__tu1.L.cond1786:
+__tu1.L.cond2070:
   addi sp, sp, -18
   jal ra, __tu1.L.static.dir_count
   addi sp, sp, 18
-  blt s10, a0, __tu1.L.begin1786
-__tu1.L..20:
+  blt s10, a0, __tu1.L.begin2070
+__tu1.L..24:
   li a0, 1
   neg a0, a0
   j __tu1.L.return..L.static.dir_find
@@ -3169,34 +3446,34 @@ __tu1.L.static.name_eq:
   mv s8, a1
   mv s10, zero
   mv s10, zero
-  j __tu1.L.cond1813
-__tu1.L.begin1813:
+  j __tu1.L.cond2097
+__tu1.L.begin2097:
   add a0, s8, s10
   ldt a0, 0(a0)
   mv s1, a0
   add a0, s9, s10
   ldt a0, 0(a0)
   mv a1, s1
-  beq a0, a1, __tu1.L.else1820
+  beq a0, a1, __tu1.L.else2104
   li a0, 0
   j __tu1.L.return..L.static.name_eq
-  j __tu1.L.end1820
-__tu1.L.else1820:
-__tu1.L.end1820:
+  j __tu1.L.end2104
+__tu1.L.else2104:
+__tu1.L.end2104:
   add a0, s9, s10
   ldt a0, 0(a0)
-  bne a0, zero, __tu1.L.else1831
+  bne a0, zero, __tu1.L.else2115
   li a0, 1
   j __tu1.L.return..L.static.name_eq
-  j __tu1.L.end1831
-__tu1.L.else1831:
-__tu1.L.end1831:
-__tu1.L..17:
+  j __tu1.L.end2115
+__tu1.L.else2115:
+__tu1.L.end2115:
+__tu1.L..21:
   addi s10, s10, 1
-__tu1.L.cond1813:
+__tu1.L.cond2097:
   li a1, 16
-  blt s10, a1, __tu1.L.begin1813
-__tu1.L..16:
+  blt s10, a1, __tu1.L.begin2097
+__tu1.L..20:
   li a0, 1
   j __tu1.L.return..L.static.name_eq
 __tu1.L.return..L.static.name_eq:
@@ -3245,19 +3522,119 @@ __tu1.L.static.dir_count:
   jal ra, __tu1.L.static.word_at
   addi sp, sp, 18
   li a1, 27027
-  bne a0, a1, __tu1.L.else1858
+  bne a0, a1, __tu1.L.else2142
   addi sp, sp, -18
   addi a0, zero, __tu1.L.static.dir
   addi a0, a0, 3
   stw a0, 0(sp)
   jal ra, __tu1.L.static.word_at
   addi sp, sp, 18
-  j __tu1.L.end1858
-__tu1.L.else1858:
+  j __tu1.L.end2142
+__tu1.L.else2142:
   li a0, 0
-__tu1.L.end1858:
+__tu1.L.end2142:
   j __tu1.L.return..L.static.dir_count
 __tu1.L.return..L.static.dir_count:
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.put_word:
+; REGVARS s10 s9 s8 s7 s6
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -36
+  stw s1, -21(fp)
+  stw s10, -24(fp)
+  stw s9, -27(fp)
+  stw s8, -30(fp)
+  stw s7, -33(fp)
+  stw s6, -36(fp)
+  stw sp, -12(fp)
+  mv s7, a0
+  mv s6, a1
+  mv s9, zero
+  li a1, 19683
+  mod s9, s6, a1
+  li a0, 9841
+  bge a0, s9, __tu1.L.else2162
+  addi s9, s9, -19683
+  j __tu1.L.end2162
+__tu1.L.else2162:
+__tu1.L.end2162:
+  li a1, -9841
+  bge s9, a1, __tu1.L.else2165
+  addi s9, s9, 19683
+  j __tu1.L.end2165
+__tu1.L.else2165:
+__tu1.L.end2165:
+  mv s8, zero
+  sub a0, s6, s9
+  li a1, 19683
+  div s8, a0, a1
+  mv s10, zero
+  li a1, 19683
+  mod s10, s8, a1
+  li a0, 9841
+  bge a0, s10, __tu1.L.else2180
+  addi s10, s10, -19683
+  j __tu1.L.end2180
+__tu1.L.else2180:
+__tu1.L.end2180:
+  li a1, -9841
+  bge s10, a1, __tu1.L.else2183
+  addi s10, s10, 19683
+  j __tu1.L.end2183
+__tu1.L.else2183:
+__tu1.L.end2183:
+  addi a0, s7, 0
+  stt s9, 0(a0)
+  addi a0, s7, 1
+  stt s10, 0(a0)
+  addi a0, s7, 2
+  mv s1, a0
+  sub a0, s8, s10
+  divi a0, a0, 19683
+  sxt a0, a0
+  stt a0, 0(s1)
+__tu1.L.return..L.static.put_word:
+  ldw s1, -21(fp)
+  ldw s10, -24(fp)
+  ldw s9, -27(fp)
+  ldw s8, -30(fp)
+  ldw s7, -33(fp)
+  ldw s6, -36(fp)
+  mv sp, fp
+  pop fp
+  pop ra
+  ret
+  .align 3
+__tu1.L.static.disk_write:
+; REGVARS s10 s9
+  push ra
+  push fp
+  mv fp, sp
+  addi sp, sp, -15
+  stw s10, -12(fp)
+  stw s9, -15(fp)
+  stw sp, -3(fp)
+  mv s10, a0
+  mv s9, a1
+  li a0, 20
+  neg a0, a0
+  stw s10, 0(a0)
+  li a0, 21
+  neg a0, a0
+  stw s9, 0(a0)
+  li a0, 22
+  neg a0, a0
+  li a1, 2
+  stw a1, 0(a0)
+__tu1.L.return..L.static.disk_write:
+  ldw s10, -12(fp)
+  ldw s9, -15(fp)
   mv sp, fp
   pop fp
   pop ra
@@ -3306,20 +3683,20 @@ __tu1.L.static.uptr:
   mv s9, a0
   mv s10, a1
   mv s8, a2
-  blt s10, zero, __tu1.L.bskip1893
-  blt s8, zero, __tu1.L.bskip1893
+  blt s10, zero, __tu1.L.bskip2237
+  blt s8, zero, __tu1.L.bskip2237
   add a0, s10, s8
   mv s1, a0
   mv a0, s9
   ldw a0, 87(a0)
   mv a1, s1
-  bge a0, a1, __tu1.L.else1892
-__tu1.L.bskip1893:
+  bge a0, a1, __tu1.L.else2236
+__tu1.L.bskip2237:
   li a0, 0
   j __tu1.L.return..L.static.uptr
-  j __tu1.L.end1892
-__tu1.L.else1892:
-__tu1.L.end1892:
+  j __tu1.L.end2236
+__tu1.L.else2236:
+__tu1.L.end2236:
   mv a0, s9
   ldw a0, 84(a0)
   add a0, a0, s10
@@ -3405,11 +3782,11 @@ __tu1.L.static.bal:
   mv s10, zero
   add a0, s7, s9
   mod s10, a0, s8
-  bge s10, zero, __tu1.L.else1955
+  bge s10, zero, __tu1.L.else2299
   add s10, s10, s8
-  j __tu1.L.end1955
-__tu1.L.else1955:
-__tu1.L.end1955:
+  j __tu1.L.end2299
+__tu1.L.else2299:
+__tu1.L.end2299:
   sub a0, s10, s9
   j __tu1.L.return..L.static.bal
 __tu1.L.return..L.static.bal:
@@ -3445,6 +3822,18 @@ __builtin_sht:
   ret
 wfi:
   wfi
+  ret
+__builtin_tcons:
+  cons a0, a0, a1
+  ret
+__builtin_tany:
+  any a0, a0, a1
+  ret
+__builtin_tsum:
+  tsum a0, a0
+  ret
+__builtin_tdot:
+  tdot a0, a0, a1
   ret
 
   .align 1

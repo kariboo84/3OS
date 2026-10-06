@@ -38,6 +38,10 @@ pub mod op {
     pub const MULH: u8 = 16;
     /// Extension de signe d'une tryte : rd = valeur sur 9 trits de rs1 (cast char).
     pub const SXT: u8 = 17;
+    /// Somme des 27 trits de rs1 (−27..27) : le « popcount » ternaire.
+    pub const TSUM: u8 = 18;
+    /// Produit scalaire ternaire : Σ a_i·b_i sur les 27 trits (= TSUM(TMUL a b)).
+    pub const TDOT: u8 = 19;
     pub const ADDI: u8 = 20;
     pub const MULI: u8 = 21;
     pub const SHTI: u8 = 22;
@@ -84,7 +88,7 @@ macro_rules! ops {
 ops! {
     "add" ADD R, "sub" SUB R, "mul" MUL R, "div" DIV R, "mod" MOD R,
     "neg" NEG R2, "min" MIN R, "max" MAX R, "tmul" TMUL R, "cons" CONS R, "any" ANY R,
-    "cmp" CMP R, "sht" SHT R, "slt" SLT R, "seq" SEQ R, "mulh" MULH R, "sxt" SXT R2,
+    "cmp" CMP R, "sht" SHT R, "slt" SLT R, "seq" SEQ R, "mulh" MULH R, "sxt" SXT R2, "tsum" TSUM R2, "tdot" TDOT R,
     "addi" ADDI I, "muli" MULI I, "shti" SHTI I,
     "ldt" LDT Mem, "ldw" LDW Mem, "stt" STT Mem, "stw" STW Mem,
     "beq" BEQ Br, "bne" BNE Br, "blt" BLT Br, "bge" BGE Br,

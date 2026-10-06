@@ -15,3 +15,6 @@ sys_readfile:
 sys_procs:
   ecall 14
   ret
+sys_writefile:
+  ecall 15
+  ret

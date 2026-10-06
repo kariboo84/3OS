@@ -114,6 +114,22 @@ pub fn from_planes(p: u32, n: u32) -> i64 {
 
 const M27: u32 = (1 << 27) - 1;
 
+/// Somme des trits : (#trits à +1) − (#trits à −1).
+#[inline]
+pub fn tsum(v: i64) -> i64 {
+    let (p, n) = to_planes(v);
+    p.count_ones() as i64 - n.count_ones() as i64
+}
+
+/// Produit scalaire trit à trit : Σ a_i·b_i.
+#[inline]
+pub fn tdot(a: i64, b: i64) -> i64 {
+    let ((ap, an), (bp, bn)) = (to_planes(a), to_planes(b));
+    let pos = (ap & bp) | (an & bn);
+    let neg = (ap & bn) | (an & bp);
+    pos.count_ones() as i64 - neg.count_ones() as i64
+}
+
 pub fn tmin(a: i64, b: i64) -> i64 {
     let ((ap, an), (bp, bn)) = (to_planes(a), to_planes(b));
     from_planes(ap & bp, an | bn)

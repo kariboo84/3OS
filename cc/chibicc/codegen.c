@@ -191,7 +191,33 @@ static void load(Type *t) {
   emit("  %s a0, 0(a0)",t->size==1?"ldt":"ldw");
   if(t->kind==TY_CHAR && t->is_unsigned) cast(t);
 }
+/* Intrinsèques ternaires : une instruction en ligne, sans appel. */
+static const char *builtin_op(Node *n, int *nargs) {
+  static const struct { const char *name, *op; int n; } B[] = {
+    {"__builtin_tmin","min",2},{"__builtin_tmax","max",2},{"__builtin_tmul","tmul",2},
+    {"__builtin_tcons","cons",2},{"__builtin_tany","any",2},{"__builtin_sht","sht",2},
+    {"__builtin_tsum","tsum",1},{"__builtin_tdot","tdot",2},
+  };
+  if(n->lhs->kind!=ND_VAR || n->ret_buffer) return NULL;
+  for(int i=0;i<(int)(sizeof B/sizeof B[0]);i++) if(!strcmp(n->lhs->var->name,B[i].name)) {
+    int c=0; for(Node *a=n->args;a;a=a->next) c++;
+    if(c!=B[i].n) return NULL;
+    *nargs=c; return B[i].op;
+  }
+  return NULL;
+}
+
 static void call(Node *n) {
+  int bn; const char *bop=builtin_op(n,&bn);
+  if(bop) {
+    Node *a1=n->args, *a2=bn==2?n->args->next:NULL;
+    if(bn==1) { if(reg_var(a1)) emit("  %s a0, s%d",bop,reg_var(a1)); else { expr(a1); emit("  %s a0, a0",bop); } return; }
+    const char *lo, *ro;
+    if(simple(a2)) { if(simple(a1)) lo=operand(a1,"a0"); else { expr(a1); lo="a0"; } ro=operand(a2,"a1"); }
+    else if(simple(a1)) { expr(a2); ro="a0"; lo=operand(a1,"a1"); }
+    else { expr(a2); spush(); expr(a1); spop("a1"); lo="a0"; ro="a1"; }
+    emit("  %s a0, %s, %s",bop,lo,ro); return;
+  }
   if(n->lhs->kind==ND_VAR && !strcmp(n->lhs->var->name,"alloca")) {
     expr(n->args);
     int id=serial++;

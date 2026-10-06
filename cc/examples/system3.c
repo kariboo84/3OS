@@ -115,7 +115,7 @@ static void cur_show(void) {
 /* ---------- bureau ---------- */
 typedef struct { int x, y, w, h, open; const char *title; } Win;
 static Win win[2] = {
-  { 40, 40, 220, 170, 1, "3OS" },
+  { 30, 34, 230, 200, 1, "3OS" },
   { 280, 120, 270, 175, 1, "Lisez-moi" },
 };
 /* contenu du disque (sys_readdir) et du fichier lisez-moi (sys_readfile) */
@@ -163,7 +163,7 @@ static void draw_window(int j, int active) {
       else frame(x, row_y(i), 8, 10, K_BLACK);
       char lab[24];
       int k = 0;
-      lab[k++] = '1' + i; lab[k++] = ' ';
+      lab[k++] = i < 9 ? '1' + i : ' '; lab[k++] = ' ';
       for (int c = 0; names[i][c] && k < 22; c++) lab[k++] = names[i][c];
       lab[k] = 0;
       text(x + 14, row_y(i) + 1, lab, kinds[i] == 1 ? K_BLACK : K_GRAY);
@@ -234,6 +234,7 @@ static void launch(int i) {
   if (i < 0 || i >= nfiles || kinds[i] != 1) return;
   cur_hide();
   long code = sys_exec(names[i]);
+  load_disk();                      /* un programme a pu écrire sur le disque */
   /* retour au bureau : le noyau a rétabli notre écran ; on redessine par sécurité */
   char *m = status;
   const char *a = "Fin de ";

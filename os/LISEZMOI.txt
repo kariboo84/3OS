@@ -1,11 +1,8 @@
-3OS v0.3 - systeme ternaire TRI-27.
+3OS v0.4 - systeme ternaire TRI-27.
 
-Chaque programme tourne dans son
-propre espace memoire (UBASE/ULIMIT).
-Le noyau virtualise l'ecran, le
-clavier, la souris et le son.
-
-Cliquez un programme dans la fenetre
-3OS (ou tapez son numero dans la
-console). Essayez "crash" : le noyau
-le tue, le systeme continue.
+chiffres : reseau de neurones 100%
+  ternaire (poids -1/0/+1, TDOT).
+editeur  : modifie ce texte (F2).
+ternet, kleene : logique a 3 etats.
+crash : le noyau le tue, le
+  systeme continue.

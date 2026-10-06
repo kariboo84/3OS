@@ -1,0 +1,8 @@
+; VM supplies sp at end of RAM, aligned to 3. Reserve register homes.
+.align 3
+start:
+  addi sp, sp, -18
+  li a0, 0
+  li a1, 0
+  call main
+  ecall 0

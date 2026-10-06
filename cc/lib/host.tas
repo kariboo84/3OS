@@ -1,0 +1,22 @@
+; Leaf host services; no dependence on host libc.
+.align 3
+putchar:
+  ecall 1
+  ret
+exit:
+  ecall 0
+abort:
+  li a0, 1
+  ecall 0
+__builtin_tmin:
+  min a0, a0, a1
+  ret
+__builtin_tmax:
+  max a0, a0, a1
+  ret
+__builtin_tmul:
+  tmul a0, a0, a1
+  ret
+__builtin_sht:
+  sht a0, a0, a1
+  ret

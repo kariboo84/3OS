@@ -1,5 +1,11 @@
 [
  {
+  "file": "system3.tas",
+  "title": "Système 3 — bureau façon System 7 (souris, fenêtres, C = couleur)",
+  "framebuffer": true,
+  "animated": true
+ },
+ {
   "file": "tetris.tas",
   "title": "Tetris en C (compilé par chibicc ternaire)",
   "framebuffer": true,

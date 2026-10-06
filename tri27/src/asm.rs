@@ -355,7 +355,9 @@ pub fn assemble(src: &str) -> Result<Image, String> {
                 None => (line.to_ascii_lowercase(), String::new()),
             };
             let args = split_args(&rest);
-            let cx = Ctx { syms: &syms, final_pass };
+            // new_syms = symboles de la passe précédente + ceux déjà (re)définis dans cette passe :
+            // une chaîne de .equ (B = A+1, C = B+1, …) se résout en une passe.
+            let cx = Ctx { syms: &new_syms, final_pass };
             if let Some(d) = mn.strip_prefix('.') {
                 match d {
                     "org" => pc = cx.eval(&rest).map_err(err)?,
@@ -402,6 +404,9 @@ pub fn assemble(src: &str) -> Result<Image, String> {
                             return Err(err("chaîne attendue".into()));
                         }
                         for c in unescape(&s[1..s.len() - 1]).map_err(err)? {
+                            if c > 9841 {
+                                return Err(err(format!("caractère U+{c:04X} hors d'un tryte (max 9841)")));
+                            }
                             put(&mut mem, pc, c).map_err(err)?;
                             pc += 1;
                         }

@@ -59,6 +59,8 @@ pub mod op {
     pub const BR3: u8 = 45;
     pub const HALT: u8 = 50;
     pub const ERET: u8 = 51;
+    /// Attente d'événement : le CPU dort jusqu'au prochain tick hôte (privilégiée).
+    pub const WFI: u8 = 52;
     pub const UNDECODED: u8 = 255;
 }
 
@@ -84,7 +86,7 @@ ops! {
     "jalr" JALR I, "ecall" ECALL Ecall, "csrr" CSRR CsrR, "csrw" CSRW CsrW,
     "mini" MINI I, "maxi" MAXI I, "slti" SLTI I,
     "lui" LUI Lui, "jal" JAL Jal, "br3" BR3 B3,
-    "halt" HALT N, "eret" ERET N,
+    "halt" HALT N, "eret" ERET N, "wfi" WFI N,
 }
 
 pub fn info_by_name(name: &str) -> Option<&'static OpInfo> {

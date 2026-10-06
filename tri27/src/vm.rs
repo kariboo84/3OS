@@ -102,10 +102,14 @@ pub struct Vm {
     pub disk_addr: i64,
     pub disk_status: i64,
     pub disk_dirty: bool,
+    /// WFI exécuté : run() rend la main à l'hôte jusqu'au prochain appel.
+    pub waiting: bool,
     #[cfg(feature = "prof")]
     pub prof_op: [u64; 256],
     #[cfg(feature = "prof")]
     pub prof_user: u64,
+    #[cfg(feature = "prof")]
+    pub prof_pc: Vec<u32>,
     #[cfg(feature = "prof")]
     pub prof_traps: [u64; 16],
     pub present_w: usize,
@@ -145,10 +149,13 @@ impl Vm {
             disk_addr: 0,
             disk_status: 0,
             disk_dirty: false,
+            waiting: false,
             #[cfg(feature = "prof")]
             prof_op: [0; 256],
             #[cfg(feature = "prof")]
             prof_user: 0,
+            #[cfg(feature = "prof")]
+            prof_pc: vec![0; ram / 3 + 1],
             #[cfg(feature = "prof")]
             prof_traps: [0; 16],
             present_w: 0,
@@ -450,7 +457,8 @@ impl Vm {
     pub fn run(&mut self, max: u64) -> u64 {
         let start = self.cycles;
         let end = start.saturating_add(max);
-        while !self.halted && self.cycles < end {
+        self.waiting = false;
+        while !self.halted && !self.waiting && self.cycles < end {
             if self.csr[csr::IE] != 0 {
                 let tc = self.csr[csr::TIMECMP];
                 if tc > 0 && self.cycles as i64 >= tc {
@@ -489,6 +497,7 @@ impl Vm {
         #[cfg(feature = "prof")]
         {
             self.prof_op[i.op as usize] += 1;
+            self.prof_pc[ci] += 1;
             if user { self.prof_user += 1; }
         }
         let mut next = pc + 3;
@@ -660,6 +669,10 @@ impl Vm {
             op::HALT => {
                 kernel!();
                 self.halted = true;
+            }
+            op::WFI => {
+                kernel!();
+                self.waiting = true;
             }
             _ => {
                 self.trap(cause::ILLEGAL, i.imm);

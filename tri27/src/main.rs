@@ -142,6 +142,7 @@ fn main() {
             let mut input = String::new();
             let mut wav: Option<String> = None;
             let mut disk: Option<String> = None;
+            let mut realtime = false;
             let mut audio: Vec<f32> = Vec::new();
             let mut i = 3;
             while i < args.len() {
@@ -160,6 +161,7 @@ fn main() {
                         mouse = Some((v[0], v[1], *v.get(2).unwrap_or(&0)));
                         i += 1;
                     }
+                    "--realtime" => realtime = true,
                     "--disk" => {
                         disk = Some(args[i + 1].clone());
                         i += 1
@@ -188,10 +190,18 @@ fn main() {
             let t0 = Instant::now();
             let stdout = std::io::stdout();
             let mut done = 0u64;
+            let mut skipped_ms = 0i64; // temps sauté pendant les WFI (sauf --realtime)
             while !vm.halted && done < max {
-                vm.time_ms = t0.elapsed().as_millis() as i64;
+                vm.time_ms = t0.elapsed().as_millis() as i64 + skipped_ms;
                 if let Some((x, y, b)) = mouse { vm.set_mouse(x, y, b); }
                 done += vm.run((max - done).min(1 << 20));
+                if vm.waiting {
+                    if realtime {
+                        std::thread::sleep(std::time::Duration::from_millis(1));
+                    } else {
+                        skipped_ms += 1;
+                    }
+                }
                 if wav.is_some() {
                     let want = (vm.time_ms as f64 * tri27::sound::SR / 1000.0) as usize;
                     if want > audio.len() {
@@ -230,6 +240,12 @@ fn main() {
                     eprintln!("[prof] {:<6} {:>6.2}%", name, 100.0 * *n as f64 / tot as f64);
                 }
                 eprintln!("[prof] pièges par cause : {:?}", &vm.prof_traps[..12]);
+                if let Ok(path) = std::env::var("TRI27_HOT") {
+                    let mut h: Vec<(usize, u32)> = vm.prof_pc.iter().copied().enumerate().filter(|x| x.1 > 0).collect();
+                    h.sort_by(|a, b| b.1.cmp(&a.1));
+                    let s: String = h.iter().take(400).map(|(c, n)| format!("{} {}\n", c * 3, n)).collect();
+                    std::fs::write(path, s).unwrap();
+                }
             }
             let dt = t0.elapsed().as_secs_f64();
             if let Some(w) = &wav {

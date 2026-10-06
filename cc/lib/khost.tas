@@ -19,3 +19,6 @@ __builtin_tmul:
 __builtin_sht:
   sht a0, a0, a1
   ret
+wfi:
+  wfi
+  ret

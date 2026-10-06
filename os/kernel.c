@@ -274,9 +274,18 @@ static void syscall(long n) {
 }
 
 /* ---------- point d'entrée des pièges (kentry.tas) ---------- */
+/* WFI du processus : céder à un autre prêt, sinon dormir nous-mêmes (mode noyau). */
+static void user_wfi(void) {
+  cur->pc += 3;
+  for (int i = 0; i < NPROC; i++)
+    if (&procs[i] != cur && procs[i].state == READY) { schedule(); return; }
+  wfi();
+}
+
 void ktrap(void) {
   long c = csr_cause(), v = csr_tval();
   if (c == 9) schedule();
+  else if (c == 2 && v == 52) user_wfi();
   else if (c == 8) syscall(v);
   else if (c == 3 && v < 0) emulate_mmio(v);
   else if (c == 3) kill(cur, "faute memoire", v);

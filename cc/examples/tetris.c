@@ -556,7 +556,7 @@ int main(void) {
   long last = -1, sum = 0, mx = 0, frames = 0;
   while (!quit) {
     long t;
-    while ((t = TIME_MS) == last) {}
+    while ((t = TIME_MS) == last) wfi();
     last = t; now = t;
     long c0 = CYCLES;
     input();

@@ -294,9 +294,6 @@ int main(void) {
 
     if (dirty) { cur_hide(); cx = mx; cy = my; draw_all(); cur_show(); present(); }
     else if (mx != cx || my != cy) { cur_hide(); cx = mx; cy = my; cur_show(); present(); }
-    else {
-      long t = TIME_MS + 16;                                       /* attendre ~1 image */
-      while (TIME_MS < t && MOUSE_X == cx && MOUSE_Y == cy) {}
-    }
+    else wfi();                                  /* rien à faire : dormir jusqu'au prochain événement */
   }
 }

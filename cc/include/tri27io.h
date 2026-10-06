@@ -12,6 +12,9 @@
 #define FB_PRESENT  TRI27_MMIO(-6)
 #define KEY_EVENT   TRI27_MMIO(-7)   /* +code appui, -code relâche, 0 rien (codes KeyboardEvent.keyCode) */
 #define TIME_MS     TRI27_MMIO(-8)
+/* Dort jusqu'au prochain événement hôte (image suivante, entrée, 1 ms en CLI).
+ * À appeler dans toute boucle d'attente au lieu de tourner à vide. */
+void wfi(void);
 
 #define VMODE       TRI27_MMIO(-9)   /* 0 = TRGB 320x200, 1 = TRIT 576x360 (1 trit/pixel), 2 = TRGB 576x360 */
 #define MOUSE_X     TRI27_MMIO(-10)

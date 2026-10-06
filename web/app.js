@@ -135,12 +135,17 @@ function audioPump() {
 }
 
 let diskImage = null;
-fetch('3os.t3d', { cache: 'no-store' })
+// promesse gardée : un lancement attend la fin du téléchargement du disque
+const diskReady = fetch('3os.t3d', { cache: 'no-store' })
   .then(r => r.ok ? r.arrayBuffer() : null)
-  .then(b => { if (b) diskImage = new Int16Array(b); })
-  .catch(() => {});
+  .then(b => { if (b && b.byteLength) diskImage = new Int16Array(b); })
+  .catch(() => {})
+  .then(() => {
+    if (!diskImage) appendConsole('[web] disque 3os.t3d introuvable : 3OS v0.3 ne pourra pas démarrer\n');
+  });
 
-function assembleAndRun() {
+async function assembleAndRun() {
+  await diskReady;
   audioInit();
   const bytes = enc.encode(srcEl.value);
   const p = W.src_alloc(bytes.length);
@@ -255,7 +260,7 @@ canvas.addEventListener('mousedown', sendMouse);
 canvas.addEventListener('mouseup', sendMouse);
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-$('btnRun').onclick = () => { if (W) assembleAndRun(); };
+$('btnRun').onclick = () => { if (W) assembleAndRun(); };  // async : attend le disque
 $('btnPause').onclick = () => {
   if (!loaded || W.halted()) return;
   running = !running;
@@ -309,7 +314,7 @@ async function init() {
   srcEl.value = DEMO;
   loadExampleList();
   try {
-    const resp = await fetch('tri27.wasm');
+    const resp = await fetch('tri27.wasm', { cache: 'no-store' });
     const bytes = await resp.arrayBuffer();
     const { instance } = await WebAssembly.instantiate(bytes, {});
     W = instance.exports;

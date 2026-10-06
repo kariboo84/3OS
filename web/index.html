@@ -52,6 +52,9 @@
     <pre id="console" tabindex="0"></pre>
   </div>
 </main>
-<script src="app.js"></script>
+<script>
+  // contourne le cache du navigateur : app.js et tri27.wasm changent souvent
+  document.write('<script src="app.js?v=' + Date.now() + '"><\/script>');
+</script>
 </body>
 </html>

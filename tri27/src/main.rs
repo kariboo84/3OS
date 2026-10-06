@@ -45,6 +45,7 @@ fn main() {
             let mut max = u64::MAX;
             let mut ppm: Option<String> = None;
             let mut stats = false;
+            let mut input = String::new();
             let mut i = 3;
             while i < args.len() {
                 match args[i].as_str() {
@@ -57,6 +58,10 @@ fn main() {
                         i += 1
                     }
                     "--stats" => stats = true,
+                    "--input" => {
+                        input = args[i + 1].replace("\\n", "\n");
+                        i += 1
+                    }
                     _ => usage(),
                 }
                 i += 1;
@@ -65,6 +70,7 @@ fn main() {
             let mut vm = Vm::new(RAM);
             vm.load(0, &img.trytes);
             vm.reset_cpu(img.entry);
+            vm.input.extend(input.chars().map(|c| c as i64));
             let t0 = Instant::now();
             let stdout = std::io::stdout();
             let mut done = 0u64;

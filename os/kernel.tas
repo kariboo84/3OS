@@ -1,0 +1,703 @@
+; =====================================================================
+;  3OS — noyau ternaire pour TRI-27  (v0.1)
+;  - pièges : ECALL (appels système), timer (préemption), fautes
+;  - 2 tâches en mode utilisateur (+1) : shell + animation framebuffer
+;  - ordonnanceur round-robin préemptif (TIMECMP)
+; =====================================================================
+
+        .equ QUANTUM, 40000         ; cycles par tranche de temps
+
+        ; décalages dans un TCB (registre k → (k+13)*3)
+        .equ R_S10, 0
+        .equ R_S9, 3
+        .equ R_S8, 6
+        .equ R_S7, 9
+        .equ R_S6, 12
+        .equ R_S5, 15
+        .equ R_S4, 18
+        .equ R_S3, 21
+        .equ R_S2, 24
+        .equ R_S1, 27
+        .equ R_FP, 30
+        .equ R_RA, 33
+        .equ R_SP, 36
+        .equ R_A0, 42
+        .equ R_A1, 45
+        .equ R_A2, 48
+        .equ R_A3, 51
+        .equ R_A4, 54
+        .equ R_A5, 57
+        .equ R_T0, 60
+        .equ R_T1, 63
+        .equ R_T2, 66
+        .equ R_T3, 69
+        .equ R_T4, 72
+        .equ R_T5, 75
+        .equ R_T6, 78
+        .equ R_PC, 81
+        .equ R_MODE, 84
+
+        ; appels système
+        .equ SYS_PUTC, 1
+        .equ SYS_GETC, 2
+        .equ SYS_EXIT, 3
+        .equ SYS_PUTS, 4
+        .equ SYS_YIELD, 5
+        .equ SYS_TICKS, 6
+        .equ SYS_PINT, 7
+        .equ SYS_PTRITS, 8
+
+; ---------------------------------------------------------------------
+;  démarrage (mode noyau, -1)
+; ---------------------------------------------------------------------
+start:
+        la    sp, kstack_top
+        la    t0, trap
+        csrw  t0, tvec
+        la    a0, s_banner
+        call  kputs
+
+        ; tâche 1 : shell
+        la    t0, tcb1
+        la    t1, shell
+        stw   t1, R_PC(t0)
+        li    t1, 1
+        stw   t1, R_MODE(t0)
+        la    t1, ustack1_top
+        stw   t1, R_SP(t0)
+        ; tâche 2 : animation
+        la    t0, tcb2
+        la    t1, anim
+        stw   t1, R_PC(t0)
+        li    t1, 1
+        stw   t1, R_MODE(t0)
+        la    t1, ustack2_top
+        stw   t1, R_SP(t0)
+
+        la    t0, fb
+        stw   t0, -5(zero)          ; FB_ADDR
+
+        la    t0, tcb1
+        stw   t0, cur(zero)
+        ldw   t1, -4(zero)          ; CYCLES
+        addi  t1, t1, QUANTUM
+        csrw  t1, timecmp
+        j     restore
+
+; ---------------------------------------------------------------------
+;  entrée des pièges : sauvegarde du contexte dans le TCB courant
+; ---------------------------------------------------------------------
+trap:
+        stw   t0, ksave(zero)
+        ldw   t0, cur(zero)
+        stw   s10, R_S10(t0)
+        stw   s9, R_S9(t0)
+        stw   s8, R_S8(t0)
+        stw   s7, R_S7(t0)
+        stw   s6, R_S6(t0)
+        stw   s5, R_S5(t0)
+        stw   s4, R_S4(t0)
+        stw   s3, R_S3(t0)
+        stw   s2, R_S2(t0)
+        stw   s1, R_S1(t0)
+        stw   fp, R_FP(t0)
+        stw   ra, R_RA(t0)
+        stw   sp, R_SP(t0)
+        stw   a0, R_A0(t0)
+        stw   a1, R_A1(t0)
+        stw   a2, R_A2(t0)
+        stw   a3, R_A3(t0)
+        stw   a4, R_A4(t0)
+        stw   a5, R_A5(t0)
+        stw   t1, R_T1(t0)
+        stw   t2, R_T2(t0)
+        stw   t3, R_T3(t0)
+        stw   t4, R_T4(t0)
+        stw   t5, R_T5(t0)
+        stw   t6, R_T6(t0)
+        ldw   t1, ksave(zero)
+        stw   t1, R_T0(t0)
+        csrr  t1, epc
+        stw   t1, R_PC(t0)
+        csrr  t1, pmode
+        stw   t1, R_MODE(t0)
+
+        la    sp, kstack_top
+        csrr  t1, cause
+        li    t2, 9
+        beq   t1, t2, on_tick
+        li    t2, 8
+        beq   t1, t2, on_sys
+        j     on_fault
+
+; ---------------------------------------------------------------------
+;  sortie : restaure le TCB courant et ERET
+; ---------------------------------------------------------------------
+restore:
+        ldw   t0, cur(zero)
+        ldw   t1, R_PC(t0)
+        csrw  t1, epc
+        ldw   t1, R_MODE(t0)
+        csrw  t1, pmode
+        li    t1, 1
+        csrw  t1, pie
+        ldw   s10, R_S10(t0)
+        ldw   s9, R_S9(t0)
+        ldw   s8, R_S8(t0)
+        ldw   s7, R_S7(t0)
+        ldw   s6, R_S6(t0)
+        ldw   s5, R_S5(t0)
+        ldw   s4, R_S4(t0)
+        ldw   s3, R_S3(t0)
+        ldw   s2, R_S2(t0)
+        ldw   s1, R_S1(t0)
+        ldw   fp, R_FP(t0)
+        ldw   ra, R_RA(t0)
+        ldw   sp, R_SP(t0)
+        ldw   a0, R_A0(t0)
+        ldw   a1, R_A1(t0)
+        ldw   a2, R_A2(t0)
+        ldw   a3, R_A3(t0)
+        ldw   a4, R_A4(t0)
+        ldw   a5, R_A5(t0)
+        ldw   t1, R_T1(t0)
+        ldw   t2, R_T2(t0)
+        ldw   t3, R_T3(t0)
+        ldw   t4, R_T4(t0)
+        ldw   t5, R_T5(t0)
+        ldw   t6, R_T6(t0)
+        ldw   t0, R_T0(t0)
+        eret
+
+; ---------------------------------------------------------------------
+;  timer / yield : tâche suivante (round-robin)
+; ---------------------------------------------------------------------
+on_tick:
+        ldw   t1, switches(zero)
+        addi  t1, t1, 1
+        stw   t1, switches(zero)
+        ldw   t0, cur(zero)
+        la    t1, tcb1
+        beq   t0, t1, tk_to2
+        la    t1, tcb1
+        j     tk_set
+tk_to2: la    t1, tcb2
+tk_set: stw   t1, cur(zero)
+        ldw   t1, -4(zero)
+        addi  t1, t1, QUANTUM
+        csrw  t1, timecmp
+        j     restore
+
+; ---------------------------------------------------------------------
+;  appels système : n° = TVAL, argument = a0 sauvegardé
+; ---------------------------------------------------------------------
+on_sys:
+        ldw   t0, cur(zero)
+        ldw   t1, R_PC(t0)
+        addi  t1, t1, 3             ; reprendre après l'ECALL
+        stw   t1, R_PC(t0)
+        ldw   a0, R_A0(t0)
+        csrr  t1, tval
+        li    t2, SYS_PUTC
+        beq   t1, t2, sys_putc
+        li    t2, SYS_GETC
+        beq   t1, t2, sys_getc
+        li    t2, SYS_PUTS
+        beq   t1, t2, sys_puts
+        li    t2, SYS_YIELD
+        beq   t1, t2, on_tick
+        li    t2, SYS_TICKS
+        beq   t1, t2, sys_ticks
+        li    t2, SYS_PINT
+        beq   t1, t2, sys_pint
+        li    t2, SYS_PTRITS
+        beq   t1, t2, sys_ptrits
+        li    t2, SYS_EXIT
+        beq   t1, t2, sys_exit
+        la    a0, s_badsys
+        call  kputs
+        j     restore
+
+sys_putc:
+        stt   a0, -1(zero)
+        j     restore
+sys_getc:
+        ldw   a0, -2(zero)
+        ldw   t0, cur(zero)
+        stw   a0, R_A0(t0)
+        j     restore
+sys_puts:
+        call  kputs
+        j     restore
+sys_ticks:
+        ldw   a0, -4(zero)
+        ldw   t0, cur(zero)
+        stw   a0, R_A0(t0)
+        j     restore
+sys_pint:
+        call  kprint_int
+        j     restore
+sys_ptrits:
+        call  kprint_trits
+        j     restore
+sys_exit:
+        la    a0, s_halt
+        call  kputs
+        halt
+
+on_fault:
+        la    a0, s_fault
+        call  kputs
+        csrr  a0, cause
+        call  kprint_int
+        la    a0, s_fault_pc
+        call  kputs
+        csrr  a0, epc
+        call  kprint_int
+        li    a0, 10
+        stt   a0, -1(zero)
+        halt
+
+; ---------------------------------------------------------------------
+;  routines noyau (console MMIO)
+; ---------------------------------------------------------------------
+kputs:                              ; a0 = chaîne terminée par 0
+        ldt   t1, 0(a0)
+        beqz  t1, kputs_end
+        stt   t1, -1(zero)
+        addi  a0, a0, 1
+        j     kputs
+kputs_end:
+        ret
+
+kprint_int:                         ; a0 = entier signé, en décimal
+        bgez  a0, kpi_pos
+        li    t1, '-'
+        stt   t1, -1(zero)
+        neg   a0, a0
+kpi_pos:
+        la    t2, numbuf
+        li    t3, 0
+        li    t4, 10
+kpi_loop:
+        mod   t5, a0, t4
+        div   a0, a0, t4
+        addi  t5, t5, '0'
+        add   t6, t2, t3
+        stt   t5, 0(t6)
+        addi  t3, t3, 1
+        bnez  a0, kpi_loop
+kp_out:                             ; affiche numbuf[t3-1..0]
+        addi  t3, t3, -1
+        add   t6, t2, t3
+        ldt   t5, 0(t6)
+        stt   t5, -1(zero)
+        bnez  t3, kp_out
+        ret
+
+kprint_trits:                       ; a0 = mot, en trits (+ 0 -)
+        la    t2, numbuf
+        li    t3, 0
+        bnez  a0, kpt_loop
+        li    t1, '0'
+        stt   t1, -1(zero)
+        ret
+kpt_loop:
+        shti  t4, a0, -1            ; quotient équilibré
+        muli  t5, t4, 3
+        sub   t5, a0, t5            ; trit de poids faible ∈ {-1,0,+1}
+        li    t1, '0'
+        br3   t5, kpt_neg, kpt_pos  ; branchement à 3 voies
+        j     kpt_put
+kpt_neg: li   t1, '-'
+        j     kpt_put
+kpt_pos: li   t1, '+'
+kpt_put:
+        add   t6, t2, t3
+        stt   t1, 0(t6)
+        addi  t3, t3, 1
+        mv    a0, t4
+        bnez  a0, kpt_loop
+        j     kp_out
+
+; =====================================================================
+;  TÂCHE 1 — shell (mode utilisateur)
+; =====================================================================
+shell:
+        la    a0, s_shell
+        ecall SYS_PUTS
+sh_prompt:
+        la    a0, s_prompt
+        ecall SYS_PUTS
+        la    s1, line
+        li    s2, 0
+sh_read:
+        ecall SYS_GETC
+        bgez  a0, sh_got
+        ecall SYS_YIELD
+        j     sh_read
+sh_got:
+        li    t0, 13
+        beq   a0, t0, sh_enter
+        li    t0, 10
+        beq   a0, t0, sh_enter
+        li    t0, 8
+        beq   a0, t0, sh_bs
+        li    t0, 127
+        beq   a0, t0, sh_bs
+        li    t0, 78
+        bge   s2, t0, sh_read
+        add   t1, s1, s2
+        stt   a0, 0(t1)
+        addi  s2, s2, 1
+        ecall SYS_PUTC              ; écho
+        j     sh_read
+sh_bs:
+        beqz  s2, sh_read
+        addi  s2, s2, -1
+        li    a0, 8
+        ecall SYS_PUTC
+        li    a0, ' '
+        ecall SYS_PUTC
+        li    a0, 8
+        ecall SYS_PUTC
+        j     sh_read
+sh_enter:
+        add   t1, s1, s2
+        stt   zero, 0(t1)
+        li    a0, 10
+        ecall SYS_PUTC
+        beqz  s2, sh_prompt
+
+        mv    a0, s1
+        la    a1, w_help
+        call  match
+        bnez  a0, cmd_help
+        mv    a0, s1
+        la    a1, w_trits
+        call  match
+        bnez  a0, cmd_trits
+        mv    a0, s1
+        la    a1, w_uptime
+        call  match
+        bnez  a0, cmd_uptime
+        mv    a0, s1
+        la    a1, w_ps
+        call  match
+        bnez  a0, cmd_ps
+        mv    a0, s1
+        la    a1, w_echo
+        call  match
+        bnez  a0, cmd_echo
+        mv    a0, s1
+        la    a1, w_calc
+        call  match
+        bnez  a0, cmd_calc
+        mv    a0, s1
+        la    a1, w_sleep
+        call  match
+        bnez  a0, cmd_sleep
+        mv    a0, s1
+        la    a1, w_halt
+        call  match
+        bnez  a0, cmd_halt
+        la    a0, s_unknown
+        ecall SYS_PUTS
+        j     sh_prompt
+
+cmd_help:
+        la    a0, s_help
+        ecall SYS_PUTS
+        j     sh_prompt
+
+cmd_trits:                          ; trits N : N en ternaire équilibré, et -N
+        call  parse_int
+        mv    s3, a0
+        ecall SYS_PINT
+        la    a0, s_eq
+        ecall SYS_PUTS
+        mv    a0, s3
+        ecall SYS_PTRITS
+        la    a0, s_negis
+        ecall SYS_PUTS
+        neg   a0, s3
+        ecall SYS_PTRITS
+        li    a0, 10
+        ecall SYS_PUTC
+        j     sh_prompt
+
+cmd_calc:                           ; calc A op B   (op : + - * / % m M t)
+        call  parse_int
+        mv    s3, a0                ; A
+        mv    s5, a1                ; pointeur après A
+cc_sp:  ldt   s4, 0(s5)
+        li    t0, ' '
+        bne   s4, t0, cc_op
+        addi  s5, s5, 1
+        j     cc_sp
+cc_op:  addi  a0, s5, 1
+        call  parse_int
+        mv    s6, a0                ; B
+        li    t0, '+'
+        beq   s4, t0, cc_add
+        li    t0, '-'
+        beq   s4, t0, cc_sub
+        li    t0, '*'
+        beq   s4, t0, cc_mul
+        li    t0, '/'
+        beq   s4, t0, cc_div
+        li    t0, '%'
+        beq   s4, t0, cc_mod
+        li    t0, 'm'
+        beq   s4, t0, cc_min
+        li    t0, 'M'
+        beq   s4, t0, cc_max
+        li    t0, 't'
+        beq   s4, t0, cc_tmul
+        la    a0, s_badop
+        ecall SYS_PUTS
+        j     sh_prompt
+cc_add: add   s7, s3, s6
+        j     cc_show
+cc_sub: sub   s7, s3, s6
+        j     cc_show
+cc_mul: mul   s7, s3, s6
+        j     cc_show
+cc_div: beqz  s6, cc_zero
+        div   s7, s3, s6
+        j     cc_show
+cc_mod: beqz  s6, cc_zero
+        mod   s7, s3, s6
+        j     cc_show
+cc_min: min   s7, s3, s6
+        j     cc_show
+cc_max: max   s7, s3, s6
+        j     cc_show
+cc_tmul: tmul s7, s3, s6
+        j     cc_show
+cc_zero:
+        la    a0, s_div0
+        ecall SYS_PUTS
+        j     sh_prompt
+cc_show:
+        mv    a0, s7
+        ecall SYS_PINT
+        la    a0, s_eq
+        ecall SYS_PUTS
+        mv    a0, s7
+        ecall SYS_PTRITS
+        li    a0, 10
+        ecall SYS_PUTC
+        j     sh_prompt
+
+cmd_uptime:
+        ecall SYS_TICKS
+        ecall SYS_PINT
+        la    a0, s_cycles
+        ecall SYS_PUTS
+        j     sh_prompt
+
+cmd_ps:
+        la    a0, s_ps1
+        ecall SYS_PUTS
+        la    a0, s_ps2
+        ecall SYS_PUTS
+        ldw   a0, anim_frames(zero)
+        ecall SYS_PINT
+        la    a0, s_ps3
+        ecall SYS_PUTS
+        ldw   a0, switches(zero)
+        ecall SYS_PINT
+        li    a0, 10
+        ecall SYS_PUTC
+        j     sh_prompt
+
+cmd_echo:
+        ldt   t0, 0(a0)
+        beqz  t0, ce_nl
+        addi  a0, a0, 1             ; saute l'espace
+        ecall SYS_PUTS
+ce_nl:  li    a0, 10
+        ecall SYS_PUTC
+        j     sh_prompt
+
+cmd_sleep:                          ; sleep N : cède le CPU pendant N cycles
+        call  parse_int
+        mv    s3, a0
+        ecall SYS_TICKS
+        add   s3, s3, a0
+sl_loop:
+        ecall SYS_YIELD
+        ecall SYS_TICKS
+        blt   a0, s3, sl_loop
+        j     sh_prompt
+
+cmd_halt:
+        ecall SYS_EXIT
+
+; match(a0 = ligne, a1 = mot) → a0 = pointeur après le mot, ou 0
+match:
+        ldt   t0, 0(a1)
+        beqz  t0, m_end
+        ldt   t1, 0(a0)
+        bne   t0, t1, m_fail
+        addi  a0, a0, 1
+        addi  a1, a1, 1
+        j     match
+m_end:  ldt   t1, 0(a0)
+        beqz  t1, m_ok
+        li    t2, ' '
+        beq   t1, t2, m_ok
+m_fail: li    a0, 0
+m_ok:   ret
+
+; parse_int(a0 = texte) → a0 = valeur, a1 = pointeur après le nombre
+; accepte « 0t+-0 » (trits) ou décimal signé
+parse_int:
+        mv    t3, a0
+        li    a0, 0
+        li    t4, 1
+pa_sp:  ldt   t0, 0(t3)
+        li    t1, ' '
+        bne   t0, t1, pa_sign
+        addi  t3, t3, 1
+        j     pa_sp
+pa_sign:
+        li    t1, '-'
+        bne   t0, t1, pa_tern
+        li    t4, -1
+        addi  t3, t3, 1
+pa_tern:
+        ldt   t0, 0(t3)
+        li    t1, '0'
+        bne   t0, t1, pa_dig
+        ldt   t0, 1(t3)
+        li    t1, 't'
+        bne   t0, t1, pa_dig
+        addi  t3, t3, 2
+pa_tl:  ldt   t0, 0(t3)
+        li    t1, '+'
+        beq   t0, t1, pa_tp
+        li    t1, '-'
+        beq   t0, t1, pa_tn
+        li    t1, '0'
+        beq   t0, t1, pa_tz
+        j     pa_end
+pa_tp:  muli  a0, a0, 3
+        addi  a0, a0, 1
+        addi  t3, t3, 1
+        j     pa_tl
+pa_tn:  muli  a0, a0, 3
+        addi  a0, a0, -1
+        addi  t3, t3, 1
+        j     pa_tl
+pa_tz:  muli  a0, a0, 3
+        addi  t3, t3, 1
+        j     pa_tl
+pa_dig: ldt   t0, 0(t3)
+        addi  t0, t0, -48
+        bltz  t0, pa_end
+        li    t1, 10
+        bge   t0, t1, pa_end
+        muli  a0, a0, 10
+        add   a0, a0, t0
+        addi  t3, t3, 1
+        j     pa_dig
+pa_end: mul   a0, a0, t4
+        mv    a1, t3
+        ret
+
+; =====================================================================
+;  TÂCHE 2 — animation TRGB dans le framebuffer (mode utilisateur)
+; =====================================================================
+anim:
+        li    s1, 0                 ; phase
+an_frame:
+        la    s2, fb
+        li    s3, 0                 ; y
+an_y:   li    s4, 0                 ; x
+        ; g dépend de y (constant sur la ligne)
+        add   s6, s3, s1
+        li    t1, 8
+        div   s6, s6, t1
+        li    t1, 27
+        mod   s6, s6, t1
+        addi  s6, s6, -13
+        muli  s6, s6, 27
+an_x:
+        add   t0, s4, s1            ; r = ((x+phase)/12 mod 27) - 13
+        li    t1, 12
+        div   t0, t0, t1
+        li    t1, 27
+        mod   t0, t0, t1
+        addi  t0, t0, -13
+        muli  t0, t0, 729
+        add   t2, s4, s3            ; b = ((x+y)/16 mod 27) - 13
+        li    t1, 16
+        div   t2, t2, t1
+        li    t1, 27
+        mod   t2, t2, t1
+        addi  t2, t2, -13
+        add   t0, t0, s6
+        add   t0, t0, t2
+        stt   t0, 0(s2)
+        addi  s2, s2, 1
+        addi  s4, s4, 1
+        li    t1, 320
+        blt   s4, t1, an_x
+        addi  s3, s3, 1
+        li    t1, 200
+        blt   s3, t1, an_y
+        stw   zero, -6(zero)        ; FB_PRESENT
+        ldw   t0, anim_frames(zero)
+        addi  t0, t0, 1
+        stw   t0, anim_frames(zero)
+        addi  s1, s1, 4
+        j     an_frame
+
+; =====================================================================
+;  données
+; =====================================================================
+s_banner:  .str "\n  ___   ___  ___\n |_  ) / _ \\/ __|   3OS v0.1 — noyau ternaire\n  |_ \\| (_) \\__ \\   TRI-27 : mots de 27 trits, 27 registres\n |___/ \\___/|___/   2 tâches, ordonnanceur préemptif\n\n"
+s_shell:   .str "shell prêt. tape « help ».\n"
+s_prompt:  .str "3OS> "
+s_help:    .str "commandes :\n  help            cette aide\n  trits N         N en ternaire équilibré (N décimal ou 0t+-0)\n  calc A op B     op : + - * / % m(MIN) M(MAX) t(TMUL)\n  uptime          cycles depuis le démarrage\n  sleep N         dort N cycles (les autres tâches tournent)\n  ps              tâches\n  echo TEXTE\n  halt            arrêt\n"
+s_unknown: .str "commande inconnue (help)\n"
+s_eq:      .str " = "
+s_negis:   .str "   et son opposé : "
+s_cycles:  .str " cycles\n"
+s_ps1:     .str "  1 shell   (mode +1)\n"
+s_ps2:     .str "  2 anim    (mode +1)  images : "
+s_ps3:     .str "\n  commutations de contexte : "
+s_badop:   .str "opérateur inconnu\n"
+s_div0:    .str "division par zéro\n"
+s_badsys:  .str "[3OS] appel système inconnu\n"
+s_halt:    .str "\n[3OS] arrêt.\n"
+s_fault:   .str "\n[3OS] FAUTE cause="
+s_fault_pc: .str " pc="
+w_help:    .str "help"
+w_trits:   .str "trits"
+w_uptime:  .str "uptime"
+w_ps:      .str "ps"
+w_echo:    .str "echo"
+w_calc:    .str "calc"
+w_sleep:   .str "sleep"
+w_halt:    .str "halt"
+
+        .align 3
+cur:         .word 0
+ksave:       .word 0
+switches:    .word 0
+anim_frames: .word 0
+tcb1:        .space 87
+tcb2:        .space 87
+numbuf:      .space 40
+line:        .space 81
+        .align 3
+             .space 3000
+kstack_top:  .space 3
+             .space 3000
+ustack1_top: .space 3
+             .space 3000
+ustack2_top: .space 3
+fb:          .space 64000

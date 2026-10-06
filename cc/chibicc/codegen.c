@@ -59,7 +59,15 @@ static void load(Type *t) {
 }
 static void call(Node *n) {
   if(n->lhs->kind==ND_VAR && !strcmp(n->lhs->var->name,"alloca")) {
-    error_tok(n->tok,"TRI27: alloca/VLA allocation is not supported");
+    expr(n->args);
+    int id=serial++;
+    emit("  addi a0, a0, 2"); emit("  li t0, 3"); emit("  div a0, a0, t0"); emit("  muli a0, a0, 3");
+    emit("  ldw t0, %d(fp)",fn->alloca_bottom->offset);
+    emit("  sub t1, t0, sp"); emit("  mv t2, sp"); emit("  sub sp, sp, a0"); emit("  mv t3, sp");
+    emit(".L.alloc%d:",id); emit("  beqz t1, .L.aend%d",id);
+    emit("  ldt t4, 0(t2)"); emit("  stt t4, 0(t3)"); emit("  addi t2, t2, 1"); emit("  addi t3, t3, 1"); emit("  addi t1, t1, -1"); emit("  j .L.alloc%d",id);
+    emit(".L.aend%d:",id); emit("  sub a0, t0, a0"); emit("  stw a0, %d(fp)",fn->alloca_bottom->offset);
+    return;
   }
   int count=n->ret_buffer?1:0, extra=0;
   for(Node *a=n->args;a;a=a->next) { count++; if(aggregate(a->ty)) extra+=align_to(a->ty->size,3); }
@@ -201,6 +209,7 @@ void codegen(Obj *prog, FILE *output) {
     for(Obj *v=fn->locals;v;v=v->next) { check(v->ty); size=align_to(size+v->ty->size,v->align); v->offset=-size; }
     fn->stack_size=align_to(size,3);
     emit("  .align 3"); emit("%s:",fn->name); emit("  push ra"); emit("  push fp"); emit("  mv fp, sp"); emit("  addi sp, sp, -%d",fn->stack_size);
+    emit("  stw sp, %d(fp)",fn->alloca_bottom->offset);
     // Home all six registers before copying aggregates (which clobbers a0).
     for(int i=0;i<6;i++) emit("  stw a%d, %d(fp)",i,6+3*i);
     int i=0;

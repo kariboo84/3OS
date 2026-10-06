@@ -155,9 +155,11 @@ static Type *get_common_type(Type *ty1, Type *ty2) {
   if (ty1->size != ty2->size)
     return (ty1->size < ty2->size) ? ty2 : ty1;
 
-  if (ty2->is_unsigned)
-    return ty2;
-  return ty1;
+  // Integer rank still matters even though short/int/long share a size.
+  Type *higher = ty1->kind > ty2->kind ? ty1 : ty2;
+  if (ty1->is_unsigned || ty2->is_unsigned)
+    return higher->kind == TY_LONG ? ty_ulong : ty_uint;
+  return higher;
 }
 
 // For many binary operators, we implicitly promote operands so that

@@ -1108,7 +1108,7 @@ void init_macros(void) {
   define_macro("__STDC_HOSTED__","0");
   define_macro("__STDC_NO_ATOMICS__","1");
   define_macro("__STDC_NO_THREADS__","1");
-  define_macro("__STDC_NO_VLA__","1");
+  // Variable length arrays lower to the TRI-27 alloca stack allocator.
   add_builtin("__FILE__", file_macro);
   add_builtin("__LINE__", line_macro);
   add_builtin("__COUNTER__", counter_macro);

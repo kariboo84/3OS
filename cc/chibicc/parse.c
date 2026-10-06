@@ -1827,6 +1827,13 @@ static int64_t eval(Node *node) {
 // is a pointer to a global variable and n is a postiive/negative
 // number. The latter form is accepted only as an initialization
 // expression for a global variable.
+static uint64_t tri_unsigned(int64_t v) {
+  v=tri_wrap(v,7625597484987L);
+  return v<0 ? v+7625597484987L : v;
+}
+static int64_t tri_binary(int64_t v) {
+  return (v & ((1L<<42)-1)) >= (1L<<41) ? (v & ((1L<<42)-1))-(1L<<42) : (v & ((1L<<42)-1));
+}
 static int64_t eval2(Node *node, char ***label) {
   add_type(node);
 
@@ -1835,32 +1842,32 @@ static int64_t eval2(Node *node, char ***label) {
 
   switch (node->kind) {
   case ND_ADD:
-    return eval2(node->lhs, label) + eval(node->rhs);
+    return tri_wrap(eval2(node->lhs, label) + eval(node->rhs),7625597484987L);
   case ND_SUB:
-    return eval2(node->lhs, label) - eval(node->rhs);
+    return tri_wrap(eval2(node->lhs, label) - eval(node->rhs),7625597484987L);
   case ND_MUL:
-    return eval(node->lhs) * eval(node->rhs);
+    return tri_wrap((__int128)eval(node->lhs) * eval(node->rhs) % 7625597484987L,7625597484987L);
   case ND_DIV:
     if (node->ty->is_unsigned)
-      return (uint64_t)eval(node->lhs) / eval(node->rhs);
+      return tri_wrap(tri_unsigned(eval(node->lhs)) / tri_unsigned(eval(node->rhs)),7625597484987L);
     return eval(node->lhs) / eval(node->rhs);
   case ND_NEG:
     return -eval(node->lhs);
   case ND_MOD:
     if (node->ty->is_unsigned)
-      return (uint64_t)eval(node->lhs) % eval(node->rhs);
+      return tri_wrap(tri_unsigned(eval(node->lhs)) % tri_unsigned(eval(node->rhs)),7625597484987L);
     return eval(node->lhs) % eval(node->rhs);
   case ND_BITAND:
-    return eval(node->lhs) & eval(node->rhs);
+    return tri_binary(eval(node->lhs) & eval(node->rhs));
   case ND_BITOR:
-    return eval(node->lhs) | eval(node->rhs);
+    return tri_binary(eval(node->lhs) | eval(node->rhs));
   case ND_BITXOR:
-    return eval(node->lhs) ^ eval(node->rhs);
+    return tri_binary(eval(node->lhs) ^ eval(node->rhs));
   case ND_SHL:
     return eval(node->lhs) << eval(node->rhs);
   case ND_SHR:
-    if (node->ty->is_unsigned && node->ty->size == 8)
-      return (uint64_t)eval(node->lhs) >> eval(node->rhs);
+    if (node->ty->is_unsigned)
+          return tri_unsigned(eval(node->lhs)) >> eval(node->rhs);
     return eval(node->lhs) >> eval(node->rhs);
   case ND_EQ:
     return eval(node->lhs) == eval(node->rhs);
@@ -1868,11 +1875,11 @@ static int64_t eval2(Node *node, char ***label) {
     return eval(node->lhs) != eval(node->rhs);
   case ND_LT:
     if (node->lhs->ty->is_unsigned)
-      return (uint64_t)eval(node->lhs) < eval(node->rhs);
+      return tri_unsigned(eval(node->lhs)) < tri_unsigned(eval(node->rhs));
     return eval(node->lhs) < eval(node->rhs);
   case ND_LE:
     if (node->lhs->ty->is_unsigned)
-      return (uint64_t)eval(node->lhs) <= eval(node->rhs);
+      return tri_unsigned(eval(node->lhs)) <= tri_unsigned(eval(node->rhs));
     return eval(node->lhs) <= eval(node->rhs);
   case ND_COND:
     return eval(node->cond) ? eval2(node->then, label) : eval2(node->els, label);
@@ -1888,6 +1895,7 @@ static int64_t eval2(Node *node, char ***label) {
     return eval(node->lhs) || eval(node->rhs);
   case ND_CAST: {
     int64_t val = eval2(node->lhs, label);
+    if (node->ty->kind == TY_BOOL) return val != 0;
     if (is_integer(node->ty)) {
       switch (node->ty->size) {
       case 1: { int64_t x=tri_wrap(val,19683); return node->ty->is_unsigned && x<0 ? x+19683 : x; }
@@ -1941,6 +1949,7 @@ static bool is_const_expr(Node *node) {
   add_type(node);
 
   switch (node->kind) {
+  case ND_MOD:
   case ND_ADD:
   case ND_SUB:
   case ND_MUL:

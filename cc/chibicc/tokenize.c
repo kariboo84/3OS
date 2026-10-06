@@ -383,33 +383,12 @@ static bool convert_pp_int(Token *tok) {
   if (p != tok->loc + tok->len)
     return false;
 
-  // Infer a type.
-  Type *ty;
-  if (base == 10) {
-    if (l && u)
-      ty = ty_ulong;
-    else if (l)
-      ty = ty_long;
-    else if (u)
-      ty = (val >> 32) ? ty_ulong : ty_uint;
-    else
-      ty = (val >> 31) ? ty_long : ty_int;
-  } else {
-    if (l && u)
-      ty = ty_ulong;
-    else if (l)
-      ty = (val >> 63) ? ty_ulong : ty_long;
-    else if (u)
-      ty = (val >> 32) ? ty_ulong : ty_uint;
-    else if (val >> 63)
-      ty = ty_ulong;
-    else if (val >> 32)
-      ty = ty_long;
-    else if (val >> 31)
-      ty = ty_uint;
-    else
-      ty = ty_int;
-  }
+  // All target integer ranks have the same 27-trit range.
+  if ((uint64_t)val > 7625597484986UL)
+    error_tok(tok, "TRI27: integer literal outside 27-trit range");
+  if (val > 3812798742493L) u = true;
+  Type *ty = l ? (u ? ty_ulong : ty_long) : (u ? ty_uint : ty_int);
+  val = tri_wrap(val, 7625597484987L);
 
   tok->kind = TK_NUM;
   tok->val = val;
@@ -585,7 +564,7 @@ Token *tokenize(File *file) {
     // Character literal
     if (*p == '\'') {
       cur = cur->next = read_char_literal(p, p, ty_int);
-      cur->val = (char)cur->val;
+      cur->val = tri_wrap(cur->val, 19683);
       p += cur->len;
       continue;
     }

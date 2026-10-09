@@ -7,7 +7,7 @@ VM=tri27/target/release/tri27
 B=cc/build/os; mkdir -p "$B"
 cc() { python cc/tri27cc.py "$@"; }
 cc os/kentry.tas os/kernel.c --kernel -o os/kernel3.tas
-cc cc/examples/system3.c cc/lib/tgfx.c cc/lib/sys.tas -o "$B/system3.tas"
+cc cc/examples/system3.c cc/lib/dgfx.c cc/lib/tgfx.c cc/lib/sys.tas -o "$B/system3.tas"
 cc cc/examples/tetris.c -o "$B/tetris.tas"
 cc cc/examples/hello.c -o "$B/hello.tas"
 cc cc/examples/sieve.c -o "$B/sieve.tas"
@@ -20,4 +20,5 @@ cc cc/examples/hd.c -o "$B/hd.tas" && cp "$B/hd.tas" examples/hd.tas
 cc cc/examples/gpu.c -o "$B/gpu.tas" && cp "$B/gpu.tas" examples/gpu.tas
 $VM mkdisk os/3os.t3d system3="$B/system3.tas" chiffres="$B/chiffres.tas" editeur="$B/editeur.tas" \
   tetris="$B/tetris.tas" ternet="$B/ternet.tas" kleene="$B/kleene.tas" hello="$B/hello.tas" \
-  sieve="$B/sieve.tas" crash="$B/crash.tas" lisez-moi=os/LISEZMOI.txt:2187 hd="$B/hd.tas" gpu="$B/gpu.tas"
+  sieve="$B/sieve.tas" crash="$B/crash.tas" lisez-moi=os/LISEZMOI.txt:2187 hd="$B/hd.tas" gpu="$B/gpu.tas" \
+  config=os/config.txt:729

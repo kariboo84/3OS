@@ -13,6 +13,14 @@ Clic : selection.
 Double-clic ou Entree : ouvrir.
 F2 : editer ce document.
 Tab : changer de fenetre.
+F4 : reglages d'affichage.
+F5 : actualiser le disque.
+F10 ou double-clic sur le titre :
+  maximiser / restaurer.
+Bouton _ : reduire ; cliquer dans
+  la barre du bas pour retrouver.
+Echap : fermer la fenetre.
+Home/End, PageUp/PageDown : liste.
 Tirer le titre : deplacer.
 Coin bas droit : redimensionner.
 Fleches de barre : defiler.

@@ -8,7 +8,7 @@ const { connect, sleep } = require('./cdp.cjs');
   const widths = [576, 1280, 1920], heights = [360, 720, 1080], depths = [1, 9, 27];
   await cdp('Emulation.setDeviceMetricsOverride', { width: 2200, height: 1500, deviceScaleFactor: 1, mobile: false });
   const size = () => ev('[canvas.width,canvas.height]');
-  const scale = async () => { const [w] = await size(); return w === 576 ? 1 : w === 1280 ? 2 : 3; };
+  const scale = async () => { const [w] = await size(); return w === 576 ? 1 : 2; };
   const pointer = async (type, x, y, buttons = 0) => {
     const s = await scale();
     const r = await ev('(()=>{const r=canvas.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height,cw:canvas.width,ch:canvas.height}})()');
@@ -93,8 +93,13 @@ const { connect, sleep } = require('./cdp.cjs');
     x=await panelX(); await click(x+205,80+58+d*24+10);
     const expected=`${widths[r]} ${heights[r]} ${depths[d]}\n`;
     await until(async()=>await readConfig()===expected,'écriture 3FS exacte');
-    const s=await scale(),colors=await palette();
-    assert.equal(s,r+1); if(depths[d]===1)assert.equal(colors,3);else assert(colors>=8);
+    const s=await scale();let colors=await palette();
+    if(depths[d]===1&&colors!==3){
+      const oldFrames=await ev('W.frames()'),oldColors=colors;
+      await until(async()=>await palette()===3,'PRESENT du bureau trois gris',300);
+      colors=await palette();console.log('PASS transition terminée au PRESENT',{oldColors,colors,oldFrames,frames:await ev('W.frames()')});
+    }
+    assert.equal(s,r===0?1:2); if(depths[d]===1)assert.equal(colors,3);else assert(colors>=8);
     assert.deepEqual(await rgb(x+17,80+58+r*24+1,s),depths[d]===1?[0,0,0]:depths[d]===9?[58,107,196]:[59,108,196]);
     assert.deepEqual(await rgb(x+165,80+58+d*24+1,s),depths[d]===1?[0,0,0]:depths[d]===9?[58,107,196]:[59,108,196]);
     const file=await capture(`desktop-display-${widths[r]}x${heights[r]}-${depths[d]}`);
@@ -115,7 +120,7 @@ const { connect, sleep } = require('./cdp.cjs');
   assert.equal(await readConfig(),'1920 1080 27\n');
   assert(await ev("Boolean(diskKey&&localStorage.getItem(diskKey))"), "copie de disque persistée");
   await panel(); const px=await panelX();
-  assert.deepEqual(await rgb(px+165,80+58+48+1,3),[59,108,196]);
+  assert.deepEqual(await rgb(px+165,80+58+48+1,await scale()),[59,108,196]);
   await capture('desktop-display-reload-1080'); await key('Enter',13);
   console.log('PASS rechargement : config relu, profondeur 27 sélectionnée, panneau et pixels corrects');
   // Mesure contrôlée : vraie entrée CDP, exécution VM manuelle par tranches de 1000.

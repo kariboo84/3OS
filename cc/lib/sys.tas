@@ -18,3 +18,6 @@ sys_procs:
 sys_writefile:
   ecall 15
   ret
+sys_filesize:
+  ecall 16
+  ret

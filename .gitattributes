@@ -10,3 +10,8 @@
 
 # Code tiers (chibicc) : tel quel, aucune conversion.
 cc/chibicc/** -text
+
+# Licences tierces conservées telles quelles, espaces de fin compris.
+cc/include/ui_font_OFL.txt -whitespace
+cc/include/ui_sans_OFL.txt -whitespace
+cc/third_party/lodepng/LICENSE -whitespace

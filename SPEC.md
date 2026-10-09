@@ -298,6 +298,12 @@ Secteur 0 = répertoire : mot 0 magic 27027, mot 3 nombre d'entrées, puis entr�
 nom 16 trytes (chaîne), secteur de début (mot +16), longueur en trytes (+19), entrée (+22, −1 = fichier de données),
 capacité réservée en trytes (+25). Fichiers contigus.
 Outil : `tri27 mkdisk out.t3d nom=fichier[.tas][:capacité] ...`.
+Préfixe explicite `nom=bytes:chemin[:capacité]` pour les formats binaires : chaque
+**octet 0…255 est conservé dans un tryte**, sans transformation UTF-8. L'entrée
+reste −1 et la longueur/capacité est toujours exprimée en trytes. Exemples :
+`demo.png=bytes:os/assets/demo.png`, `demo.bmp=bytes:os/assets/demo.bmp`.
+Les fichiers texte sans ce préfixe gardent leur traitement Unicode historique.
+Bibliothèque native PNG/BMP/PPM et visualiseur : voir `docs/images.md`.
 
 Appels système (`ecall n`, arguments a0..a2, résultat a0) :
 
@@ -312,6 +318,7 @@ Appels système (`ecall n`, arguments a0..a2, résultat a0) :
 | 13 | readfile(nom, buf, max) | longueur ou −1 |
 | 14 | procs | nombre de processus |
 | 15 | writefile(nom, buf, len) | len ou −1 (fichiers de données seulement, len ≤ capacité, persistant) |
+| 16 | filesize(nom) | longueur en trytes sans lire le contenu, données ou programme ; −1 si absent/pointeur invalide |
 
 En-tête C : `cc/include/3os.h`. Intrinsèques ternaires : `cc/include/tri27.h` (T_AND = min de Kleene, T_OR = max,
 T_NOT, T_MUL, T_CONS, T_SUM, T_DOT ; une instruction chacune).

@@ -320,6 +320,15 @@ static void syscall(long n) {
     R(p, A0) = a2;
     return;
   }
+  if (n == 16) {                                   /* filesize(nom) : aucune lecture de contenu */
+    char *s = uptr(p, a0, 16), name[16];
+    if (!s) { R(p, A0) = -1; return; }
+    for (int k = 0; k < 16; k++) name[k] = s[k];
+    name[15] = 0;
+    long e = dir_find(name);
+    R(p, A0) = e < 0 ? -1 : word_at(dir_entry(e) + 19);
+    return;
+  }
   if (n == 14) {
     long c = 0;
     for (int i = 0; i < NPROC; i++) if (procs[i].state != FREE) c++;

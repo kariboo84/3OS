@@ -119,7 +119,11 @@ fn mkdisk(out: &str, items: &[String]) {
             Some((p, c)) if c.chars().all(|x| x.is_ascii_digit()) && !c.is_empty() => (p, c.parse::<usize>().unwrap()),
             _ => (spec, 0),
         };
-        let (data, entry): (Vec<i16>, i64) = if path.ends_with(".tas") {
+        // Octets de formats binaires : un octet 0..255 par tryte, sans conversion UTF-8.
+        // Préfixe explicite bytes: ; les anciens fichiers texte gardent leur comportement.
+        let (data, entry): (Vec<i16>, i64) = if let Some(raw) = path.strip_prefix("bytes:") {
+            (std::fs::read(raw).unwrap().into_iter().map(i16::from).collect(), -1)
+        } else if path.ends_with(".tas") {
             let img = load(path);
             (img.trytes, img.entry)
         } else {

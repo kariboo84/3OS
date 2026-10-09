@@ -67,6 +67,19 @@ const srcEl = $('src'), conEl = $('console'), statsEl = $('stats'), statusEl = $
 const canvas = $('screen'), ctx = canvas.getContext('2d');
 let imgData = ctx.createImageData(320, 200);
 let focusDone = false;
+function bootPhase(label, failed=false) {
+  const p=$('bootPhase'),b=$('bootScreen');if(!p||!b)return;
+  p.textContent=label;
+  if(failed){b.classList.add('failed');$('bootRetry').hidden=false;}
+}
+function bootStart(label) {
+  if(!document.documentElement.classList.contains('desk'))return;
+  const b=$('bootScreen');b.hidden=false;b.classList.remove('failed');b.setAttribute('aria-busy','true');$('bootRetry').hidden=true;bootPhase(label);
+}
+function bootDone() {
+  const b=$('bootScreen');if(b){b.hidden=true;b.setAttribute('aria-busy','false');}
+}
+if($('bootRetry'))$('bootRetry').onclick=()=>location.reload();
 // mode vidéo : TRGB 320x200 affiché x3, TRIT 576x360 affiché x2
 function fitCanvas(w, h) {
   if (canvas.width === w && canvas.height === h) return;
@@ -75,6 +88,7 @@ function fitCanvas(w, h) {
   const k = w <= 320 ? 3 : (w <= 640 ? 2 : 1);
   canvas.style.width = (w * k) + 'px'; canvas.style.height = 'auto';
   canvas.style.maxWidth = '100%';
+  canvas.style.imageRendering = w > 640 ? 'auto' : 'pixelated';
   imgData = ctx.createImageData(w, h);
 }
 const enc = new TextEncoder(), dec = new TextDecoder();
@@ -96,6 +110,7 @@ function appendConsole(s) {
   conText += s;
   if (conText.length > 200000) conText = conText.slice(-150000);
   conEl.textContent = conText;
+  if(conText.includes('[3OS] desktop-ready')&&W&&W.frames()>0)bootDone();
   conEl.scrollTop = conEl.scrollHeight;
 }
 
@@ -150,7 +165,7 @@ const diskReady = fetch('../os/3os.t3d', { cache: 'no-store' })
     try {
       const saved = localStorage.getItem(diskKey);
       if (saved) { diskImage = new Int16Array(unb64(saved).buffer); appendConsole('[web] disque restauré depuis le navigateur (vos modifications)\n'); }
-      for (const k of Object.keys(localStorage)) if (k.startsWith('3os.disk:') && k !== diskKey) localStorage.removeItem(k);
+      // Conserver les copies des disques antérieurs : une mise à jour ne doit pas les effacer.
     } catch (_) {}
   })
   .catch(() => {})
@@ -170,7 +185,9 @@ function resetDisk() {
 }
 
 async function assembleAndRun() {
+  bootStart('Lecture du disque 3FS…');
   await diskReady;
+  bootPhase('Assemblage du noyau et démarrage de la VM…');
   audioInit();
   const bytes = enc.encode(srcEl.value);
   const p = W.src_alloc(bytes.length);
@@ -185,6 +202,7 @@ async function assembleAndRun() {
     running = false; loaded = false;
     const e = str(W.err_ptr(), W.err_len());
     setStatus('Erreur d\'assemblage', 'err');
+    bootPhase('Erreur d’assemblage : '+e,true);
     appendConsole('\n[assembleur] ' + e + '\n');
     return false;
   }
@@ -207,6 +225,7 @@ function finishIfHalted() {
     const e = str(W.err_ptr(), W.err_len());
     appendConsole('\n[VM] erreur : ' + e + '\n');
     setStatus('Arrêt sur erreur', 'err');
+    if(!$('bootScreen').hidden)bootPhase('Erreur de démarrage : '+e,true);
   } else {
     setStatus('Terminé (code ' + W.exit_code() + ')', 'ok');
   }
@@ -247,6 +266,7 @@ function tick(ts) {
 // ---- clavier : codes = KeyboardEvent.keyCode (flèches 37..40, lettres 65..90, Entrée 13, Échap 27) ----
 function onKeyDown(e) {
   if (!W) return;
+  audioInit();
   // écran focus → KEY_EVENT seulement ; console focus → caractères seulement
   if (e.currentTarget === canvas) {
     if (!e.repeat && e.keyCode) W.push_key(e.keyCode);
@@ -275,15 +295,21 @@ function onKeyUp(e) {
 for (const el of [canvas, conEl]) {
   el.addEventListener('keydown', onKeyDown);
   el.addEventListener('keyup', onKeyUp);
-  el.addEventListener('mousedown', () => setTimeout(() => el.focus(), 0));
+  el.addEventListener('mousedown', () => { audioInit(); setTimeout(() => el.focus(), 0); });
 }
 
 // ---- souris : pixels du mode courant ----
 function sendMouse(e) {
   if (!W) return;
   const r = canvas.getBoundingClientRect();
-  const x = Math.floor((e.clientX - r.left) * canvas.width / r.width);
-  const y = Math.floor((e.clientY - r.top) * canvas.height / r.height);
+  let rw = r.width, rh = r.height;
+  if (document.fullscreenElement === canvas) {
+    const k = Math.min(r.width / canvas.width, r.height / canvas.height);
+    rw = canvas.width * k; rh = canvas.height * k;
+  }
+  // En plein écran, object-fit:contain ajoute parfois des bandes : viser l'image, pas la boîte CSS.
+  const x = Math.floor((e.clientX - r.left - (r.width - rw) / 2) * canvas.width / rw);
+  const y = Math.floor((e.clientY - r.top - (r.height - rh) / 2) * canvas.height / rh);
   const b = e.buttons | 0;
   W.set_mouse(x, y, (b & 1) + 3 * ((b >> 1) & 1));
 }
@@ -301,8 +327,14 @@ $('btnPause').onclick = () => {
   setStatus(running ? 'En cours' : 'En pause', running ? 'ok' : '');
   if (running) conEl.focus();
 };
+if ($('btnFullscreen')) $('btnFullscreen').onclick = async () => {
+  try { await canvas.requestFullscreen(); canvas.focus(); }
+  catch (e) { setStatus('Plein écran indisponible : ' + e.message, 'err'); }
+};
+
 $('btnReset').onclick = () => {
   if (!loaded) return;
+  bootStart('Redémarrage de 3OS…');
   W.reset();
   conText = ''; conEl.textContent = '';
   lastFrames = 0; vmTime = 0; lastTs = null; running = true; focusDone = false;
@@ -349,16 +381,19 @@ async function init() {
   const desktopBoot = new URLSearchParams(location.search).get('boot') === '3os';
   try {
     if (desktopBoot) {
+      bootPhase('Chargement du noyau 3OS…');
       const kernel = await fetch('../os/kernel3.tas', { cache: 'no-store' });
       if (!kernel.ok) throw new Error('Noyau 3OS : HTTP ' + kernel.status);
       srcEl.value = await kernel.text();
     }
+    bootPhase('Chargement du CPU ternaire WASM…');
     const resp = await fetch('tri27.wasm', { cache: 'no-store' });
     const bytes = await resp.arrayBuffer();
     const { instance } = await WebAssembly.instantiate(bytes, {});
     W = instance.exports;
   } catch (err) {
     setStatus('Échec du chargement de tri27.wasm : ' + err.message, 'err');
+    bootPhase('Échec du chargement : '+err.message,true);
     return;
   }
   setStatus('WASM prêt (RAM ' + W.ram_size() + ' trytes)');

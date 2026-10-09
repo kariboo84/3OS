@@ -36,14 +36,16 @@ const { connect, sleep } = require('./cdp.cjs');
   await until(async () => await size() === '576x360', 'return from Tetris'); assert((await pixels()).colors >= 8); console.log('PASS select + Enter -> Tetris -> desktop');
   // Double click another real application and test kernel isolation.
   await click(110, 220); await click(110, 220); await until(() => ev(`conEl.textContent.includes('crash tue : faute memoire')`), 'crash killed'); assert.equal(await size(), '576x360'); console.log('PASS double click + process isolation');
-  await drag(170, 47, 200, 70); assert.notDeepEqual(await rgb(25, 39), await rgb(55, 62), 'window moved');
-  await drag(355, 316, 325, 251); assert.notDeepEqual(await rgb(325, 251), await rgb(355, 316), 'window resized'); await shot('desktop-resize'); console.log('PASS drag + resize');
+  const beforeMove=await pixels(24,38,20,258); // Bande de bord, hors du curseur : vraie géométrie, pas deux couleurs identiques.
+  await drag(170,47,200,70); assert.notEqual((await pixels(24,38,20,258)).hash,beforeMove.hash,'window moved');
+  const beforeResize=await pixels(338,260,6,30);
+  await drag(355,316,325,251); assert.notEqual((await pixels(338,260,6,30)).hash,beforeResize.hash,'window resized'); await shot('desktop-resize'); console.log('PASS drag + resize');
   // Smaller Finder scrolls to the document with a functional thumb.
   const beforeScroll = await pixels(55, 100, 180, 90); await click(316, 228); const afterScroll = await pixels(55, 100, 180, 90);
   assert.notEqual(beforeScroll.hash, afterScroll.hash, 'scroll content changed');
   await drag(319, 140, 319, 170); assert.notEqual((await pixels(55, 100, 180, 90)).hash, afterScroll.hash, 'scroll thumb changes content');
   await click(130, 10); await click(150, 74); // restore canonical window layout
-  await click(355, 120); await click(533, 310); assert.equal(await size(), '576x360'); console.log('PASS scroll + arrange + close/reopen help');
+  await click(363, 80); await click(533, 310); assert.equal(await size(), '576x360'); console.log('PASS scroll + arrange + close/reopen help');
   const readDiskText = () => ev(`(()=>{const d=new Int16Array(W.memory.buffer,W.disk_ptr(),W.disk_len());const word=p=>d[p]+19683*d[p+1]+387420489*d[p+2];for(let i=0;i<word(3);i++){const p=6+i*30;let name='';for(let j=0;j<16&&d[p+j];j++)name+=String.fromCharCode(d[p+j]);if(name==='lisez-moi'){const s=word(p+16)*729,n=word(p+19);let text='';for(let j=0;j<n;j++)text+=String.fromCharCode(d[s+j]);return text;}}throw Error('missing lisez-moi');})()`);
   const textBefore = await readDiskText();
   await key('F2', 113); await until(() => ev('W.text_input()===1'), 'editor'); await shot('desktop-editor');

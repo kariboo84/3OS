@@ -3,17 +3,25 @@
 ## Fonctionnement
 
 - `Preferences > Affichage...` : trois résolutions et trois profondeurs, application immédiate.
-- 576×360 à l'échelle 1 ; 1280×720 à l'échelle 2 ; 1920×1080 à l'échelle 3.
-  Les dimensions logiques sont respectivement 576×360, 640×360 et 640×360.
+- Framebuffer natif 1:1 dans les trois résolutions : 576×360, 1280×720, 1920×1080.
+  Aucun agrandissement des pixels. IBM Plex Sans proportionnelle (Mono alternative),
+  rasterisée à 9 px en compact, 14 ou 16 px en HD, avec couverture AA à 27 niveaux
+  calculée dans le guest. Les métriques UI restent fixes entre 720p et 1080p :
+  la surface utilisable augmente réellement, sans dupliquer les pixels des glyphes.
 - Toutes les primitives de rectangle/barre et de texte passent par le GPU 2D en 9/27 trits.
   Le texte utilise un atlas de glyphes transparent COPY_KEY, reconstruit seulement si
-  la profondeur, l'échelle ou la palette changent. Profondeur 1 : CPU, trits empaquetés
+  la profondeur, la famille, la taille, le lissage ou la palette changent.
+  Le cache est paresseux par couple fond/encre ; le mélange utilise le vrai fond. Profondeur 1 : CPU, trits empaquetés
   continûment, y compris en 1280 (largeur non divisible par neuf).
 - Les buffers sont réservés sous la pile ; aucun framebuffer statique dans l'image disque.
 - `config` contient `largeur hauteur profondeur\n`, lu par `sys_readfile` au démarrage
   et au retour d'une application. Absence/erreur/paire ou profondeur invalide : 576 360 27.
   Les choix passent par `sys_writefile` et la sauvegarde du disque existante du navigateur.
 - Les raccourcis C, les menus Bureau, Tetris, l'éditeur et les fenêtres sont conservés.
+- Chrome de fenêtres sobre, barre des fenêtres ouvertes, réduction/restauration,
+  maximisation par bouton, double-clic du titre ou F10. F4 ouvre Affichage, F5 actualise,
+  Home/End et PageUp/PageDown naviguent dans la liste ; Tab change de fenêtre.
+- Le bouton Plein écran utilise la vraie API Fullscreen, pas un zoom du framebuffer.
   C mémorise également sa profondeur dans config et revient à la dernière profondeur couleur.
 - Un échec de sauvegarde est affiché dans le panneau et la barre d'état. Le fichier `config`
   est réservé par `os/build.sh` ; `sys_writefile` ne crée pas de fichier absent.
@@ -22,7 +30,7 @@
 
 Commande exécutée sur `feat/desktop-res` :
 
-    TRI27_HTTP=8125 TRI27_CDP=9232 ./check.sh --web
+    TRI27_HTTP=8125 TRI27_CDP=9246 ./check.sh --web
 
 Résultat : code de sortie 0, dernière ligne `== tout est vert`.
 
@@ -37,7 +45,17 @@ Résultat : code de sortie 0, dernière ligne `== tout est vert`.
 - `Page.reload` : nouveau contexte JS confirmé, boot automatique depuis le disque persisté,
   fichier config relu, profondeur 27 et dimensions vérifiées. Aucune réinjection du disque
   ni appel à assembleAndRun dans cette vérification de rechargement.
-- Anciens tests web_smoke/desktop_smoke/mouse_refresh/hd_web : tous verts, zéro exception JS.
+- Tests web_smoke/desktop_smoke/mouse_refresh/hd_web conservés.
+- desktop_classic : logo pendant le vrai chargement, signal desktop-ready, panneaux
+  Fond/Son/Polices, réglages lus sur 3FS, audio numérique nul/non nul, redémarrage.
+- desktop_images : Finder → PNG/BMP/PPM → pixels natifs, alpha, retour Échap ;
+  décodeurs d'images hôte interdits pendant le test. Codec C : 36 vérifications.
+- Une écriture config n'est pas un PRESENT : pour passer au mode trois gris,
+  le test attend la vraie image suivante, puis exige toujours exactement trois couleurs.
+- desktop_qol : vrais événements CDP, F4, F10, double-clic titre, réduire/barre/restaurer,
+  déplacement au-delà de l'ancien espace limité, Home/End, Tab et Fullscreen.
+- dgfx.c vérifie un pixel 1:1 et un glyphe qui n'est pas une duplication 2×2.
+  Les tests doivent passer avec zéro exception JS.
 - Captures natives du canvas, dimensions PNG égales à celles du framebuffer ; panneau
   couleur 1080p et repli trit 720p regardés, ainsi que la fenêtre déplacée en 1080p.
 
@@ -49,12 +67,14 @@ les événements viennent toujours de CDP. Exécution manuelle par tranches de 1
 jusqu'au PRESENT suivant, puis retour au WFI avant l'échantillon suivant.
 L'arrondi de la borne PRESENT est inférieur à 1000 instructions par échantillon.
 
-- Repos : 21,536 instructions pour 32 réveils,
-  soit 673 instructions/réveil, **0 nouvelle image**. Le coût de rendu au
-  repos est nul ; « instructions/image » n'a pas de quotient quand aucune image n'est rendue.
-- Déplacement de la fenêtre Disque 3OS : 20 images,
-  6,699,706 instructions au total, moyenne **334,985.3 instructions/image**.
-  Minimum 334,966, maximum 335,000.
+- Repos : 22174 instructions pour 32 réveils,
+  **0 nouvelle image**. Le coût de rendu au repos est nul ;
+  « instructions/image » n'a pas de quotient quand aucune image n'est rendue.
+- Passe Platinum/native AA : déplacement de la fenêtre Finder, 20 images,
+  7938065 instructions au total, moyenne **396903 instructions/image**.
+  Minimum 396785, maximum 397000. Le seuil du test est inférieur à 500000/image.
+  Ces mesures incluent le noyau, les nouvelles fontes et 19 fichiers ; ne pas les
+  attribuer à l'ancienne interface ni en déduire une cadence hôte.
 - Pas d'estimation de cadence réelle à partir de TIME_MS (horloge VM du navigateur).
 
 ## Artefacts et reproduction

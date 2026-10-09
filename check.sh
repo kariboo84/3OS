@@ -20,6 +20,8 @@ hn=$($VM run examples/hello.tas --stats --trace cc/build/hello.trace 2>&1 | sed 
 echo "== Primitives du bureau : neuf formats natifs"
 python cc/tri27cc.py tests/dgfx.c cc/lib/dgfx.c cc/lib/tgfx.c -o cc/build/dgfx-test.tas
 $VM run cc/build/dgfx-test.tas --max 300000000
+echo "== Images : codecs natifs et octets 3FS"; python3 tests/timage.py
+echo "== Images : taille 3FS et lecture sans buffers abandonnés"; python3 tests/timage_io.py
 echo "== Profondeurs vidéo : captures CLI"; python tests/display_ppm.py
 echo "== Video HD (mode 3, 1 mot/pixel)"
 python cc/tri27cc.py cc/examples/hd.c -o cc/build/hd.tas
@@ -59,7 +61,7 @@ if [[ "${1:-}" == "--web" ]]; then
   prof=$(mktemp -d); "$CH" --headless=new --disable-gpu --no-first-run --remote-debugging-port=$CDP --user-data-dir="$prof" about:blank >/dev/null 2>&1 &
   pid=$!; sleep 3
   fails=0
-  for t in web_smoke desktop_smoke desktop_display mouse_refresh hd_web; do
+  for t in web_smoke desktop_smoke desktop_display desktop_qol desktop_classic desktop_images mouse_refresh hd_web; do
     if timeout 300 node tests/$t.cjs </dev/null; then echo "  ok  $t"; else echo "  ÉCHEC $t"; fails=1; break; fi
   done
   kill $pid 2>/dev/null || true

@@ -53,6 +53,7 @@
   html.desk #right { display: block; }
   html.desk #screen { display: block; width: min(100%, 1152px) !important; height: auto !important; cursor: none; border: 1px solid #15191b; box-shadow: 3px 3px #252b2e; }
   html.desk #screen:focus { border-color: #d4d5d4; }
+  html.desk #screen:fullscreen { width: 100vw !important; height: 100vh !important; max-width: none !important; object-fit: contain; background: #101722; border: 0; }
   html.desk footer { max-width: 1152px; display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 0; color: #d6dadb; font-size: 12px; }
   html.desk #stats { color: #afb8ba; font-size: 12px; }
   html.desk details { max-width: 1152px; margin-top: 8px; }
@@ -63,16 +64,43 @@
   html.desk #status.err { color: #a71919; }
   html.desk .bench { display: none !important; }
   html:not(.desk) .desk-only { display: none !important; }
+  #bootScreen { position: fixed; inset: 0; z-index: 100; background: #c6c6c6; color: #151515; display: flex; align-items: center; justify-content: center; cursor: wait; }
+  #bootCard { width: min(480px, 90vw); padding: 30px 36px; background: #f5f5ee; border: 1px solid #111; border-radius: 3px; box-shadow: 2px 3px #555; text-align: center; }
+  #bootCard h2 { margin: 18px 0 20px; font: 600 22px Arial, sans-serif; }
+  #bootPhase { min-height: 2.5em; font: 14px Arial, sans-serif; }
+  #bootTrack { overflow: hidden; height: 13px; border: 1px solid #111; background: #fff; margin: 20px 0 0; }
+  #bootTrack span { display: block; width: 35%; height: 100%; background: repeating-linear-gradient(135deg,#666 0 4px,#aaa 4px 8px); animation: bootSweep 1.4s linear infinite alternate; }
+  #bootScreen.failed { cursor: default; } #bootScreen.failed #bootTrack span { animation: none; background: #777; }
+  @keyframes bootSweep { to { transform: translateX(186%); } }
+  @media (prefers-reduced-motion: reduce) { #bootTrack span { animation: none; width: 100%; } }
   @media (max-width: 700px) { html.desk main { padding: 10px 6px; } html.desk footer { flex-wrap: wrap; } html.desk #stats { font-size: 10px; } }
 </style>
 </head>
 <body>
+<div id="bootScreen" class="desk-only" role="status" aria-live="polite" aria-busy="true">
+  <div id="bootCard">
+    <svg width="96" height="96" viewBox="0 0 96 96" aria-label="Logo 3OS" role="img">
+      <rect x="16" y="4" width="64" height="77" rx="3" fill="#eee" stroke="#111" stroke-width="2"/>
+      <rect x="23" y="12" width="50" height="47" fill="#fff" stroke="#111" stroke-width="2"/>
+      <path d="M24 13h23v45H24z" fill="#7c98bf"/>
+      <path d="M47 13v29h7v6" fill="none" stroke="#111" stroke-width="2"/>
+      <path d="M33 30v5m30-5v5M33 46q15 10 30 0" fill="none" stroke="#111" stroke-width="3"/>
+      <rect x="48" y="68" width="22" height="3" fill="#111"/>
+      <path d="M11 84h74v7H11z" fill="#ddd" stroke="#111" stroke-width="2"/>
+    </svg>
+    <h2>Bienvenue sur 3OS</h2>
+    <div id="bootPhase">Chargement du système…</div>
+    <div id="bootTrack" aria-hidden="true"><span></span></div>
+    <button id="bootRetry" hidden>Réessayer</button>
+  </div>
+</div>
 <header>
   <h1 class="bench">TRI-27 · VM ternaire</h1>
   <strong class="desk-only">3OS</strong><span class="desk-only">TRI-27 · bureau ternaire</span>
   <button id="btnRun" class="primary bench">Assembler + Lancer</button>
   <button id="btnPause">Pause</button>
   <button id="btnReset">Reset</button>
+  <button id="btnFullscreen" class="desk-only">Plein écran</button>
   <button id="btnDisk" class="bench" title="Efface les modifications du disque 3OS gardées par le navigateur">Disque d'origine</button>
   <label class="bench">Exemple <select id="examples"><option value="__demo">Démo intégrée (dégradé TRGB)</option></select></label>
   <label class="bench">Budget/frame <input id="budget" type="number" min="1000" step="100000" value="2000000"></label>
@@ -87,7 +115,7 @@
   <div id="right">
     <canvas id="screen" width="320" height="200" tabindex="0" aria-label="Écran : souris et clavier"></canvas>
     <footer>
-      <span class="desk-only">C : couleur / gris · Double-clic ou Entrée : ouvrir · F2 : éditeur</span>
+      <span class="desk-only">Double-clic / Entrée : ouvrir · F2 : éditeur · F4 : affichage · F10 : maximiser</span>
       <span id="stats">—</span>
     </footer>
     <div id="termhint" class="bench">▸ Clique dans la console ci-dessous et tape (ex. help puis Entrée). Le curseur vert clignote quand elle a le focus.</div>

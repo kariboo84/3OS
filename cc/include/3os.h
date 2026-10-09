@@ -14,6 +14,9 @@ long sys_yield(void);
 long sys_readdir(long i, char *name);
 /* Lit le fichier `name` dans buf (max trytes) ; renvoie la longueur lue ou -1. */
 long sys_readfile(const char *name, char *buf, long max);
+/* Longueur exacte d’un fichier en trytes, sans lecture/allocation ; -1 si absent
+ * ou pointeur invalide. Programmes et données, indépendamment de la capacité. */
+long sys_filesize(const char *name);
 /* Nombre de processus vivants. */
 long sys_procs(void);
 /* Réécrit le fichier de données `name` (len <= capacité réservée par mkdisk) ;

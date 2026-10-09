@@ -1,7 +1,34 @@
 # TRI-27 — Feuille de route d'architecture (au-delà de v0.4)
 
-Statut : **document de conception, rien n'est implémenté.** `SPEC.md` reste la référence de ce qui existe.
-Chaque étape est une proposition à valider avec sa preuve mesurable. Sources en fin de document (§12).
+Statut : **feuille de route et état d'avancement**. `SPEC.md` reste la référence de ce qui existe.
+Les sections techniques décrivent aussi des propositions : leur présence ici ne prouve pas une implémentation.
+
+## État réel et prochaines étapes
+
+Le code courant du bureau est dans le worktree `3OS-wt/desktop` (branche `feat/desktop-res`).
+La branche principale contient la banque vectorielle, mais pas encore les évolutions du bureau de ce worktree.
+
+| Domaine | État réel | Restant |
+|---|---|---|
+| VM Rust/WASM, compilateur C, noyau préemptif, isolation, disque 3FS | Livrés, suites maintenues ; filesize exact sans lecture de contenu | Auto-hébergement du compilateur ; fichiers créables/supprimables et lecture par plages |
+| RAM | Allocation creuse dynamique, taille configurable | **Pas encore de mémoire virtuelle paginée ni de TLB** : les pages d'allocation hôte ne sont pas la pagination guest |
+| Vecteurs v0.5 | Banque 27 × 27 trytes, VL, intrinsèques C, sauvegarde noyau et TerNet | Référence effective : SPEC, pas toutes les idées du §1 ; gain mesuré TerNet contre TDOT |
+| Graphique | GPU 2D MMIO, framebuffer natif, 576×360 / 720p / 1080p, profondeurs 1/9/27 | Pas de pipeline 3D, shaders, textures filtrées ni accélérateur hôte 3D |
+| Bureau | Platinum/System 7–8, polices AA guest, logo de chargement, Finder, réglages 3FS, fenêtres/raccourcis/plein écran ; parcours navigateur validés | Fusion du worktree ; enrichissements d'applications distincts de l'ISA |
+| Images | Bibliothèque C timage : PNG via LodePNG, BMP et PPM ; fichiers binaires 3FS ; visualiseur 1:1 | JPEG/GIF/WebP non implémentés ; vrais malloc/free et fichiers par plages pour grandes images |
+| Chromium / YouTube | Application 3OS avec composant Chromium hôte déclaré choisie, mais **non implémentée** | Intégration et parcours réel à construire ; pas un navigateur guest autonome |
+| Réels tekum v0.6 | Conception (§2) | Codec logiciel de référence, tests d'arrondi/ulp puis décision ISA |
+| Timing, SPM, DMA v0.7 | Conception (§3, §7) | Modèle de cycles, latences, transferts et preuve de double tampon |
+| Pagination/étiquettes v0.8 | Conception (§4) | Tables de pages, TLB, fautes, étiquettes et prise en charge noyau |
+| Compression mémoire | Bibliographie/propositions (§7 bis) | Mesures sur vrais instantanés ; aucun taux de compression promis |
+| TNPU v0.9 | Conception (§8) | Noyaux GPU et modèle réel avec égalité CPU ; TerNet n'est pas un LLM |
+| JIT / multicœur / ECC / FPGA | Non implémentés | Étapes indépendantes, avec budgets et preuves avant extension |
+
+**Ordre conseillé pour la machine utilisable** : terminer/fusionner le bureau et les images,
+puis renforcer 3FS + l'allocateur ; ensuite JIT mesuré pour accélérer le logiciel.
+**Ordre architectural de recherche** : vecteurs livrés → tekum → timing/SPM/DMA → pagination → TNPU.
+Le JIT reste une accélération hôte, pas une évolution du matériel ternaire ; le FPGA suit sa propre piste.
+Sources et plan détaillé ci-dessous (§12).
 
 ---
 
@@ -21,7 +48,11 @@ Chaque étape est une proposition à valider avec sa preuve mesurable. Sources e
    formats et noyaux BitNet existants (§8). On adopte, on adapte, on cite.
 5. **Chaque étape a un critère d'arrêt** : pas de gain mesuré → on s'arrête et on le dit.
 
-### Ressources libres réservées dès maintenant
+### Réservation historique v0.4 (pas la carte mémoire actuelle)
+
+Ces plages étaient celles de la proposition initiale. Vecteurs, MMIO vidéo et GPU 2D
+en occupent désormais une partie : consulter **SPEC.md** et `tri27/src/isa.rs` avant
+d’ajouter un opcode ou un périphérique ; ne pas réutiliser les plages « libres » ci-dessous.
 
 | Ressource | Occupé (v0.4) | Libre |
 |---|---|---|
@@ -400,7 +431,7 @@ ternarycore / ternfpga (accélérateurs BitNet sur FPGA).
 
 | Version | Contenu | Preuve principale |
 |---|---|---|
-| v0.5 | Vecteurs (+ réservation opcodes/CSR/MMIO) | `ternet` / Tetris : instructions avant/après |
+| v0.5 — livré | Vecteurs effectifs documentés dans SPEC (+ CSR/MMIO) | `ternet` / Tetris : instructions avant/après |
 | v0.6 | Réels tekum (logiciel → matériel) | erreur en ulp vs ternary27, programme réel |
 | (indépendant) | Mesure de compressibilité sur images mémoire (§7 bis) | taux ternaire vs binaire, script hors VM |
 | v0.7 | Modèle de timing + SPM + DMA | rapports de cycles, double tampon `ternet` |
@@ -410,7 +441,7 @@ ternarycore / ternfpga (accélérateurs BitNet sur FPGA).
 | piste parallèle | FPGA F0 → F5 | §9 bis |
 
 ## 11. Questions ouvertes
-- Vecteurs : arithmétique tryte modulo ou saturée ?
+- Vecteurs : les opérations effectives et leurs variantes modulo/saturées sont définies dans SPEC ; toute extension doit préserver les tests existants.
 - Réels : tekum + trit d'exactitude tient-il ses promesses face à ternary27 ? Place de NaR dans `CMP`.
 - Étiquettes : 3 trits de couleur (27 couleurs) suffisent-ils ?
 - Tailles SPM / L1 / L2 : décidées par §7.

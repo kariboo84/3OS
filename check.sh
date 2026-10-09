@@ -17,14 +17,20 @@ echo "== Reseau ternaire + Kleene"
 (cd cc && python tri27cc.py examples/ternet.c -o build/ternet.tas && python tri27cc.py examples/kleene.c -o build/kleene.tas)
 tn=$($VM run cc/build/ternet.tas 2>&1); grep -q "identique a la reference hote : 450/450" <<<"$tn" && echo "  ok  ternet 450/450" || { echo "  ECHEC ternet"; exit 1; }
 kl=$($VM run cc/build/kleene.tas 2>&1); grep -q "0 erreur(s)" <<<"$kl" && echo "  ok  kleene 0 erreur" || { echo "  ECHEC kleene"; exit 1; }
+echo "== Présentation PRESENT (wasm, node seul)"
+pl="${TMPDIR:-/tmp}/present.$$"
+node tests/present_snapshot.cjs >"$pl" 2>&1 && echo "  ok  present_snapshot ($(grep -c '^PASS' "$pl") vérifications)" || { cat "$pl"; echo "  ECHEC present_snapshot"; exit 1; }
 if [[ "${1:-}" == "--web" ]]; then
-  echo "== Web"; ./build_web.sh >/dev/null
+  echo "== Web (Chrome headless + serveur :8124)"; ./build_web.sh >/dev/null
   curl -sf http://127.0.0.1:8124/web/ >/dev/null || { echo "  serveur :8124 absent (python -m http.server 8124 --directory .)"; exit 1; }
   CH="/c/Program Files/Google/Chrome/Application/chrome.exe"
   prof=$(mktemp -d); "$CH" --headless=new --disable-gpu --no-first-run --remote-debugging-port=9231 --user-data-dir="$prof" about:blank >/dev/null 2>&1 &
   pid=$!; sleep 3
-  res=$(timeout 120 node tests/web_smoke.cjs </dev/null || true); kill $pid 2>/dev/null || true
-  echo "$res"
-  grep -q "exceptions 0" <<<"$res" && grep -q "après clic tetris : écran 320x200" <<<"$res" && grep -q "crash tue" <<<"$res" && echo "  ok  web" || { echo "  ÉCHEC web"; exit 1; }
+  fails=0
+  for t in web_smoke desktop_smoke mouse_refresh; do
+    if timeout 300 node tests/$t.cjs </dev/null; then echo "  ok  $t"; else echo "  ÉCHEC $t"; fails=1; break; fi
+  done
+  kill $pid 2>/dev/null || true
+  [[ $fails -eq 0 ]] || exit 1
 fi
 echo "== tout est vert"

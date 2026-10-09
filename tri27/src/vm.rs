@@ -1,6 +1,6 @@
 //! Machine virtuelle TRI-27.
 
-use crate::isa::{decode, op};
+use crate::isa::{decode, op, Inst};
 use crate::mem::{ICache, Ram};
 
 #[path = "gpu.rs"]
@@ -73,7 +73,9 @@ pub mod csr {
     pub const ULIMIT: usize = 11;
     /// ≠ 0 : le mode utilisateur accède directement aux périphériques (sauf privilégiés).
     pub const IOPERM: usize = 12;
-    pub const COUNT: usize = 13;
+    /// Longueur active des vecteurs (voies : trytes en .T, mots en .W). Reset = 0 : VSETVL requis.
+    pub const VL: usize = 13;
+    pub const COUNT: usize = 14;
 }
 
 pub mod cause {
@@ -90,7 +92,7 @@ pub struct Vm {
     pub regs: [i64; 27],
     pub pc: i64,
     pub mem: Ram,
-    cache: ICache,
+    pub(crate) cache: ICache,
     pub csr: [i64; csr::COUNT],
     pub mode: i64,
     pub halted: bool,
@@ -146,6 +148,9 @@ pub struct Vm {
     pub present_h: usize,
     pub time_ms: i64,
     pub snd: crate::sound::Tsg,
+    /// Banque vectorielle : 27 registres × 27 trytes (v0.5, voir vector.rs). En fin de struct
+    /// pour ne pas décaler les champs chauds (regs, pc, mem, cache) du chemin scalaire.
+    pub vregs: Box<[crate::vector::VReg; 27]>,
 }
 
 impl Vm {
@@ -153,6 +158,7 @@ impl Vm {
         let ram = ram_trytes - ram_trytes % 3;
         let mut vm = Vm {
             regs: [0; 27],
+            vregs: Box::new([[0; 27]; 27]),
             pc: 0,
             mem: Ram::new(ram),
             cache: ICache::new(ram / 3),
@@ -215,6 +221,7 @@ impl Vm {
 
     pub fn reset_cpu(&mut self, entry: i64) {
         self.regs = [0; 27];
+        *self.vregs = [[0; 27]; 27];
         self.regs[SP] = self.mem.len() as i64;
         self.pc = entry;
         self.mode = -1;
@@ -226,7 +233,7 @@ impl Vm {
 
     /// Espace utilisateur courant (UBASE, ULIMIT), si le CPU est en mode utilisateur isolé.
     #[inline(always)]
-    fn user_space(&self) -> Option<(i64, i64)> {
+    pub(crate) fn user_space(&self) -> Option<(i64, i64)> {
         if self.mode > 0 && self.csr[csr::ULIMIT] > 0 {
             Some((self.csr[csr::UBASE], self.csr[csr::ULIMIT]))
         } else {
@@ -575,6 +582,8 @@ impl Vm {
     fn step_traced(&mut self) {
         use std::fmt::Write;
         let (pc, mode, regs0, tc0) = (self.pc, self.mode, self.regs, self.trap_count);
+        let vregs0 = *self.vregs;
+        let vl0 = self.csr[csr::VL];
         let user = mode > 0 && self.csr[csr::ULIMIT] > 0;
         let ppc = pc + if user { self.csr[csr::UBASE] } else { 0 };
         let word = if ppc >= 0 && ppc % 3 == 0 && (ppc as usize) + 2 < self.mem.len() { Some(self.peek_word(ppc)) } else { None };
@@ -592,6 +601,14 @@ impl Vm {
             if self.regs[k] != regs0[k] {
                 let _ = write!(s, " {}={}", crate::isa::REG_NAMES[k], self.regs[k]);
             }
+        }
+        for k in 0..27 {
+            if self.vregs[k] != vregs0[k] {
+                let _ = write!(s, " {}={:?}", crate::isa::vreg_name(k as i64 - 13), self.vregs[k]);
+            }
+        }
+        if self.csr[csr::VL] != vl0 {
+            let _ = write!(s, " VL={}", self.csr[csr::VL]);
         }
         if self.trap_count == tc0 {
             if let Some(w) = word {
@@ -826,6 +843,11 @@ impl Vm {
                 kernel!();
                 self.waiting = true;
             }
+            c if (op::VSETVL..=op::VSPLATW).contains(&c) => {
+                if self.vec_step(i) {
+                    return; // piège pris : pc déjà positionné par trap()
+                }
+            }
             _ => {
                 self.trap(cause::ILLEGAL, i.imm);
                 return;
@@ -833,6 +855,20 @@ impl Vm {
         }
         self.regs[Z] = 0;
         self.pc = next;
+    }
+
+    /// Dispatch des instructions vectorielles, hors du chemin chaud (`#[cold]` : ne pénalise pas le scalaire).
+    /// Renvoie true si un piège a été pris (l'instruction n'est alors pas terminée).
+    #[cold]
+    #[inline(never)]
+    fn vec_step(&mut self, i: Inst) -> bool {
+        match self.vec_exec(i) {
+            Ok(()) => false,
+            Err(a) => {
+                self.trap(cause::MEM, a);
+                true
+            }
+        }
     }
 
     /// Dimensions du mode vidéo courant.

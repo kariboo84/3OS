@@ -24,11 +24,13 @@
 #define DISK_STATUS TRI27_MMIO(-23)
 #define DISK_COUNT  TRI27_MMIO(-24)
 
-/* Disposition connue de kentry.tas : r à 0, pc à 81, ubase à 84, ulimit à 87, ioperm à 90. */
+/* Disposition connue de kentry.tas : r à 0, pc à 81, ubase à 84, ulimit à 87, ioperm à 90, vl à 93, vsave à 96. */
 struct proc {
   long r[27];
   long pc, ubase, ulimit;
   long ioperm;     /* 1 = premier plan : périphériques en accès direct (CSR IOPERM) */
+  long vl;         /* CSR VL (longueur vectorielle) du processus */
+  long vsave;      /* adresse de sa banque vectorielle sauvegardée (27 x 27 trytes) */
   long state;      /* 0 libre, 1 prêt, 2 attend un enfant */
   long parent;
   long vmode, fbaddr, fbw, fbh, fbdepth;
@@ -37,6 +39,7 @@ struct proc {
 enum { FREE, READY, WAITING };
 
 struct proc procs[NPROC];
+static char vstate[NPROC][729];   /* registres vectoriels sauvegardés, un bloc par processus */
 struct proc *cur;
 extern long ram_size;
 static long nslots, fg = -1;
@@ -151,6 +154,8 @@ static struct proc *spawn(const char *name, long parent) {
   long base = KERNEL_END + pid(p) * SLOT;
   for (long k = 0; k * SECT < len; k++) disk_read(start + k, base + k * SECT);
   for (int k = 0; k < 27; k++) p->r[k] = 0;
+  p->vl = 0;
+  for (int k = 0; k < 729; k++) vstate[pid(p)][k] = 0;   /* pas de fuite entre processus */
   R(p, SP) = SLOT;
   p->pc = entry;
   p->ubase = base;
@@ -356,6 +361,7 @@ static void boot_init(void) {
 }
 
 int kmain(void) {
+  for (int i = 0; i < NPROC; i++) procs[i].vsave = (long)vstate[i];
   /* RAM dynamique : la RAM libre est partagée entre NPROC emplacements (multiples d'un secteur),
      jamais moins de 3^12 trytes chacun. */
   SLOT = (ram_size - KERNEL_END) / NPROC / SECT * SECT;

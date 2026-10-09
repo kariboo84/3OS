@@ -105,6 +105,34 @@ Décalages de saut (`imm` des branches, `JAL`, `offn/offp`) comptés **en instru
 
 op 0 = instruction illégale (la mémoire vide piège).
 
+### Vecteurs (v0.5)
+
+**27 registres vectoriels** `vn13…vn1, v0, vp1…vp13` (champ de 3 trits comme les registres entiers), chacun **27 trytes
+= 9 mots = 243 trits**. **CSR 13 = VL** : nombre de voies actives (trytes pour `.T` et les opérations trit à trit,
+mots pour `.W`) ; reset = 0, donc `VSETVL` d'abord. Les voies au-delà de VL ne sont pas modifiées. Chaque instruction
+vectorielle compte pour 1 instruction retirée. **Opcodes négatifs** −1…−26 (les extensions vivent dans les opcodes
+négatifs, ARCHITECTURE.md §0).
+
+| op | mnémo | effet |
+|---|---|---|
+| −1 | `VSETVL rd, rs1` | VL = rs1 borné à 0…27 ; rd = VL |
+| −2 / −3 | `VLD vd, imm(rs1)` / `VST` | VL trytes mémoire ↔ vd (adresse traduite et bornée comme LDW/STW ; MMIO interdit) |
+| −4 / −5 | `VLDS vd, rs1, rs2` / `VSTS` | idem, pas de rs2 trytes entre voies |
+| −6…−8 | `VADD.T VSUB.T VMUL.T vd, va, vb` | par tryte, modulo 3⁹ |
+| −9…−11 | `VADD.W VSUB.W VMUL.W` | par mot, modulo 3²⁷ |
+| −12…−17 | `VMIN VMAX VTMUL VCONS VANY` (vd, va, vb), `VNEG vd, va` | trit à trit, mêmes sémantiques que les scalaires |
+| −18 | `VSEL vd, vm, va, vb` | par trit de vm : −1 → a, 0 → vd inchangé, +1 → b (format R4 : 4ᵉ registre dans les trits 14–16) |
+| −19 / −20 | `VCMP.T` / `VCMP.W vd, va, vb` | masque : chaque voie remplie de trits égaux à signe(a − b) (tryte ±9 841 ou 0), utilisable par VSEL |
+| −21 | `VTDOT rd, va, vb` | Σ aᵢ·bᵢ sur les trits des VL trytes → scalaire |
+| −22 | `VTMAC.T rd, va, vb` | Σ aᵢ × bᵢ sur les VL trytes (produit scalaire de trytes, sans réduction modulo) |
+| −23 / −24 | `VSUM.T` / `VSUM.W rd, va` | .T : somme de tous les trits des VL trytes ; .W : somme des VL mots (modulo 3²⁷) |
+| −25 / −26 | `VSPLAT.T` / `VSPLAT.W vd, rs1` | diffusion d'un scalaire |
+
+**Noyau 3OS** : à chaque piège, VL et les 27 registres vectoriels du processus sont sauvés (729 trytes par processus)
+et restaurés à la reprise ; un nouveau processus démarre avec des registres vectoriels nuls.
+**C** : intrinsèques en ligne `__builtin_v*` (`cc/include/tri27vec.h`), registres vectoriels désignés par des constantes
+(`VP1` = 14 …).
+
 ## 5. Privilèges, pièges, CSR
 
 Mode = 1 trit : **−1 noyau**, 0 pilote, +1 utilisateur. Démarrage en noyau.

@@ -1,7 +1,7 @@
 ; kentry.tas — 3OS v0.3 : démarrage et vecteur de pièges.
 ; Le contexte utilisateur est sauvé dans *cur (struct proc, kernel.c) :
 ;   r[k] (registre k = -13..13) au décalage (k+13)*3, pc à 81, ubase à 84, ulimit à 87,
-;   ioperm à 90.
+;   ioperm à 90, VL à 93, adresse de la sauvegarde vectorielle (729 trytes) à 96.
 
 .align 3
 start:
@@ -42,6 +42,39 @@ __trap:
         stw   t4, 72(t0)
         stw   t5, 75(t0)
         stw   t6, 78(t0)
+        ; vecteurs (v0.5) : VL à 93, banque de 27 registres (729 trytes) à l'adresse vsave (96)
+        csrr  t1, 13
+        stw   t1, 93(t0)
+        li    t1, 27
+        csrw  t1, 13
+        ldw   t1, 96(t0)
+        vst   vn13, 0(t1)
+        vst   vn12, 27(t1)
+        vst   vn11, 54(t1)
+        vst   vn10, 81(t1)
+        vst   vn9, 108(t1)
+        vst   vn8, 135(t1)
+        vst   vn7, 162(t1)
+        vst   vn6, 189(t1)
+        vst   vn5, 216(t1)
+        vst   vn4, 243(t1)
+        vst   vn3, 270(t1)
+        vst   vn2, 297(t1)
+        vst   vn1, 324(t1)
+        vst   v0, 351(t1)
+        vst   vp1, 378(t1)
+        vst   vp2, 405(t1)
+        vst   vp3, 432(t1)
+        vst   vp4, 459(t1)
+        vst   vp5, 486(t1)
+        vst   vp6, 513(t1)
+        vst   vp7, 540(t1)
+        vst   vp8, 567(t1)
+        vst   vp9, 594(t1)
+        vst   vp10, 621(t1)
+        vst   vp11, 648(t1)
+        vst   vp12, 675(t1)
+        vst   vp13, 702(t1)
         csrr  t1, scratch
         stw   t1, 60(t0)
         csrr  t1, epc
@@ -54,6 +87,38 @@ __trap:
 ; ---------- reprise du processus *cur (ne revient pas) ----------
 kresume:
         ldw   t0, cur(zero)
+        li    t1, 27
+        csrw  t1, 13
+        ldw   t1, 96(t0)
+        vld   vn13, 0(t1)
+        vld   vn12, 27(t1)
+        vld   vn11, 54(t1)
+        vld   vn10, 81(t1)
+        vld   vn9, 108(t1)
+        vld   vn8, 135(t1)
+        vld   vn7, 162(t1)
+        vld   vn6, 189(t1)
+        vld   vn5, 216(t1)
+        vld   vn4, 243(t1)
+        vld   vn3, 270(t1)
+        vld   vn2, 297(t1)
+        vld   vn1, 324(t1)
+        vld   v0, 351(t1)
+        vld   vp1, 378(t1)
+        vld   vp2, 405(t1)
+        vld   vp3, 432(t1)
+        vld   vp4, 459(t1)
+        vld   vp5, 486(t1)
+        vld   vp6, 513(t1)
+        vld   vp7, 540(t1)
+        vld   vp8, 567(t1)
+        vld   vp9, 594(t1)
+        vld   vp10, 621(t1)
+        vld   vp11, 648(t1)
+        vld   vp12, 675(t1)
+        vld   vp13, 702(t1)
+        ldw   t1, 93(t0)
+        csrw  t1, 13                 ; VL du processus
         ldw   t1, 81(t0)
         csrw  t1, epc
         ldw   t1, 84(t0)

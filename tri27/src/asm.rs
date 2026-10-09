@@ -24,6 +24,10 @@ fn csr_by_name(s: &str) -> Option<i64> {
         "ie" => 7,
         "pmode" => 8,
         "pie" => 9,
+        "ubase" => 10,
+        "ulimit" => 11,
+        "ioperm" => 12,
+        "vl" => 13,
         _ => return None,
     })
 }
@@ -210,6 +214,10 @@ fn reg(s: &str) -> Result<i64, String> {
     isa::reg_by_name(s.trim()).ok_or(format!("registre inconnu: {s}"))
 }
 
+fn vreg(s: &str) -> Result<i64, String> {
+    isa::vreg_by_name(s.trim()).ok_or(format!("registre vectoriel inconnu: {s}"))
+}
+
 /// "imm(reg)" / "(reg)" / "imm"
 fn mem_operand(cx: &Ctx, s: &str) -> Result<(i64, i64), String> {
     let s = s.trim();
@@ -307,6 +315,18 @@ fn assemble_inst(cx: &Ctx, mn: &str, args: &[String], pc: i64, li_long: Option<b
             let o = |s: &str| -> Result<i64, String> { if s == "_" || s == "." { Ok(1) } else { off(s, pc) } };
             one(c, reg(a(0)?)?, 0, 0, o(a(1)?)?, o(a(2)?)?)
         }
+        // ---- vecteurs ----
+        Fmt::VMem => {
+            let (o, b) = mem_operand(cx, a(1)?)?;
+            one(c, vreg(a(0)?)?, b, 0, o, 0)
+        }
+        Fmt::VMemS => one(c, vreg(a(0)?)?, reg(a(1)?)?, reg(a(2)?)?, 0, 0),
+        Fmt::VR => one(c, vreg(a(0)?)?, vreg(a(1)?)?, vreg(a(2)?)?, 0, 0),
+        Fmt::VR2 => one(c, vreg(a(0)?)?, vreg(a(1)?)?, 0, 0, 0),
+        Fmt::VSel => one(c, vreg(a(0)?)?, vreg(a(1)?)?, vreg(a(2)?)?, 0, vreg(a(3)?)?),
+        Fmt::VRS => one(c, reg(a(0)?)?, vreg(a(1)?)?, vreg(a(2)?)?, 0, 0),
+        Fmt::VRS1 => one(c, reg(a(0)?)?, vreg(a(1)?)?, 0, 0, 0),
+        Fmt::VSplat => one(c, vreg(a(0)?)?, reg(a(1)?)?, 0, 0, 0),
     }
 }
 

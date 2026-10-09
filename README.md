@@ -1,7 +1,11 @@
 # 3OS — un ordinateur ternaire équilibré
 
 **TRI-27** est une machine virtuelle ternaire : trits −1/0/+1, trytes de 9 trits, mots de 27 trits.
-**3OS** est son système d'exploitation, avec un bureau façon Mac System 7 en 3 niveaux de gris.
+**3OS** est son système d'exploitation : bureau inspiré de Mac System 7, fenêtres grises et accents couleur TRGB, ou trois niveaux de gris TRIT.
+
+Bureau direct : **http://127.0.0.1:8124/web/desktop.html** (serveur démarré ci-dessous).
+Clic pour sélectionner, double-clic / Entrée pour ouvrir ; C pour couleur/gris, F2 pour l'éditeur. Menus, fenêtres déplaçables et redimensionnables, défilement et lecture du vrai disque 3FS.
+L'éditeur enregistre avec F2 ; Échap enregistre puis revient au bureau. Le navigateur conserve les modifications du disque.
 
 - **Processeur** (`tri27/`, Rust, natif + WebAssembly) : 27 registres, pièges, modes noyau/utilisateur,
   protection mémoire UBASE/ULIMIT, accès périphériques contrôlé (IOPERM), `WFI`, son TSG-3, disque à secteurs.

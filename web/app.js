@@ -344,7 +344,13 @@ $('examples').onchange = async (e) => {
 async function init() {
   srcEl.value = DEMO;
   loadExampleList();
+  const desktopBoot = document.body.dataset.boot === '3os';
   try {
+    if (desktopBoot) {
+      const kernel = await fetch('../os/kernel3.tas', { cache: 'no-store' });
+      if (!kernel.ok) throw new Error('Noyau 3OS : HTTP ' + kernel.status);
+      srcEl.value = await kernel.text();
+    }
     const resp = await fetch('tri27.wasm', { cache: 'no-store' });
     const bytes = await resp.arrayBuffer();
     const { instance } = await WebAssembly.instantiate(bytes, {});

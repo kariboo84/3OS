@@ -27,10 +27,11 @@ await shot('os_web_boot.png');
 await sleep(1500); console.log('bureau inactif :', await ev(`document.getElementById('stats').textContent`));
 const click = async (fx, fy) => { const R = await ev(`(()=>{const c=document.getElementById('screen'); const r=c.getBoundingClientRect(); return {x:r.x,y:r.y,w:r.width,h:r.height,cw:c.width,ch:c.height}})()`);
   const x = R.x + fx * R.w / R.cw, y = R.y + fy * R.h / R.ch;
-  await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, buttons: 0 }); await sleep(300);
-  await cdp('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount: 1 }); await sleep(300);
-  await cdp('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount: 1 }); await sleep(300); };
-await click(70, 77);            // ligne « 2 tetris »
+  await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, buttons: 0 }); await sleep(70);
+  await cdp('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount: 1 }); await sleep(70);
+  await cdp('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount: 1 }); await sleep(70); };
+await click(100, 135);           // ligne « 4 tetris » : selection
+await click(100, 135);           // double clic : ouvrir
 await sleep(2500);
 console.log('après clic tetris : écran', await size());
 await ev(`document.getElementById('screen').focus()`);
@@ -41,7 +42,8 @@ await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', windowsVir
 await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', windowsVirtualKeyCode: 27 });
 await sleep(2500);
 console.log('après Échap : écran', await size());
-await click(70, 119);           // ligne « 5 crash »
+await click(100, 220);          // ligne « 9 crash » : selection
+await click(100, 220);          // double clic : ouvrir
 await sleep(2500);
 const c2 = await con();
 console.log('après crash : écran', await size(), '| fin console :', JSON.stringify(c2.slice(-160)));

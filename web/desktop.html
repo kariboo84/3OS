@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,"><title>3OS — bureau ternaire</title>
+<style>
+*{box-sizing:border-box} [hidden]{display:none!important}
+body{margin:0;background:#444b4f;color:#ededeb;font:13px system-ui,sans-serif}
+header{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:9px 16px;background:#d4d5d4;color:#222;border-bottom:1px solid #202323}
+header strong{letter-spacing:.08em}header span{color:#444}header a{color:#303c47;margin-left:auto}
+button{font:inherit;color:#222;background:#eee;border:1px solid #555;box-shadow:inset 1px 1px #fff,inset -1px -1px #999;padding:4px 12px;cursor:pointer}
+button:hover{background:#fff}button:active{box-shadow:inset 1px 1px #999}
+main{padding:20px 16px 12px}#screen{display:block;width:min(100%,1152px)!important;height:auto!important;image-rendering:pixelated;cursor:none;background:#000;border:1px solid #15191b;box-shadow:3px 3px #252b2e;outline:none}
+#screen:focus{border-color:#d4d5d4}footer{max-width:1152px;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 0;color:#d6dadb;font-size:12px}
+#stats{color:#afb8ba}details{max-width:1152px;margin-top:8px}summary{cursor:pointer;color:#afb8ba}
+#console{height:160px;overflow:auto;background:#1c2225;color:#e7ebed;padding:10px;white-space:pre-wrap;outline:none}#console:focus{outline:1px solid #ccd3d5}
+#console:focus::after{content:'▌';color:#a9d8b6}#status.err{color:#a71919}
+@media(max-width:700px){main{padding:10px 6px}header{gap:8px}footer{flex-wrap:wrap}#stats{font-size:10px}}
+</style>
+</head>
+<body data-boot="3os">
+<header><strong>3OS</strong><span>TRI-27 · bureau ternaire</span><button id="btnPause">Pause</button><button id="btnReset">Redémarrer</button><span id="status"></span><a href="./">Atelier VM</a></header>
+<main>
+<canvas id="screen" width="320" height="200" tabindex="0" aria-label="Bureau 3OS : souris et clavier"></canvas>
+<footer><span>C : couleur / gris · Double-clic ou Entrée : ouvrir · F2 : éditeur</span><span id="stats">Démarrage…</span></footer>
+<details><summary>Console du noyau</summary><p id="termhint">Clique ici pour saisir dans la console. Clique sur le bureau pour son clavier.</p><pre id="console" tabindex="0"></pre></details>
+</main>
+<div hidden><textarea id="src"></textarea><select id="examples"><option value="__demo">Démo</option></select><input id="budget" type="number" value="2000000"><button id="btnRun">Lancer</button></div>
+<script src="app.js"></script>
+</body>
+</html>

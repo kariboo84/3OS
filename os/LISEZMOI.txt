@@ -6,3 +6,22 @@ editeur  : modifie ce texte (F2).
 ternet, kleene : logique a 3 etats.
 crash : le noyau le tue, le
   systeme continue.
+
+Le bureau
+C : couleur / trois gris.
+Clic : selection.
+Double-clic ou Entree : ouvrir.
+F2 : editer ce document.
+Tab : changer de fenetre.
+Tirer le titre : deplacer.
+Coin bas droit : redimensionner.
+Fleches de barre : defiler.
+Tirer le curseur : defiler.
+Bureau : ranger les fenetres.
+Q : quitter vers le noyau.
+
+Editeur
+F2 : enregistrer sur le disque.
+Echap : enregistrer et revenir.
+Le disque est garde par le
+navigateur entre les sessions.

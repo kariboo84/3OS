@@ -8,7 +8,7 @@
 //! Les entiers 64 bits sont renvoyés en f64 pour éviter les BigInt côté JS.
 
 use crate::asm;
-use crate::vm::{Vm, TRIT_H, TRIT_W};
+use crate::vm::{Vm, FB_H, FB_W, TRIT_H, TRIT_W};
 use std::ptr::addr_of_mut;
 
 /// 3^14 trytes de RAM.
@@ -44,6 +44,8 @@ fn st() -> &'static mut State {
 
 fn fresh_vm(s: &mut State) {
     let mut vm = Vm::new(WEB_RAM);
+    // The browser scans out the completed PRESENT, never guest RAM mid-draw.
+    vm.capture_present = true;
     if !s.image.is_empty() {
         vm.load(0, &s.image);
     }
@@ -140,11 +142,14 @@ pub extern "C" fn out_clear() {
     st().vm.out.clear();
 }
 
-/// Convertit le framebuffer en RGBA et renvoie le pointeur (320×200×4 octets).
+/// Renvoie la dernière image complète figée au FB_PRESENT (dimensions via fb_width/height).
 #[no_mangle]
 pub extern "C" fn fb_render() -> *const u8 {
     let s = st();
-    s.vm.render_rgba(&mut s.rgba);
+    if !s.vm.present_rgba.is_empty() {
+        let n = s.vm.present_rgba.len();
+        s.rgba[..n].copy_from_slice(&s.vm.present_rgba);
+    }
     s.vm.frame_ready = false;
     s.rgba.as_ptr()
 }
@@ -156,12 +161,14 @@ pub extern "C" fn fb_ptr() -> *const u8 {
 
 #[no_mangle]
 pub extern "C" fn fb_width() -> i32 {
-    st().vm.fb_dims().0 as i32
+    let vm = &st().vm;
+    if vm.present_rgba.is_empty() { FB_W as i32 } else { vm.present_w as i32 }
 }
 
 #[no_mangle]
 pub extern "C" fn fb_height() -> i32 {
-    st().vm.fb_dims().1 as i32
+    let vm = &st().vm;
+    if vm.present_rgba.is_empty() { FB_H as i32 } else { vm.present_h as i32 }
 }
 
 /// Mode vidéo courant (0 = TRGB 320×200, 1 = TRIT 576×360).

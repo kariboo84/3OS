@@ -19,7 +19,7 @@ tn=$($VM run cc/build/ternet.tas 2>&1); grep -q "identique a la reference hote :
 kl=$($VM run cc/build/kleene.tas 2>&1); grep -q "0 erreur(s)" <<<"$kl" && echo "  ok  kleene 0 erreur" || { echo "  ECHEC kleene"; exit 1; }
 if [[ "${1:-}" == "--web" ]]; then
   echo "== Web"; ./build_web.sh >/dev/null
-  curl -sf -o /dev/null http://127.0.0.1:8124/web/ || { echo "  serveur :8124 absent (python -m http.server 8124 --directory .)"; exit 1; }
+  curl -sf http://127.0.0.1:8124/web/ >/dev/null || { echo "  serveur :8124 absent (python -m http.server 8124 --directory .)"; exit 1; }
   CH="/c/Program Files/Google/Chrome/Application/chrome.exe"
   prof=$(mktemp -d); "$CH" --headless=new --disable-gpu --no-first-run --remote-debugging-port=9231 --user-data-dir="$prof" about:blank >/dev/null 2>&1 &
   pid=$!; sleep 3

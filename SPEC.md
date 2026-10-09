@@ -172,6 +172,26 @@ Changer VMODE rebornes la souris aux dimensions du nouveau mode.
 Souris : l'hôte fixe la position (pixels du mode courant) et l'état des boutons ; la page web convertit les
 coordonnées du canvas, le CLI natif propose `--mouse x,y,btn` (position fixe, pour tests).
 
+### Carte graphique 2D (MMIO −60…−76)
+
+Commandes exécutées par l'hôte sur des **surfaces** au format du mode 3 (1 mot par pixel). Adresse de surface 0 = l'écran
+(mode 3 obligatoire). En mode utilisateur, les adresses sont virtuelles, traduites et bornées par UBASE/ULIMIT
+(surface hors de l'espace du processus → commande refusée, STATUS = −1). Rectangles découpés aux bords des surfaces.
+
+| Adresse | Nom | |
+|---|---|---|
+| −60 | G_CMD | écriture : exécute 1 FILL, 2 COPY, 3 COPY_KEY (pixels = COLOR ignorés), 4 BLEND (ALPHA), 5 FILL_ALPHA |
+| −61 / −62 / −63 | G_DST / G_DPITCH / G_DH | surface destination : adresse, largeur, hauteur (pixels) |
+| −64 / −65 / −66 | G_SRC / G_SPITCH / G_SH | surface source |
+| −67 / −68 / −69 / −70 | G_X / G_Y / G_W / G_H | rectangle destination |
+| −71 / −72 | G_SX / G_SY | coin source |
+| −73 | G_COLOR | couleur (mot) ; couleur transparente pour COPY_KEY |
+| −74 | G_ALPHA | 0…729 (729 = opaque) |
+| −75 | G_STATUS | lecture : pixels écrits par la dernière commande, −1 = erreur |
+| −76 | G_OPS | lecture : commandes exécutées depuis le démarrage |
+
+COPY sur la même surface vers le bas est parcourue de bas en haut (défilement correct). En-tête C : `cc/include/gpu2d.h`.
+
 ## 7. Assembleur (`.tas`)
 
 ```

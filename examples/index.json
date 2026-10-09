@@ -18,6 +18,12 @@
   "animated": true
  },
  {
+  "file": "gpu.tas",
+  "title": "Carte graphique 2D : 1080p animé, 100 commandes par image (fond, rectangles translucides, sprites)",
+  "framebuffer": true,
+  "animated": true
+ },
+ {
   "file": "../os/kernel.tas",
   "title": "3OS v0.1 — noyau, ordonnanceur préemptif, shell (tape help)",
   "framebuffer": true,

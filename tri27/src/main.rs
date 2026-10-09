@@ -341,6 +341,9 @@ fn main() {
                     vm.mem.len() as f64 * 9.0 * 3f64.log2() / 8.0 / 1e9,
                     vm.mem.host_bytes() as f64 / 1e6
                 );
+                if vm.gpu.ops > 0 {
+                    eprintln!("[tri27] GPU 2D : {} commandes, {} pixels écrits", vm.gpu.ops, vm.gpu.pixels);
+                }
             }
             std::process::exit(if vm.error.is_some() { 1 } else { (vm.exit_code as i32).clamp(0, 255) });
         }

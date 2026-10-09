@@ -29,6 +29,11 @@ a = array.array("H"); a.frombytes(p[3]); a.byteswap()
 row = a[(h - 10) * w * 3:(h - 9) * w * 3]
 n = len(set(row[0::3])); print("  rampe grise :", n, "niveaux distincts sur une ligne (8 bits : 256 max)"); assert n > 256
 PY
+echo "== Carte graphique 2D"
+python cc/tri27cc.py cc/examples/gpu.c -o cc/build/gpu.tas
+go=$($VM run cc/build/gpu.tas --stats 2>&1); echo "$go" | grep "^gpu :" | sed 's/^/  /'
+ipf=$(sed -n 's/.*images, \([0-9]*\) instr\/image.*/\1/p' <<<"$go")
+[[ -n "$ipf" && $ipf -lt 100000 ]] && grep -q "frames=120" <<<"$go" && grep -q "GPU 2D : 12240 commandes" <<<"$go" && echo "  ok  gpu 2D : $ipf instr/image en 1080p" || { echo "  ECHEC gpu 2D"; exit 1; }
 echo "== Reseau ternaire + Kleene"
 (cd cc && python tri27cc.py examples/ternet.c -o build/ternet.tas && python tri27cc.py examples/kleene.c -o build/kleene.tas)
 tn=$($VM run cc/build/ternet.tas 2>&1); grep -q "identique a la reference hote : 450/450" <<<"$tn" && echo "  ok  ternet 450/450" || { echo "  ECHEC ternet"; exit 1; }

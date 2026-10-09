@@ -73,15 +73,51 @@ impl Ram {
         }
     }
 
+    /// Tranche mutable de `u` jusqu'à la fin de sa page (au plus `n` trytes) ; alloue la page.
+    #[inline]
+    fn chunk_mut(&mut self, u: usize, n: usize) -> &mut [i16] {
+        let (i, o) = (u >> PB, u & PM);
+        let m = n.min(PS - o);
+        if self.pages[i].is_none() {
+            self.alloc(i);
+        }
+        &mut self.pages[i].as_mut().unwrap()[o..o + m]
+    }
+
     pub fn write_slice(&mut self, a: usize, src: &[i16]) {
-        for (k, &v) in src.iter().enumerate() {
-            self.set(a + k, v);
+        let mut k = 0;
+        while k < src.len() {
+            let c = self.chunk_mut(a + k, src.len() - k);
+            let m = c.len();
+            c.copy_from_slice(&src[k..k + m]);
+            k += m;
         }
     }
 
     pub fn read_slice(&self, a: usize, dst: &mut [i16]) {
-        for (k, d) in dst.iter_mut().enumerate() {
-            *d = self.get(a + k);
+        let mut k = 0;
+        while k < dst.len() {
+            let u = a + k;
+            let (i, o) = (u >> PB, u & PM);
+            let m = (dst.len() - k).min(PS - o);
+            match &self.pages[i] {
+                Some(p) => dst[k..k + m].copy_from_slice(&p[o..o + m]),
+                None => dst[k..k + m].fill(0),
+            }
+            k += m;
+        }
+    }
+
+    /// Remplit `n` mots (3 trytes chacun) à partir de `a` avec le motif `t`.
+    pub fn fill3(&mut self, a: usize, n: usize, t: [i16; 3]) {
+        let total = n * 3;
+        let mut k = 0;
+        while k < total {
+            let c = self.chunk_mut(a + k, total - k);
+            for (j, x) in c.iter_mut().enumerate() {
+                *x = t[(k + j) % 3];
+            }
+            k += c.len();
         }
     }
 }
@@ -129,9 +165,18 @@ impl ICache {
         }
     }
 
+    /// Invalide les mots [ci0, ci1) ; les pages jamais exécutées sont sautées d'un bloc.
     pub fn invalidate_range(&mut self, ci0: usize, ci1: usize) {
-        for ci in ci0..ci1 {
-            self.invalidate(ci);
+        let mut ci = ci0;
+        while ci < ci1 {
+            let i = ci >> CB;
+            let end = ((i + 1) << CB).min(ci1);
+            if let Some(Some(p)) = self.pages.get_mut(i) {
+                for e in &mut p[(ci & CM)..((end - 1) & CM) + 1] {
+                    *e = Inst::UNDECODED;
+                }
+            }
+            ci = end;
         }
     }
 

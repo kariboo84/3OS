@@ -2,6 +2,9 @@
 
 use crate::isa::{decode, op};
 use crate::mem::{ICache, Ram};
+
+#[path = "gpu.rs"]
+pub mod gpu;
 use crate::trit::*;
 use std::collections::VecDeque;
 
@@ -102,6 +105,8 @@ pub struct Vm {
     pub hd_h: usize,
     /// Image du dernier FB_PRESENT en mode 3, 16 bits par canal (R, V, B), pour les captures --ppm.
     pub present_hi: Vec<u16>,
+    /// Carte graphique 2D (registres −60…−76).
+    pub gpu: gpu::Gpu,
     pub mouse_x: i64,
     pub mouse_y: i64,
     pub mouse_btn: i64,
@@ -162,6 +167,7 @@ impl Vm {
             hd_w: HD_W,
             hd_h: HD_H,
             present_hi: Vec::new(),
+            gpu: gpu::Gpu::default(),
             mouse_x: 0,
             mouse_y: 0,
             mouse_btn: 0,
@@ -269,6 +275,9 @@ impl Vm {
         if crate::sound::Tsg::owns(a) {
             return self.snd.read(a);
         }
+        if gpu::owns(a) {
+            return self.gpu_read(a);
+        }
         match a {
             mmio::CONSOLE_IN => self.input.pop_front().unwrap_or(-1),
             mmio::CYCLES => wrap27(self.cycles as i64),
@@ -297,6 +306,10 @@ impl Vm {
     fn mmio_write(&mut self, a: i64, v: i64) {
         if crate::sound::Tsg::owns(a) {
             self.snd.write(a, v);
+            return;
+        }
+        if gpu::owns(a) {
+            self.gpu_write(a, v);
             return;
         }
         match a {

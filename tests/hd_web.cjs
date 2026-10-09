@@ -21,5 +21,15 @@ const { connect, sleep } = require('./cdp.cjs');
   const shot = await b.shot('hd_web');
   assert.equal(b.exceptions.length, 0, 'exceptions JS : ' + b.exceptions.join(' | '));
   console.log('PASS hd 1920x1080 dans le navigateur, pixels ' + JSON.stringify(px) + ', capture ' + shot);
+  // carte graphique 2D dans le navigateur : la démo gpu.tas doit tourner et rapporter ses images/s
+  await b.ev(`(async()=>{const s=document.getElementById('examples'); s.value='gpu.tas'; s.dispatchEvent(new Event('change')); await new Promise(r=>setTimeout(r,1500)); document.getElementById('btnRun').click(); return 1})()`);
+  await b.until(() => b.ev(`/gpu : 1920x1080, 120 images/.test(document.getElementById('console').textContent)`), 'démo gpu terminée', 900);
+  const line = (await b.ev(`document.getElementById('console').textContent`)).split('\n').find(l => l.startsWith('gpu :'));
+  const fps = +(/(\d+) images\/s/.exec(line) || [])[1];
+  assert(fps > 0, 'images/s mesurées');
+  await sleep(300);
+  const g = await b.shot('gpu_web');
+  assert.equal(b.exceptions.length, 0, 'exceptions JS : ' + b.exceptions.join(' | '));
+  console.log('PASS gpu 2D dans le navigateur : ' + line.trim() + ', capture ' + g);
   b.close(); process.exit(0);
 })().catch(e => { console.log('FAIL ' + e.message); process.exit(1); });

@@ -16,6 +16,15 @@ pub enum Fmt {
     Lui, // op rd imm19
     Jal, // op rd off19 (étiquette)
     B3, // op rs offn offp
+    // ---- vecteurs (v0.5) ----
+    VMem,  // vld/vst vd, imm(rs1)           (format I)
+    VMemS, // vlds/vsts vd, rs1, rs2         (format R, rs1 = base, rs2 = pas)
+    VR,    // op vd, va, vb                  (format R, registres vectoriels)
+    VR2,   // op vd, va                      (format R)
+    VSel,  // vsel vd, vm, va, vb            (format R4 : rs3 dans les trits 14–16)
+    VRS,   // op rd, va, vb                  (rd scalaire)
+    VRS1,  // op rd, va                      (rd scalaire)
+    VSplat, // op vd, rs1                    (rs1 scalaire)
 }
 
 pub mod op {
@@ -70,6 +79,34 @@ pub mod op {
     pub const ERET: u8 = 51;
     /// Attente d'événement : le CPU dort jusqu'au prochain tick hôte (privilégiée).
     pub const WFI: u8 = 52;
+    /// Vecteurs (v0.5) : opcodes négatifs −1…−26, codés 128 + |op| (voir ARCHITECTURE.md §0, SPEC.md).
+    pub const VBASE: u8 = 128;
+    pub const VSETVL: u8 = 129; // −1
+    pub const VLD: u8 = 130; // −2
+    pub const VST: u8 = 131; // −3
+    pub const VLDS: u8 = 132; // −4
+    pub const VSTS: u8 = 133; // −5
+    pub const VADDT: u8 = 134; // −6
+    pub const VSUBT: u8 = 135; // −7
+    pub const VMULT: u8 = 136; // −8
+    pub const VADDW: u8 = 137; // −9
+    pub const VSUBW: u8 = 138; // −10
+    pub const VMULW: u8 = 139; // −11
+    pub const VMIN: u8 = 140; // −12
+    pub const VMAX: u8 = 141; // −13
+    pub const VTMUL: u8 = 142; // −14
+    pub const VCONS: u8 = 143; // −15
+    pub const VANY: u8 = 144; // −16
+    pub const VNEG: u8 = 145; // −17
+    pub const VSEL: u8 = 146; // −18
+    pub const VCMPT: u8 = 147; // −19
+    pub const VCMPW: u8 = 148; // −20
+    pub const VTDOT: u8 = 149; // −21
+    pub const VTMACT: u8 = 150; // −22
+    pub const VSUMT: u8 = 151; // −23
+    pub const VSUMW: u8 = 152; // −24
+    pub const VSPLATT: u8 = 153; // −25
+    pub const VSPLATW: u8 = 154; // −26
     pub const UNDECODED: u8 = 255;
 }
 
@@ -96,6 +133,16 @@ ops! {
     "mini" MINI I, "maxi" MAXI I, "slti" SLTI I, "divi" DIVI I, "modi" MODI I,
     "lui" LUI Lui, "jal" JAL Jal, "br3" BR3 B3,
     "halt" HALT N, "eret" ERET N, "wfi" WFI N,
+    "vsetvl" VSETVL R2,
+    "vld" VLD VMem, "vst" VST VMem, "vlds" VLDS VMemS, "vsts" VSTS VMemS,
+    "vadd.t" VADDT VR, "vsub.t" VSUBT VR, "vmul.t" VMULT VR,
+    "vadd.w" VADDW VR, "vsub.w" VSUBW VR, "vmul.w" VMULW VR,
+    "vmin" VMIN VR, "vmax" VMAX VR, "vtmul" VTMUL VR, "vcons" VCONS VR, "vany" VANY VR,
+    "vneg" VNEG VR2, "vsel" VSEL VSel,
+    "vcmp.t" VCMPT VR, "vcmp.w" VCMPW VR,
+    "vtdot" VTDOT VRS, "vtmac.t" VTMACT VRS,
+    "vsum.t" VSUMT VRS1, "vsum.w" VSUMW VRS1,
+    "vsplat.t" VSPLATT VSplat, "vsplat.w" VSPLATW VSplat,
 }
 
 pub fn info_by_name(name: &str) -> Option<&'static OpInfo> {
@@ -109,6 +156,8 @@ pub fn info_by_code(code: u8) -> Option<&'static OpInfo> {
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Phys {
     R,
+    /// R à quatre registres : rs3 dans les trits 14–16 (VSEL).
+    R4,
     I,
     J,
     B3,
@@ -116,9 +165,33 @@ pub enum Phys {
 pub fn phys(f: Fmt) -> Phys {
     match f {
         Fmt::R | Fmt::R2 | Fmt::N => Phys::R,
-        Fmt::I | Fmt::Mem | Fmt::Br | Fmt::Ecall | Fmt::CsrR | Fmt::CsrW => Phys::I,
+        Fmt::VMemS | Fmt::VR | Fmt::VR2 | Fmt::VRS | Fmt::VRS1 | Fmt::VSplat => Phys::R,
+        Fmt::VSel => Phys::R4,
+        Fmt::I | Fmt::Mem | Fmt::Br | Fmt::Ecall | Fmt::CsrR | Fmt::CsrW | Fmt::VMem => Phys::I,
         Fmt::Lui | Fmt::Jal => Phys::J,
         Fmt::B3 => Phys::B3,
+    }
+}
+
+/// Opcode (5 trits signés) → code interne : 1..120 tels quels, −1..−26 → 128+|op| (vecteurs).
+#[inline]
+pub fn code_of_opval(v: i64) -> u8 {
+    if (1..=120).contains(&v) {
+        v as u8
+    } else if (-26..=-1).contains(&v) {
+        (op::VBASE as i64 - v) as u8
+    } else {
+        op::ILLEGAL
+    }
+}
+
+/// Code interne → valeur de l'opcode dans le mot (inverse de `code_of_opval`).
+#[inline]
+pub fn opval_of_code(c: u8) -> i64 {
+    if c >= op::VBASE {
+        -(c as i64 - op::VBASE as i64)
+    } else {
+        c as i64
     }
 }
 
@@ -151,7 +224,7 @@ pub fn decode(w: i64) -> Inst {
         d
     };
     let opv = take(5);
-    let code = if (1..=120).contains(&opv) { opv as u8 } else { op::ILLEGAL };
+    let code = code_of_opval(opv);
     let Some(info) = info_by_code(code) else {
         return Inst { op: op::ILLEGAL, rd: 13, rs1: 13, rs2: 13, imm: opv, imm2: 0 };
     };
@@ -161,6 +234,12 @@ pub fn decode(w: i64) -> Inst {
             i.rd = reg(take(3));
             i.rs1 = reg(take(3));
             i.rs2 = reg(take(3));
+        }
+        Phys::R4 => {
+            i.rd = reg(take(3));
+            i.rs1 = reg(take(3));
+            i.rs2 = reg(take(3));
+            i.imm2 = take(3); // rs3 : valeur signée −13..13 (comme encode)
         }
         Phys::I => {
             i.rd = reg(take(3));
@@ -189,9 +268,15 @@ pub fn encode(code: u8, rd: i64, rs1: i64, rs2: i64, imm: i64, imm2: i64) -> Res
             return Err(format!("registre hors plage: {r}"));
         }
     }
-    let c = code as i64;
+    let c = opval_of_code(code);
     Ok(match phys(info.fmt) {
         Phys::R => c + rd * POW3[5] + rs1 * POW3[8] + rs2 * POW3[11],
+        Phys::R4 => {
+            if !fits(imm2, 3) {
+                return Err(format!("registre hors plage: {imm2}"));
+            }
+            c + rd * POW3[5] + rs1 * POW3[8] + rs2 * POW3[11] + imm2 * POW3[14]
+        }
         Phys::I => {
             if !fits(imm, 16) {
                 return Err(format!("immédiat 16 trits hors plage: {imm}"));
@@ -218,6 +303,36 @@ pub const REG_NAMES: [&str; 27] = [
     "zero", // 0
     "a0", "a1", "a2", "a3", "a4", "a5", "t0", "t1", "t2", "t3", "t4", "t5", "t6", // 1..13
 ];
+
+/// Registre vectoriel : indice −13..13 → `vn13`…`vn1`, `v0`, `vp1`…`vp13`.
+pub fn vreg_name(k: i64) -> String {
+    match k {
+        0 => "v0".into(),
+        k if k > 0 => format!("vp{k}"),
+        k => format!("vn{}", -k),
+    }
+}
+
+/// Nom de registre vectoriel → valeur signée −13..13.
+pub fn vreg_by_name(s: &str) -> Option<i64> {
+    let s = s.to_ascii_lowercase();
+    if s == "v0" {
+        return Some(0);
+    }
+    let (sign, rest) = if let Some(r) = s.strip_prefix("vp") {
+        (1, r)
+    } else if let Some(r) = s.strip_prefix("vn") {
+        (-1, r)
+    } else {
+        return None;
+    };
+    let k: i64 = rest.parse().ok()?;
+    if (1..=13).contains(&k) {
+        Some(sign * k)
+    } else {
+        None
+    }
+}
 
 /// Nom → valeur signée −13..13.
 pub fn reg_by_name(s: &str) -> Option<i64> {
@@ -263,5 +378,20 @@ pub fn disasm(w: i64, pc: i64) -> String {
         Fmt::Lui => format!("lui {}, {}", r(i.rd), i.imm),
         Fmt::Jal => format!("jal {}, @{}", r(i.rd), tgt(i.imm)),
         Fmt::B3 => format!("br3 {}, @{}, @{}", r(i.rd), tgt(i.imm), tgt(i.imm2)),
+        Fmt::VMem => format!("{} {}, {}({})", info.name, vreg_name(i.rd as i64 - 13), i.imm, r(i.rs1)),
+        Fmt::VMemS => format!("{} {}, {}, {}", info.name, vreg_name(i.rd as i64 - 13), r(i.rs1), r(i.rs2)),
+        Fmt::VR => format!("{} {}, {}, {}", info.name, vreg_name(i.rd as i64 - 13), vreg_name(i.rs1 as i64 - 13), vreg_name(i.rs2 as i64 - 13)),
+        Fmt::VR2 => format!("{} {}, {}", info.name, vreg_name(i.rd as i64 - 13), vreg_name(i.rs1 as i64 - 13)),
+        Fmt::VSel => format!(
+            "{} {}, {}, {}, {}",
+            info.name,
+            vreg_name(i.rd as i64 - 13),
+            vreg_name(i.rs1 as i64 - 13),
+            vreg_name(i.rs2 as i64 - 13),
+            vreg_name(i.imm2)
+        ),
+        Fmt::VRS => format!("{} {}, {}, {}", info.name, r(i.rd), vreg_name(i.rs1 as i64 - 13), vreg_name(i.rs2 as i64 - 13)),
+        Fmt::VRS1 => format!("{} {}, {}", info.name, r(i.rd), vreg_name(i.rs1 as i64 - 13)),
+        Fmt::VSplat => format!("{} {}, {}", info.name, vreg_name(i.rd as i64 - 13), r(i.rs1)),
     }
 }

@@ -207,8 +207,64 @@ static const char *builtin_op(Node *n, int *nargs) {
   return NULL;
 }
 
+/* Intrinsèques vectoriels (v0.5). Chaque argument est soit :
+ *   - un REGISTRE VECTORIEL constant (bit de vec_mask à 1) : numéro 0..26 (= nom + 13, cf. tri27vec.h) ;
+ *   - un SCALAIRE (bit à 0) : évalué dans un registre (scalaires simples, puis a0/a1).
+ * Destination : scalaire (résultat en a0) ou vectorielle (premier argument constant, dst_vec=1). */
+static const char *vbuiltin_op(Node *n, int *nargs, int *fixed, int *dst_vec) {
+  static const struct { const char *name, *op; int n; int vec_mask; int dst_is_vec; } V[] = {
+    {"__builtin_vtdot",  "vtdot",   2, 0x3, 0}, /* a0 = Σ va·vb (rd implicite = a0)        */
+    {"__builtin_vtmac",  "vtmac.t", 2, 0x3, 0}, /* a0 = Σ tryte_a·trit_b (rd implicite = a0)*/
+    {"__builtin_vsum",   "vsum.t",  1, 0x1, 0}, /* a0 = Σ trits de va (rd implicite = a0)  */
+    {"__builtin_vadd",   "vadd.t",  2, 0x7, 1}, /* vd, va, vb                              */
+    {"__builtin_vsub",   "vsub.t",  2, 0x7, 1},
+    {"__builtin_vmul",   "vmul.t",  2, 0x7, 1},
+    {"__builtin_vmin",   "vmin",    2, 0x7, 1},
+    {"__builtin_vmax",   "vmax",    2, 0x7, 1},
+    {"__builtin_vtmul",  "vtmul",   2, 0x7, 1},
+    {"__builtin_vcons",  "vcons",   2, 0x7, 1},
+    {"__builtin_vany",   "vany",    2, 0x7, 1},
+    {"__builtin_vneg",   "vneg",    1, 0x3, 1},
+  };
+  if(n->lhs->kind!=ND_VAR || n->ret_buffer) return NULL;
+  for(int i=0;i<(int)(sizeof V/sizeof V[0]);i++) if(!strcmp(n->lhs->var->name,V[i].name)) {
+    int c=0; for(Node *a=n->args;a;a=a->next) c++;
+    if(c!=V[i].n) return NULL;
+    *nargs=c; *fixed=V[i].vec_mask; *dst_vec=V[i].dst_is_vec;
+    return V[i].op;
+  }
+  return NULL;
+}
+
+/* Nom ABI d'un registre vectoriel (indice 0..26 = nom + 13). */
+static void vreg_name(long c, char *buf) {
+  if(c==13) strcpy(buf,"v0");
+  else if(c>13) sprintf(buf,"vp%ld",c-13);
+  else sprintf(buf,"vn%ld",13-c);
+}
+
 static void call(Node *n) {
   int bn; const char *bop=builtin_op(n,&bn);
+  int vbn, vfix, vdst; const char *vop=vbuiltin_op(n,&vbn,&vfix,&vdst);
+  if(vop) {
+    /* registre de destination : premier argument si vdst, sinon a0 (scalaire) */
+    char out[96]; out[0]=0;
+    int k=0;
+    for(Node *a=n->args; a; a=a->next, k++) {
+      long c;
+      if(vfix>>k & 1) {
+        if(!const_val(a,&c) || c<0 || c>26) error_tok(a->tok,"TRI27: registre vectoriel constant 0..26 attendu");
+        char name[8]; vreg_name(c,name);
+        strcat(out, out[0]?", ":""); strcat(out,name);
+      } else {
+        error_tok(a->tok,"TRI27: argument scalaire non supporté dans cet intrinsèque");
+      }
+    }
+    if(vdst) emit("  %s %s", vop, out);
+    else emit("  %s a0, %s", vop, out);
+    return;
+  }
+
   if(bop) {
     Node *a1=n->args, *a2=bn==2?n->args->next:NULL;
     if(bn==1) { if(reg_var(a1)) emit("  %s a0, s%d",bop,reg_var(a1)); else { expr(a1); emit("  %s a0, a0",bop); } return; }

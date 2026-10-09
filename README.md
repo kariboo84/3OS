@@ -27,6 +27,9 @@ python -m http.server 8124              # puis http://127.0.0.1:8124/web/ → «
 ```
 
 En ligne de commande : `tri27/target/release/tri27 run os/kernel3.tas --disk os/3os.t3d`.
+Journal d'exécution : `--trace FICHIER` écrit une ligne par instruction retirée
+(`n K|U pc mot désassemblage | registres modifiés [adresse]t|w=valeur`, pièges et interruptions),
+format stable prévu pour comparer la VM à un futur processeur FPGA instruction par instruction. Sans `--trace`, aucun coût.
 
 Vérification complète : `./check.sh` (ou `./check.sh --web` avec Chrome).
 

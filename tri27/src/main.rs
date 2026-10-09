@@ -7,7 +7,7 @@ const RAM: usize = 14_348_907; // 3^15 trytes
 fn usage() -> ! {
     eprintln!(
         "tri27 — VM ternaire équilibrée\n\
-         usage:\n  tri27 run <prog.tas> [--max N] [--ppm DIR] [--stats]\n  \
+         usage:\n  tri27 run <prog.tas> [--max N] [--ppm DIR] [--stats] [--trace FICHIER]\n  \
          tri27 asm <prog.tas>          listing désassemblé\n  \
          tri27 bench                   mesure instructions/s"
     );
@@ -152,6 +152,7 @@ fn main() {
             let mut wav: Option<String> = None;
             let mut disk: Option<String> = None;
             let mut realtime = false;
+            let mut trace: Option<String> = None;
             let mut audio: Vec<f32> = Vec::new();
             let mut i = 3;
             while i < args.len() {
@@ -171,6 +172,10 @@ fn main() {
                         i += 1;
                     }
                     "--realtime" => realtime = true,
+                    "--trace" => {
+                        trace = Some(args[i + 1].clone());
+                        i += 1
+                    }
                     "--disk" => {
                         disk = Some(args[i + 1].clone());
                         i += 1
@@ -196,6 +201,11 @@ fn main() {
             }
             vm.input.extend(input.chars().map(|c| c as i64));
             vm.capture_present = ppm.is_some();
+            let mut trace_out = trace.as_ref().map(|p| {
+                vm.trace = Some(String::new());
+                std::io::BufWriter::new(std::fs::File::create(p).unwrap_or_else(|e| panic!("--trace {p}: {e}")))
+            });
+            let chunk: u64 = if trace_out.is_some() { 1 << 14 } else { 1 << 20 };
             let t0 = Instant::now();
             let stdout = std::io::stdout();
             let mut done = 0u64;
@@ -203,7 +213,11 @@ fn main() {
             while !vm.halted && done < max {
                 vm.time_ms = t0.elapsed().as_millis() as i64 + skipped_ms;
                 if let Some((x, y, b)) = mouse { vm.set_mouse(x, y, b); }
-                done += vm.run((max - done).min(1 << 20));
+                done += vm.run((max - done).min(chunk));
+                if let (Some(w), Some(t)) = (trace_out.as_mut(), vm.trace.as_mut()) {
+                    w.write_all(t.as_bytes()).unwrap();
+                    t.clear();
+                }
                 if vm.waiting {
                     if realtime {
                         std::thread::sleep(std::time::Duration::from_millis(1));
@@ -232,6 +246,9 @@ fn main() {
                         save_ppm(&vm, &std::path::Path::new(d).join(format!("frame_{:05}.ppm", vm.frames)));
                     }
                 }
+            }
+            if let Some(w) = trace_out.as_mut() {
+                w.flush().unwrap();
             }
             if let Some(d) = &disk {
                 if vm.disk_dirty {

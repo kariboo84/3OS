@@ -107,6 +107,11 @@ pub struct Vm {
     /// WFI exécuté : run() rend la main à l'hôte jusqu'au prochain appel.
     pub waiting: bool,
     pub text_input: bool,
+    /// Journal d'exécution (une ligne par instruction retirée) ; None = désactivé, coût nul.
+    pub trace: Option<String>,
+    pub trace_seq: u64,
+    /// Nombre de pièges pris (sert au journal pour savoir si l'instruction a abouti).
+    pub trap_count: u64,
     #[cfg(feature = "prof")]
     pub prof_op: [u64; 256],
     #[cfg(feature = "prof")]
@@ -154,6 +159,9 @@ impl Vm {
             disk_dirty: false,
             waiting: false,
             text_input: false,
+            trace: None,
+            trace_seq: 0,
+            trap_count: 0,
             #[cfg(feature = "prof")]
             prof_op: [0; 256],
             #[cfg(feature = "prof")]
@@ -404,6 +412,7 @@ impl Vm {
     // ---------------- pièges ----------------
 
     fn trap(&mut self, c: i64, tval: i64) {
+        self.trap_count += 1;
         #[cfg(feature = "prof")]
         {
             self.prof_traps[c.clamp(0, 15) as usize] += 1;
@@ -461,6 +470,16 @@ impl Vm {
 
     /// Exécute au plus `max` instructions. Renvoie le nombre exécuté.
     pub fn run(&mut self, max: u64) -> u64 {
+        if self.trace.is_some() {
+            self.run_impl::<true>(max)
+        } else {
+            self.run_impl::<false>(max)
+        }
+    }
+
+    // La boucle est dupliquée à la compilation : sans journal, aucun test supplémentaire par instruction.
+    #[inline(always)]
+    fn run_impl<const TRACE: bool>(&mut self, max: u64) -> u64 {
         let start = self.cycles;
         let end = start.saturating_add(max);
         self.waiting = false;
@@ -468,13 +487,78 @@ impl Vm {
             if self.csr[csr::IE] != 0 {
                 let tc = self.csr[csr::TIMECMP];
                 if tc > 0 && self.cycles as i64 >= tc {
+                    let pc = self.pc;
                     self.trap(cause::TIMER, 0);
+                    if TRACE {
+                        let to = self.pc;
+                        self.trace_line(format_args!("INT timer epc={} -> pc={}", pc, to));
+                    }
                     continue;
                 }
             }
-            self.step();
+            if TRACE {
+                self.step_traced();
+            } else {
+                self.step();
+            }
         }
         self.cycles - start
+    }
+
+    #[inline(never)]
+    #[cold]
+    fn trace_line(&mut self, a: std::fmt::Arguments) {
+        use std::fmt::Write;
+        let seq = self.trace_seq;
+        self.trace_seq += 1;
+        if let Some(t) = self.trace.as_mut() {
+            let _ = writeln!(t, "{seq} {a}");
+        }
+    }
+
+    /// Une instruction + une ligne de journal :
+    /// `n K|U pc mot désassemblage | reg=val ... [adr]t|w=val TRAP cause=c tval=v`.
+    /// Format stable, pensé pour la comparaison instruction par instruction avec un futur RTL (FPGA).
+    #[inline(never)]
+    fn step_traced(&mut self) {
+        use std::fmt::Write;
+        let (pc, mode, regs0, tc0) = (self.pc, self.mode, self.regs, self.trap_count);
+        let user = mode > 0 && self.csr[csr::ULIMIT] > 0;
+        let ppc = pc + if user { self.csr[csr::UBASE] } else { 0 };
+        let word = if ppc >= 0 && ppc % 3 == 0 && (ppc as usize) + 2 < self.mem.len() { Some(self.peek_word(ppc)) } else { None };
+        self.step();
+        let mut s = String::new();
+        let _ = write!(s, "{} {} ", if mode < 0 { 'K' } else { 'U' }, pc);
+        match word {
+            Some(w) => {
+                let _ = write!(s, "{} {}", w, crate::isa::disasm(w, pc));
+            }
+            None => s.push_str("? ?"),
+        }
+        s.push_str(" |");
+        for k in 0..27 {
+            if self.regs[k] != regs0[k] {
+                let _ = write!(s, " {}={}", crate::isa::REG_NAMES[k], self.regs[k]);
+            }
+        }
+        if self.trap_count == tc0 {
+            if let Some(w) = word {
+                let i = decode(w);
+                if i.op == op::STT || i.op == op::STW {
+                    let a = wrap27(regs0[i.rs1 as usize] + i.imm);
+                    let v = regs0[i.rd as usize];
+                    let _ = write!(s, " [{}]{}={}", a, if i.op == op::STT { 't' } else { 'w' }, if i.op == op::STT { wrap9(v) } else { v });
+                }
+            }
+        } else if self.halted {
+            let _ = write!(s, " ARRET {}", self.error.as_deref().unwrap_or(""));
+        } else {
+            let _ = write!(s, " TRAP cause={} tval={} -> pc={}", self.csr[csr::CAUSE], self.csr[csr::TVAL], self.pc);
+        }
+        if self.halted && self.trap_count == tc0 {
+            let _ = write!(s, " HALT exit={}", self.exit_code);
+        }
+        self.trace_line(format_args!("{s}"));
     }
 
     #[inline(always)]

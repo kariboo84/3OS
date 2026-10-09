@@ -5,7 +5,7 @@ const assert = require('assert');
 const { connect, sleep } = require('./cdp.cjs');
 (async () => {
   const b = await connect(), { ev, shot, exceptions, cdp } = b;
-  await cdp('Page.navigate', { url: 'http://127.0.0.1:8124/web/?v=' + Date.now() });
+  await cdp('Page.navigate', { url: 'http://127.0.0.1:' + (process.env.TRI27_HTTP || 8124) + '/web/?v=' + Date.now() });
   await sleep(3000);
   await ev(`(async()=>{const s=document.getElementById('examples'); s.value='../os/kernel3.tas'; s.dispatchEvent(new Event('change')); await new Promise(r=>setTimeout(r,1500)); document.getElementById('btnRun').click(); return 1})()`);
   await sleep(5000);

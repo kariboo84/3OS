@@ -5,7 +5,7 @@ const fs = require('fs'), path = require('path');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function connect() {
-  const t = (await (await fetch('http://127.0.0.1:9231/json')).json()).find(t => t.type === 'page');
+  const t = (await (await fetch('http://127.0.0.1:' + (process.env.TRI27_CDP || 9231) + '/json')).json()).find(t => t.type === 'page');
   const ws = new WebSocket(t.webSocketDebuggerUrl);
   const pending = new Map(), exceptions = []; let id = 0;
   ws.onmessage = e => {

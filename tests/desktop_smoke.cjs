@@ -5,7 +5,7 @@
 const fs = require('fs'), assert = require('assert');
 const { connect, sleep } = require('./cdp.cjs');
 (async () => {
-  const pageUrl = process.env.PAGE_URL || 'http://127.0.0.1:8124/web/index.html?boot=3os';
+  const pageUrl = process.env.PAGE_URL || 'http://127.0.0.1:' + (process.env.TRI27_HTTP || 8124) + '/web/index.html?boot=3os';
   const b = await connect(), { ev, cdp, until, shot, exceptions } = b;
   const pixels = async (x = 0, y = 0, w = 576, h = 360) => ev(`(()=>{const d=ctx.getImageData(${x},${y},${w},${h}).data;let hash=0,col=new Set();for(let i=0;i<d.length;i+=4){hash=(Math.imul(hash,31)+d[i]+d[i+1]*3+d[i+2]*9)>>>0;col.add(d[i]+d[i+1]*256+d[i+2]*65536);}return {hash,colors:col.size}})()`);
   const rgb = (x, y) => ev(`Array.from(ctx.getImageData(${x},${y},1,1).data).slice(0,3)`);

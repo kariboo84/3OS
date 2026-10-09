@@ -42,10 +42,11 @@ echo "== Présentation PRESENT (wasm, node seul)"
 pl="${TMPDIR:-/tmp}/present.$$"
 node tests/present_snapshot.cjs >"$pl" 2>&1 && echo "  ok  present_snapshot ($(grep -c '^PASS' "$pl") vérifications)" || { cat "$pl"; echo "  ECHEC present_snapshot"; exit 1; }
 if [[ "${1:-}" == "--web" ]]; then
-  echo "== Web (Chrome headless + serveur :8124)"; ./build_web.sh >/dev/null
-  curl -sf http://127.0.0.1:8124/web/ >/dev/null || { echo "  serveur :8124 absent (python -m http.server 8124 --directory .)"; exit 1; }
+  HTTP=${TRI27_HTTP:-8124}; CDP=${TRI27_CDP:-9231}
+  echo "== Web (Chrome headless + serveur :$HTTP, CDP :$CDP)"; ./build_web.sh >/dev/null
+  curl -sf http://127.0.0.1:$HTTP/web/ >/dev/null || { echo "  serveur :$HTTP absent (python -m http.server $HTTP --directory .)"; exit 1; }
   CH="/c/Program Files/Google/Chrome/Application/chrome.exe"
-  prof=$(mktemp -d); "$CH" --headless=new --disable-gpu --no-first-run --remote-debugging-port=9231 --user-data-dir="$prof" about:blank >/dev/null 2>&1 &
+  prof=$(mktemp -d); "$CH" --headless=new --disable-gpu --no-first-run --remote-debugging-port=$CDP --user-data-dir="$prof" about:blank >/dev/null 2>&1 &
   pid=$!; sleep 3
   fails=0
   for t in web_smoke desktop_smoke mouse_refresh hd_web; do

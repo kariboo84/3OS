@@ -4,7 +4,7 @@ const fs = require('fs'), path = require('path');
 const OUT = process.env.SHOT_DIR || require('os').tmpdir();
 (async () => {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const t = (await (await fetch('http://127.0.0.1:9231/json')).json()).find(t => t.type === 'page');
+const t = (await (await fetch('http://127.0.0.1:' + (process.env.TRI27_CDP || 9231) + '/json')).json()).find(t => t.type === 'page');
 const ws = new WebSocket(t.webSocketDebuggerUrl);
 const pend = new Map(); let id = 0; const exc = [];
 ws.onmessage = e => { const m = JSON.parse(e.data);
@@ -15,7 +15,7 @@ const cdp = (method, params = {}) => new Promise((res, rej) => { const n = ++id;
 const ev = async x => { const r = await cdp('Runtime.evaluate', { expression: x, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) throw new Error(r.exceptionDetails.text); return r.result.value; };
 await cdp('Runtime.enable'); await cdp('Page.enable');
 const boot = async () => {
-  await cdp('Page.navigate', { url: 'http://127.0.0.1:8124/web/' }); await sleep(3000);
+  await cdp('Page.navigate', { url: 'http://127.0.0.1:' + (process.env.TRI27_HTTP || 8124) + '/web/' }); await sleep(3000);
   await ev(`(async()=>{const s=document.getElementById('examples'); s.value='../os/kernel3.tas'; await s.onchange({target:s}); document.getElementById('btnRun').click(); return 1})()`);
   await sleep(4000);
 };

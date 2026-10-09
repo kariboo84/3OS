@@ -344,7 +344,7 @@ $('examples').onchange = async (e) => {
 async function init() {
   srcEl.value = DEMO;
   loadExampleList();
-  const desktopBoot = document.body.dataset.boot === '3os';
+  const desktopBoot = new URLSearchParams(location.search).get('boot') === '3os';
   try {
     if (desktopBoot) {
       const kernel = await fetch('../os/kernel3.tas', { cache: 'no-store' });

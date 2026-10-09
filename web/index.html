@@ -2,10 +2,19 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:,">
 <title>TRI-27 — VM ternaire (WASM)</title>
+<script>
+  // Mode bureau direct : index.html?boot=3os (3OS démarre seul, sans banc d'essai). Posé avant le rendu.
+  if (new URLSearchParams(location.search).get('boot') === '3os') {
+    document.documentElement.classList.add('desk');
+    document.title = '3OS — bureau ternaire';
+  }
+</script>
 <style>
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin: 0; background: #111316; color: #d6d9de; font: 14px system-ui, sans-serif; }
   header { padding: 8px 14px; background: #181b20; border-bottom: 1px solid #2a2f37; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   header h1 { font-size: 15px; margin: 0 12px 0 0; color: #9ecbff; }
@@ -28,32 +37,70 @@
   #status.err { color: #ff7b72; }
   #status.ok { color: #7ee787; }
   .hint { color: #8b949e; font-size: 12px; }
+  details { margin-top: 0; }
+  summary { cursor: pointer; color: #8b949e; }
+
+  /* ---- mode bureau direct (html.desk) : présentation du bureau direct ---- */
+  html.desk body { background: #444b4f; color: #ededeb; font: 13px system-ui, sans-serif; }
+  html.desk header { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 9px 16px; background: #d4d5d4; color: #222; border-bottom: 1px solid #202323; }
+  html.desk header strong { letter-spacing: .08em; }
+  html.desk header span { color: #444; }
+  html.desk header a { color: #303c47; margin-left: auto; }
+  html.desk button { font: inherit; color: #222; background: #eee; border: 1px solid #555; border-radius: 0; box-shadow: inset 1px 1px #fff, inset -1px -1px #999; padding: 4px 12px; cursor: pointer; }
+  html.desk button:hover { background: #fff; }
+  html.desk button:active { box-shadow: inset 1px 1px #999; }
+  html.desk main { display: block; padding: 20px 16px 12px; }
+  html.desk #right { display: block; }
+  html.desk #screen { display: block; width: min(100%, 1152px) !important; height: auto !important; cursor: none; border: 1px solid #15191b; box-shadow: 3px 3px #252b2e; }
+  html.desk #screen:focus { border-color: #d4d5d4; }
+  html.desk footer { max-width: 1152px; display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 0; color: #d6dadb; font-size: 12px; }
+  html.desk #stats { color: #afb8ba; font-size: 12px; }
+  html.desk details { max-width: 1152px; margin-top: 8px; }
+  html.desk summary { color: #afb8ba; }
+  html.desk #console { width: 100%; height: 160px; background: #1c2225; color: #e7ebed; padding: 10px; border: 0; border-radius: 0; }
+  html.desk #console:focus { outline: 1px solid #ccd3d5; border: 0; }
+  html.desk #console:focus::after { content: '▌'; color: #a9d8b6; }
+  html.desk #status.err { color: #a71919; }
+  html.desk .bench { display: none !important; }
+  html:not(.desk) .desk-only { display: none !important; }
+  @media (max-width: 700px) { html.desk main { padding: 10px 6px; } html.desk footer { flex-wrap: wrap; } html.desk #stats { font-size: 10px; } }
 </style>
 </head>
 <body>
 <header>
-  <h1>TRI-27 · VM ternaire</h1>
-  <button id="btnRun" class="primary">Assembler + Lancer</button>
+  <h1 class="bench">TRI-27 · VM ternaire</h1>
+  <strong class="desk-only">3OS</strong><span class="desk-only">TRI-27 · bureau ternaire</span>
+  <button id="btnRun" class="primary bench">Assembler + Lancer</button>
   <button id="btnPause">Pause</button>
   <button id="btnReset">Reset</button>
-      <button id="btnDisk" title="Efface les modifications du disque 3OS gardées par le navigateur">Disque d'origine</button>
-  <label>Exemple <select id="examples"><option value="__demo">Démo intégrée (dégradé TRGB)</option></select></label>
-  <label>Budget/frame <input id="budget" type="number" min="1000" step="100000" value="2000000"></label>
+  <button id="btnDisk" class="bench" title="Efface les modifications du disque 3OS gardées par le navigateur">Disque d'origine</button>
+  <label class="bench">Exemple <select id="examples"><option value="__demo">Démo intégrée (dégradé TRGB)</option></select></label>
+  <label class="bench">Budget/frame <input id="budget" type="number" min="1000" step="100000" value="2000000"></label>
   <span id="status"></span>
+  <a class="desk-only" href="./">Atelier VM</a>
 </header>
 <main>
-  <div id="left">
+  <div id="left" class="bench">
     <textarea id="src" spellcheck="false"></textarea>
     <div class="hint">Clavier : cliquer sur l'écran ou dans la console. Écran → KEY (−7) ; console → caractères CONSOLE_IN (−2) ; souris sur l'écran → −10..−12.</div>
   </div>
   <div id="right">
-    <canvas id="screen" width="320" height="200" tabindex="0"></canvas>
-    <div id="stats">—</div>
-    <div id="termhint">▸ Clique dans la console ci-dessous et tape (ex. help puis Entrée). Le curseur vert clignote quand elle a le focus.</div>
-    <pre id="console" tabindex="0"></pre>
+    <canvas id="screen" width="320" height="200" tabindex="0" aria-label="Écran : souris et clavier"></canvas>
+    <footer>
+      <span class="desk-only">C : couleur / gris · Double-clic ou Entrée : ouvrir · F2 : éditeur</span>
+      <span id="stats">—</span>
+    </footer>
+    <div id="termhint" class="bench">▸ Clique dans la console ci-dessous et tape (ex. help puis Entrée). Le curseur vert clignote quand elle a le focus.</div>
+    <details id="conwrap">
+      <summary>Console du noyau</summary>
+      <p class="desk-only hint">Clique ici pour saisir dans la console. Clique sur le bureau pour son clavier.</p>
+      <pre id="console" tabindex="0"></pre>
+    </details>
   </div>
 </main>
 <script>
+  // Banc d'essai : console ouverte ; bureau direct : console repliée (ouvrable via « Console du noyau »).
+  if (!document.documentElement.classList.contains('desk')) document.getElementById('conwrap').setAttribute('open', '');
   // contourne le cache du navigateur : app.js et tri27.wasm changent souvent
   document.write('<script src="app.js?v=' + Date.now() + '"><\/script>');
 </script>

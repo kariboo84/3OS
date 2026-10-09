@@ -4,7 +4,7 @@ const assert = require('assert');
 const { connect, sleep } = require('./cdp.cjs');
 (async () => {
   const b = await connect(), { ev, cdp } = b;
-  await cdp('Page.navigate', { url: 'http://127.0.0.1:8124/web/desktop.html' });
+  await cdp('Page.navigate', { url: 'http://127.0.0.1:8124/web/index.html?boot=3os' });
   for (let i = 0; i < 100; i++) { if (await ev(`typeof W!=='undefined'&&W&&W.frames()>=2&&canvas.width===576`)) break; await sleep(100); }
   for (const mode of ['color', 'gray']) {
     if (mode === 'gray') { await ev(`canvas.focus()`); await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key: 'c', windowsVirtualKeyCode: 67 }); await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key: 'c', windowsVirtualKeyCode: 67 }); await sleep(500); }

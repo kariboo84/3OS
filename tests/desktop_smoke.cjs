@@ -1,11 +1,11 @@
-// tests/desktop_smoke.cjs — bureau 3OS (web/desktop.html) dans Chrome : boot auto, souris, clavier,
+// tests/desktop_smoke.cjs — bureau 3OS (web/index.html?boot=3os) dans Chrome : boot auto, souris, clavier,
 // fenêtres, éditeur, persistance du disque. Captures dans SHOT_DIR. Prérequis : cdp.cjs, :8124, CDP :9231.
 // PAGE_URL permet de viser une autre page (défaut : bureau direct). UI_DISK : image de test optionnelle
 // (défaut : l'image servie, os/3os.t3d, via app.js).
 const fs = require('fs'), assert = require('assert');
 const { connect, sleep } = require('./cdp.cjs');
 (async () => {
-  const pageUrl = process.env.PAGE_URL || 'http://127.0.0.1:8124/web/desktop.html';
+  const pageUrl = process.env.PAGE_URL || 'http://127.0.0.1:8124/web/index.html?boot=3os';
   const b = await connect(), { ev, cdp, until, shot, exceptions } = b;
   const pixels = async (x = 0, y = 0, w = 576, h = 360) => ev(`(()=>{const d=ctx.getImageData(${x},${y},${w},${h}).data;let hash=0,col=new Set();for(let i=0;i<d.length;i+=4){hash=(Math.imul(hash,31)+d[i]+d[i+1]*3+d[i+2]*9)>>>0;col.add(d[i]+d[i+1]*256+d[i+2]*65536);}return {hash,colors:col.size}})()`);
   const rgb = (x, y) => ev(`Array.from(ctx.getImageData(${x},${y},1,1).data).slice(0,3)`);
@@ -18,7 +18,7 @@ const { connect, sleep } = require('./cdp.cjs');
 
   await cdp('Page.navigate', { url: pageUrl });
   await until(() => ev(`typeof W!=='undefined' && W && document.querySelector('option[value="../os/kernel3.tas"]')!==null`), 'WASM ready');
-  if (pageUrl.endsWith('desktop.html')) { await until(() => ev('W.frames()>=2&&canvas.width===576'), 'automatic OS boot'); console.log('PASS automatic 3OS boot'); }
+  if (pageUrl.includes('boot=3os')) { await until(() => ev('W.frames()>=2&&canvas.width===576'), 'automatic OS boot'); console.log('PASS automatic 3OS boot'); }
   await ev('localStorage.clear()');
   await ev(`(async()=>{ await diskReady; ${process.env.UI_DISK ? `diskImage=new Int16Array(await (await fetch(${JSON.stringify(process.env.UI_DISK)},{cache:'no-store'})).arrayBuffer());` : ''}
     srcEl.value=await(await fetch('../os/kernel3.tas',{cache:'no-store'})).text(); await assembleAndRun(); return true; })()`);

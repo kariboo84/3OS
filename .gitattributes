@@ -1,0 +1,12 @@
+# Fins de ligne : texte en LF dans le dépôt (les fichiers restent LF sur Windows).
+* text=auto eol=lf
+
+# Binaires explicites : jamais de conversion.
+*.t3d binary
+*.wasm binary
+*.png binary
+*.jpg binary
+*.wav binary
+
+# Code tiers (chibicc) : tel quel, aucune conversion.
+cc/chibicc/** -text

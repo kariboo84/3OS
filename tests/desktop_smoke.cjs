@@ -1,6 +1,7 @@
 // tests/desktop_smoke.cjs — bureau 3OS (web/desktop.html) dans Chrome : boot auto, souris, clavier,
 // fenêtres, éditeur, persistance du disque. Captures dans SHOT_DIR. Prérequis : cdp.cjs, :8124, CDP :9231.
-// PAGE_URL permet de viser une autre page (défaut : bureau direct). UI_DISK : image de test optionnelle.
+// PAGE_URL permet de viser une autre page (défaut : bureau direct). UI_DISK : image de test optionnelle
+// (défaut : l'image servie, os/3os.t3d, via app.js).
 const fs = require('fs'), assert = require('assert');
 const { connect, sleep } = require('./cdp.cjs');
 (async () => {

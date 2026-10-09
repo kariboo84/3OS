@@ -139,7 +139,7 @@ let diskImage = null, diskKey = null;
 // du disque servi (taille + date) : un nouveau disque du serveur remplace l'ancienne copie.
 function b64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
 function unb64(s) { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
-const diskReady = fetch('3os.t3d', { cache: 'no-store' })
+const diskReady = fetch('../os/3os.t3d', { cache: 'no-store' })
   .then(r => r.ok ? r.arrayBuffer().then(b => ({ b, v: (r.headers.get('Last-Modified') || '') + ':' + b.byteLength })) : null)
   .then(res => {
     if (!res || !res.b.byteLength) return;
@@ -153,7 +153,7 @@ const diskReady = fetch('3os.t3d', { cache: 'no-store' })
   })
   .catch(() => {})
   .then(() => {
-    if (!diskImage) appendConsole('[web] disque 3os.t3d introuvable : 3OS ne pourra pas démarrer\n');
+    if (!diskImage) appendConsole('[web] disque os/3os.t3d introuvable : 3OS ne pourra pas démarrer\n');
   });
 function saveDisk() {
   if (!W || !diskKey || !W.disk_take_dirty()) return;
@@ -173,7 +173,7 @@ async function assembleAndRun() {
   const bytes = enc.encode(srcEl.value);
   const p = W.src_alloc(bytes.length);
   mem().set(bytes, p);
-  // disque 3FS (web/3os.t3d) : attaché à chaque lancement, lu par le noyau 3OS
+  // disque 3FS (os/3os.t3d) : attaché à chaque lancement, lu par le noyau 3OS
   if (diskImage) {
     const dp = W.disk_alloc(diskImage.length);
     new Int16Array(W.memory.buffer, dp, diskImage.length).set(diskImage);

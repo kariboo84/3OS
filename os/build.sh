@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Construit 3OS v0.3 : noyau (os/kernel3.tas) + disque (os/3os.t3d, copié dans web/).
+# Construit 3OS : noyau (os/kernel3.tas) + disque (os/3os.t3d, seule image servie au web et au CLI).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 VM=tri27/target/release/tri27
@@ -19,4 +19,3 @@ cc cc/examples/kleene.c -o "$B/kleene.tas"
 $VM mkdisk os/3os.t3d system3="$B/system3.tas" chiffres="$B/chiffres.tas" editeur="$B/editeur.tas" \
   tetris="$B/tetris.tas" ternet="$B/ternet.tas" kleene="$B/kleene.tas" hello="$B/hello.tas" \
   sieve="$B/sieve.tas" crash="$B/crash.tas" lisez-moi=os/LISEZMOI.txt:2187
-cp os/3os.t3d web/3os.t3d

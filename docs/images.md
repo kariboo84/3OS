@@ -87,8 +87,8 @@ un damier. Les fichiers de démonstration sont de vrais PNG/BMP/PPM dans `os/ass
 python3 tests/timage.py
 bash os/build.sh
 python3 tests/timage_io.py
-TRI27_HTTP=8125 TRI27_CDP=9232 node tests/desktop_images.cjs
-TRI27_HTTP=8125 TRI27_CDP=9246 ./check.sh --web
+TRI27_HTTP=8124 TRI27_CDP=9232 node tests/desktop_images.cjs
+TRI27_HTTP=8124 TRI27_CDP=9247 ./check.sh --web
 ```
 
 Le premier test exécute le codec dans la VM : 36 vérifications (types/filtres,

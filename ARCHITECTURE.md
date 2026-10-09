@@ -5,8 +5,8 @@ Les sections techniques décrivent aussi des propositions : leur présence ici n
 
 ## État réel et prochaines étapes
 
-Le code courant du bureau est dans le worktree `3OS-wt/desktop` (branche `feat/desktop-res`).
-La branche principale contient la banque vectorielle, mais pas encore les évolutions du bureau de ce worktree.
+Le bureau et les images sont intégrés dans la branche `master` du dépôt `H:/WORKSPACE/3OS`.
+Le worktree `3OS-wt/desktop` est conservé ; la version principale sert désormais les mêmes fonctionnalités.
 
 | Domaine | État réel | Restant |
 |---|---|---|
@@ -14,7 +14,7 @@ La branche principale contient la banque vectorielle, mais pas encore les évolu
 | RAM | Allocation creuse dynamique, taille configurable | **Pas encore de mémoire virtuelle paginée ni de TLB** : les pages d'allocation hôte ne sont pas la pagination guest |
 | Vecteurs v0.5 | Banque 27 × 27 trytes, VL, intrinsèques C, sauvegarde noyau et TerNet | Référence effective : SPEC, pas toutes les idées du §1 ; gain mesuré TerNet contre TDOT |
 | Graphique | GPU 2D MMIO, framebuffer natif, 576×360 / 720p / 1080p, profondeurs 1/9/27 | Pas de pipeline 3D, shaders, textures filtrées ni accélérateur hôte 3D |
-| Bureau | Platinum/System 7–8, polices AA guest, logo de chargement, Finder, réglages 3FS, fenêtres/raccourcis/plein écran ; parcours navigateur validés | Fusion du worktree ; enrichissements d'applications distincts de l'ISA |
+| Bureau | Platinum/System 7–8, polices AA guest, logo de chargement, Finder, réglages 3FS, fenêtres/raccourcis/plein écran ; parcours navigateur validés | Enrichissements d'applications distincts de l'ISA |
 | Images | Bibliothèque C timage : PNG via LodePNG, BMP et PPM ; fichiers binaires 3FS ; visualiseur 1:1 | JPEG/GIF/WebP non implémentés ; vrais malloc/free et fichiers par plages pour grandes images |
 | Chromium / YouTube | Application 3OS avec composant Chromium hôte déclaré choisie, mais **non implémentée** | Intégration et parcours réel à construire ; pas un navigateur guest autonome |
 | Réels tekum v0.6 | Conception (§2) | Codec logiciel de référence, tests d'arrondi/ulp puis décision ISA |
@@ -24,8 +24,8 @@ La branche principale contient la banque vectorielle, mais pas encore les évolu
 | TNPU v0.9 | Conception (§8) | Noyaux GPU et modèle réel avec égalité CPU ; TerNet n'est pas un LLM |
 | JIT / multicœur / ECC / FPGA | Non implémentés | Étapes indépendantes, avec budgets et preuves avant extension |
 
-**Ordre conseillé pour la machine utilisable** : terminer/fusionner le bureau et les images,
-puis renforcer 3FS + l'allocateur ; ensuite JIT mesuré pour accélérer le logiciel.
+**Ordre conseillé pour la machine utilisable** : renforcer 3FS + l'allocateur ;
+ensuite JIT mesuré pour accélérer le logiciel. Le bureau et les images sont intégrés.
 **Ordre architectural de recherche** : vecteurs livrés → tekum → timing/SPM/DMA → pagination → TNPU.
 Le JIT reste une accélération hôte, pas une évolution du matériel ternaire ; le FPGA suit sa propre piste.
 Sources et plan détaillé ci-dessous (§12).

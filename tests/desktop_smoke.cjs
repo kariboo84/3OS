@@ -12,7 +12,7 @@ const { connect, sleep } = require('./cdp.cjs');
   const size = () => ev("canvas.width+'x'+canvas.height");
   const rect = () => ev(`(()=>{const r=canvas.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height,cw:canvas.width,ch:canvas.height}})()`);
   const pointer = async (type, fx, fy, buttons = 0) => { const r = await rect(); const x = r.x + fx * r.w / r.cw, y = r.y + fy * r.h / r.ch; await cdp('Input.dispatchMouseEvent', { type, x, y, button: type === 'mouseMoved' ? 'none' : 'left', buttons, clickCount: 1 }); };
-  const click = async (x, y) => { await pointer('mouseMoved', x, y); await sleep(70); await pointer('mousePressed', x, y, 1); await sleep(110); await pointer('mouseReleased', x, y); await sleep(200); };
+  const click = async (x, y, settle = 200) => { await pointer('mouseMoved', x, y); await sleep(70); await pointer('mousePressed', x, y, 1); await sleep(110); await pointer('mouseReleased', x, y); await sleep(settle); };
   const key = async (k, code) => { await ev('canvas.focus()'); await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key: k, windowsVirtualKeyCode: code }); await sleep(100); await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key: k, windowsVirtualKeyCode: code }); await sleep(180); };
   const drag = async (x, y, tx, ty) => { await pointer('mouseMoved', x, y); await pointer('mousePressed', x, y, 1); await sleep(120); await pointer('mouseMoved', tx, ty, 1); await sleep(180); await pointer('mouseReleased', tx, ty); await sleep(180); };
 
@@ -34,8 +34,9 @@ const { connect, sleep } = require('./cdp.cjs');
   await until(async () => await size() === '320x200', 'Tetris launch'); await shot('desktop-tetris');
   await key('ArrowLeft', 37); await key(' ', 32); await key('Escape', 27);
   await until(async () => await size() === '576x360', 'return from Tetris'); assert((await pixels()).colors >= 8); console.log('PASS select + Enter -> Tetris -> desktop');
-  // Double click another real application and test kernel isolation.
-  await click(110, 220); await click(110, 220); await until(() => ev(`conEl.textContent.includes('crash tue : faute memoire')`), 'crash killed'); assert.equal(await size(), '576x360'); console.log('PASS double click + process isolation');
+  // Double-clic réel : garder une marge sous les 450 ms malgré les allers-retours CDP.
+  // La pause courte suit uniquement le premier clic ; elle ne modifie pas le bureau.
+  await click(110, 220, 80); await click(110, 220); await until(() => ev(`conEl.textContent.includes('crash tue : faute memoire')`), 'crash killed'); assert.equal(await size(), '576x360'); console.log('PASS double click + process isolation');
   const beforeMove=await pixels(24,38,20,258); // Bande de bord, hors du curseur : vraie géométrie, pas deux couleurs identiques.
   await drag(170,47,200,70); assert.notEqual((await pixels(24,38,20,258)).hash,beforeMove.hash,'window moved');
   const beforeResize=await pixels(338,260,6,30);

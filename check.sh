@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 VM=tri27/target/release/tri27
-echo "== VM";        (cd tri27 && cargo build --release -q && cargo test --release -q)
+echo "== VM";        (cd tri27 && cargo build --release -q && cargo test -q --target-dir target/test)   # tests hors release : PDB/cdylib et panic=abort incompatibles sous Windows
 echo "== C : tests chibicc"; (cd cc && python run_tests.py | tail -1)
 echo "== C : banc d'instructions"; python cc/perf.py
 echo "== OS : noyau + disque"; bash os/build.sh >/dev/null 2>&1

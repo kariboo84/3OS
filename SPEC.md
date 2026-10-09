@@ -14,6 +14,9 @@ débordement modulo 3²⁷, décalages ×3ᵏ, logique trit-à-trit, comparaison
 - Arithmétique **modulo 3²⁷**, résultat ramené dans la plage équilibrée.
 - Mémoire **adressable au tryte**. Un mot à l'adresse `a` = trytes `a, a+1, a+2` (petit-boutiste : `a` = trits 0–8).
 - **Adresses ≥ 0 : RAM.** **Adresses < 0 : périphériques (MMIO).**
+- **Taille de RAM variable**, de 2 M trytes à la moitié positive de l'espace d'adressage (3 812 798 742 493 trytes ≈ 6,8 To
+  d'information). La VM la fixe au lancement (`--ram`, défaut 3²⁰ ≈ 6,2 Go en natif, 3¹⁹ ≈ 2,1 Go dans le navigateur) ;
+  le programme la découvre par `sp` au démarrage. Une tryte jamais écrite vaut 0 ; l'hôte n'alloue que les pages écrites.
 
 ## 2. Registres
 

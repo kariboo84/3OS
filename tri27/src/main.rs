@@ -2,12 +2,12 @@ use std::io::Write;
 use std::time::Instant;
 use tri27::{asm, isa, trit, vm::*};
 
-const RAM: usize = 14_348_907; // 3^15 trytes
+const RAM: usize = 3_486_784_401; // 3^20 trytes ≈ 6,2 Go d'information (mémoire hôte allouée à la demande)
 
 fn usage() -> ! {
     eprintln!(
         "tri27 — VM ternaire équilibrée\n\
-         usage:\n  tri27 run <prog.tas> [--max N] [--ppm DIR] [--stats] [--trace FICHIER]\n  \
+         usage:\n  tri27 run <prog.tas> [--max N] [--ppm DIR] [--stats] [--trace FICHIER] [--ram N]\n  \
          tri27 asm <prog.tas>          listing désassemblé\n  \
          tri27 bench                   mesure instructions/s"
     );
@@ -136,6 +136,29 @@ fn mkdisk(out: &str, items: &[String]) {
     eprintln!("{out} : {} secteurs", disk.len() / SECTOR);
 }
 
+/// Taille de RAM en trytes : nombre, suffixe k/M/G/T (décimal), ou puissance de 3 (`3^20`).
+/// Plafond : la moitié positive de l'espace d'adressage 27 trits.
+fn parse_ram(s: &str) -> usize {
+    const MAX: u64 = 3_812_798_742_493;
+    let v: u64 = if let Some(e) = s.strip_prefix("3^") {
+        3u64.checked_pow(e.parse().unwrap_or_else(|_| usage())).unwrap_or(u64::MAX)
+    } else {
+        let (num, mul) = match s.chars().last() {
+            Some('k') | Some('K') => (&s[..s.len() - 1], 1e3),
+            Some('M') => (&s[..s.len() - 1], 1e6),
+            Some('G') => (&s[..s.len() - 1], 1e9),
+            Some('T') => (&s[..s.len() - 1], 1e12),
+            _ => (s, 1.0),
+        };
+        (num.parse::<f64>().unwrap_or_else(|_| usage()) * mul) as u64
+    };
+    if v < 2_000_000 || v > MAX {
+        eprintln!("--ram : {v} trytes hors limites (2 M … {MAX})");
+        std::process::exit(2)
+    }
+    v as usize
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
@@ -153,6 +176,7 @@ fn main() {
             let mut disk: Option<String> = None;
             let mut realtime = false;
             let mut trace: Option<String> = None;
+            let mut ram = RAM;
             let mut audio: Vec<f32> = Vec::new();
             let mut i = 3;
             while i < args.len() {
@@ -172,6 +196,10 @@ fn main() {
                         i += 1;
                     }
                     "--realtime" => realtime = true,
+                    "--ram" => {
+                        ram = parse_ram(&args[i + 1]);
+                        i += 1
+                    }
                     "--trace" => {
                         trace = Some(args[i + 1].clone());
                         i += 1
@@ -193,7 +221,7 @@ fn main() {
                 i += 1;
             }
             let img = load(path);
-            let mut vm = Vm::new(RAM);
+            let mut vm = Vm::new(ram);
             vm.load(0, &img.trytes);
             vm.reset_cpu(img.entry);
             if let Some(d) = &disk {
@@ -291,6 +319,12 @@ fn main() {
                     vm.cycles as f64 / dt / 1e6,
                     vm.exit_code,
                     vm.frames
+                );
+                eprintln!(
+                    "[tri27] RAM {} trytes (≈ {:.2} Go d'information), mémoire hôte allouée : {:.1} Mo",
+                    vm.mem.len(),
+                    vm.mem.len() as f64 * 9.0 * 3f64.log2() / 8.0 / 1e9,
+                    vm.mem.host_bytes() as f64 / 1e6
                 );
             }
             std::process::exit(if vm.error.is_some() { 1 } else { (vm.exit_code as i32).clamp(0, 255) });

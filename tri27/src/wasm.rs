@@ -11,8 +11,8 @@ use crate::asm;
 use crate::vm::{Vm, FB_H, FB_W, TRIT_H, TRIT_W};
 use std::ptr::addr_of_mut;
 
-/// 3^14 trytes de RAM.
-pub const WEB_RAM: usize = 4_782_969;
+/// 3^19 trytes de RAM (≈ 2,1 Go d'information) ; la mémoire WebAssembly ne grandit qu'avec les pages écrites.
+pub const WEB_RAM: usize = 1_162_261_467;
 
 struct State {
     vm: Vm,

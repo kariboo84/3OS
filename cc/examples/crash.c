@@ -3,7 +3,8 @@
 #include <stdio.h>
 int main(void) {
   printf("crash : j'ecris en dehors de ma memoire...\n");
-  long *p = (long *)900000;   /* au-delà de ULIMIT (3^12) */
+  /* plus haute adresse positive (27 trits) : toujours au-delà de ULIMIT, quelle que soit la RAM */
+  long *p = (long *)3812798742491;
   *p = 42;
   printf("crash : ceci ne doit jamais s'afficher\n");
   return 0;

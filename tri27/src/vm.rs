@@ -1,6 +1,7 @@
 //! Machine virtuelle TRI-27.
 
-use crate::isa::{decode, op, Inst};
+use crate::isa::{decode, op};
+use crate::mem::{ICache, Ram};
 use crate::trit::*;
 use std::collections::VecDeque;
 
@@ -75,8 +76,8 @@ pub mod cause {
 pub struct Vm {
     pub regs: [i64; 27],
     pub pc: i64,
-    pub mem: Vec<i16>,
-    cache: Vec<Inst>,
+    pub mem: Ram,
+    cache: ICache,
     pub csr: [i64; csr::COUNT],
     pub mode: i64,
     pub halted: bool,
@@ -132,8 +133,8 @@ impl Vm {
         let mut vm = Vm {
             regs: [0; 27],
             pc: 0,
-            mem: vec![0; ram],
-            cache: vec![Inst::UNDECODED; ram / 3],
+            mem: Ram::new(ram),
+            cache: ICache::new(ram / 3),
             csr: [0; csr::COUNT],
             mode: -1,
             halted: false,
@@ -167,7 +168,7 @@ impl Vm {
             #[cfg(feature = "prof")]
             prof_user: 0,
             #[cfg(feature = "prof")]
-            prof_pc: vec![0; ram / 3 + 1],
+            prof_pc: vec![0; (ram / 3 + 1).min(1 << 24)], // profil limité aux 2^24 premiers mots (grande RAM)
             #[cfg(feature = "prof")]
             prof_traps: [0; 16],
             present_w: 0,
@@ -182,10 +183,8 @@ impl Vm {
     /// Charge des trytes en RAM et invalide le cache.
     pub fn load(&mut self, addr: i64, trytes: &[i16]) {
         let a = addr as usize;
-        self.mem[a..a + trytes.len()].copy_from_slice(trytes);
-        for c in self.cache.iter_mut() {
-            *c = Inst::UNDECODED;
-        }
+        self.mem.write_slice(a, trytes);
+        self.cache.clear();
     }
 
     pub fn reset_cpu(&mut self, entry: i64) {
@@ -231,18 +230,15 @@ impl Vm {
         let (d, m) = (s as usize * SECTOR, a as usize);
         match cmd {
             1 if s < nsec => {
-                self.mem[m..m + SECTOR].copy_from_slice(&self.disk[d..d + SECTOR]);
-                let end = ((m + SECTOR + 2) / 3).min(self.cache.len());
-                for c in &mut self.cache[m / 3..end] {
-                    *c = Inst::UNDECODED;
-                }
+                self.mem.write_slice(m, &self.disk[d..d + SECTOR]);
+                self.cache.invalidate_range(m / 3, (m + SECTOR + 2) / 3);
                 self.disk_status = 0;
             }
             2 => {
                 if self.disk.len() < d + SECTOR {
                     self.disk.resize(d + SECTOR, 0);
                 }
-                self.disk[d..d + SECTOR].copy_from_slice(&self.mem[m..m + SECTOR]);
+                self.mem.read_slice(m, &mut self.disk[d..d + SECTOR]);
                 self.disk_dirty = true;
                 self.disk_status = 0;
             }
@@ -336,10 +332,8 @@ impl Vm {
     #[inline(always)]
     fn ld_t(&mut self, a: i64) -> Result<i64, i64> {
         if a >= 0 {
-            match self.mem.get(a as usize) {
-                Some(&t) => Ok(t as i64),
-                None => Err(a),
-            }
+            let u = a as usize;
+            if u < self.mem.len() { Ok(self.mem.get(u) as i64) } else { Err(a) }
         } else {
             Ok(self.mmio_read(a))
         }
@@ -350,8 +344,8 @@ impl Vm {
         if a >= 0 {
             let u = a as usize;
             if u + 2 < self.mem.len() {
-                let m = &self.mem;
-                Ok(m[u] as i64 + m[u + 1] as i64 * T9 + m[u + 2] as i64 * T9 * T9)
+                let (t0, t1, t2) = self.mem.get3(u);
+                Ok(t0 as i64 + t1 as i64 * T9 + t2 as i64 * T9 * T9)
             } else {
                 Err(a)
             }
@@ -365,8 +359,8 @@ impl Vm {
         if a >= 0 {
             let u = a as usize;
             if u < self.mem.len() {
-                self.mem[u] = wrap9(v) as i16;
-                self.cache[u / 3] = Inst::UNDECODED;
+                self.mem.set(u, wrap9(v) as i16);
+                self.cache.invalidate(u / 3);
                 Ok(())
             } else {
                 Err(a)
@@ -386,11 +380,11 @@ impl Vm {
                 let r = (v - t0) / T9;
                 let t1 = bal_mod(r, T9);
                 let t2 = (r - t1) / T9;
-                self.mem[u] = t0 as i16;
-                self.mem[u + 1] = t1 as i16;
-                self.mem[u + 2] = t2 as i16;
-                self.cache[u / 3] = Inst::UNDECODED;
-                self.cache[(u + 2) / 3] = Inst::UNDECODED;
+                self.mem.set(u, t0 as i16);
+                self.mem.set(u + 1, t1 as i16);
+                self.mem.set(u + 2, t2 as i16);
+                self.cache.invalidate(u / 3);
+                self.cache.invalidate((u + 2) / 3);
                 Ok(())
             } else {
                 Err(a)
@@ -406,7 +400,8 @@ impl Vm {
         if a < 0 || u + 2 >= self.mem.len() {
             return 0;
         }
-        self.mem[u] as i64 + self.mem[u + 1] as i64 * T9 + self.mem[u + 2] as i64 * T9 * T9
+        let (t0, t1, t2) = self.mem.get3(u);
+        t0 as i64 + t1 as i64 * T9 + t2 as i64 * T9 * T9
     }
 
     // ---------------- pièges ----------------
@@ -577,17 +572,17 @@ impl Vm {
             return;
         }
         let ci = (ppc / 3) as usize;
-        let mut i = self.cache[ci];
+        let mut i = *self.cache.get(ci);
         if i.op == op::UNDECODED {
             let w = self.peek_word(ppc);
             i = decode(w);
-            self.cache[ci] = i;
+            *self.cache.get(ci) = i;
         }
         self.cycles += 1;
         #[cfg(feature = "prof")]
         {
             self.prof_op[i.op as usize] += 1;
-            self.prof_pc[ci] += 1;
+            if let Some(x) = self.prof_pc.get_mut(ci) { *x += 1; }
             if user { self.prof_user += 1; }
         }
         let mut next = pc + 3;
@@ -807,7 +802,7 @@ impl Vm {
             for y in 0..h {
                 for tx in 0..per {
                     let a = base + (y * per + tx) as i64;
-                    let mut t = if inmem(a) { self.mem[a as usize] as i64 } else { 0 };
+                    let mut t = if inmem(a) { self.mem.get(a as usize) as i64 } else { 0 };
                     for k in 0..9 {
                         let b = bal_mod(t, 3);
                         t = (t - b) / 3;
@@ -825,7 +820,7 @@ impl Vm {
         let lut = |c: i64| ((c + 13) * 255 / 26) as u8;
         for p in 0..w * h {
             let a = base + p as i64;
-            let t = if inmem(a) { self.mem[a as usize] as i64 } else { 0 };
+            let t = if inmem(a) { self.mem.get(a as usize) as i64 } else { 0 };
             let b = bal_mod(t, 27);
             let r1 = (t - b) / 27;
             let g = bal_mod(r1, 27);

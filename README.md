@@ -27,6 +27,7 @@ python -m http.server 8124              # puis http://127.0.0.1:8124/web/ → «
 ```
 
 En ligne de commande : `tri27/target/release/tri27 run os/kernel3.tas --disk os/3os.t3d`.
+RAM : `--ram 2.4G` (trytes, suffixes k/M/G/T ou `3^N`) ; défaut 3²⁰ trytes ≈ 6,2 Go, allouée à la demande. Le noyau partage la RAM détectée entre ses 24 emplacements de processus.
 Journal d'exécution : `--trace FICHIER` écrit une ligne par instruction retirée
 (`n K|U pc mot désassemblage | registres modifiés [adresse]t|w=valeur`, pièges et interruptions),
 format stable prévu pour comparer la VM à un futur processeur FPGA instruction par instruction. Sans `--trace`, aucun coût.

@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <tri27io.h>
 
-#define SLOT 531441L          /* 3^12 trytes par processus */
+#define SLOT_MIN 531441L      /* 3^12 trytes : taille minimale d'un emplacement de processus */
 #define KERNEL_END 1062882L   /* 2 * 3^12 : noyau + pile noyau */
 #define NPROC 24
 #define QUANTUM 60000
@@ -40,6 +40,7 @@ struct proc procs[NPROC];
 struct proc *cur;
 extern long ram_size;
 static long nslots, fg = -1;
+static long SLOT = SLOT_MIN;   /* fixé au démarrage selon la RAM détectée */
 static char dir[SECT];
 
 long csr_cause(void);
@@ -338,10 +339,14 @@ static void boot_init(void) {
 }
 
 int kmain(void) {
+  /* RAM dynamique : la RAM libre est partagée entre NPROC emplacements (multiples d'un secteur),
+     jamais moins de 3^12 trytes chacun. */
+  SLOT = (ram_size - KERNEL_END) / NPROC / SECT * SECT;
+  if (SLOT < SLOT_MIN) SLOT = SLOT_MIN;
   nslots = (ram_size - KERNEL_END) / SLOT;
   if (nslots > NPROC) nslots = NPROC;
   printf("3OS v0.4 - noyau ternaire TRI-27\n");
-  printf("RAM %ld trytes, %ld emplacements de processus\n", ram_size, nslots);
+  printf("RAM %ld trytes, %ld emplacements de processus de %ld trytes\n", ram_size, nslots, SLOT);
   if (DISK_COUNT < 1) { printf("[3OS] pas de disque\n"); exit(1); }
   disk_read(0, (long)dir);
   long n = dir_count();

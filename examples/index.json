@@ -12,6 +12,12 @@
   "animated": true
  },
  {
+  "file": "hd.tas",
+  "title": "Mode HD 1920x1080 en couleur profonde (1 mot/pixel, 19 683 niveaux par canal)",
+  "framebuffer": true,
+  "animated": true
+ },
+ {
   "file": "../os/kernel.tas",
   "title": "3OS v0.1 — noyau, ordonnanceur préemptif, shell (tape help)",
   "framebuffer": true,
@@ -48,4 +54,4 @@
   "framebuffer": true,
   "animated": true
  }
-]
+]

@@ -26,6 +26,21 @@ fn load(path: &str) -> asm::Image {
 }
 
 fn save_ppm(vm: &Vm, path: &std::path::Path) {
+    // mode 3 : capture 16 bits par canal (PPM maxval 65535, grand-boutiste) — la profondeur réelle du mode
+    if vm.vmode == 3 || !vm.present_hi.is_empty() {
+        let hi = if vm.present_hi.is_empty() {
+            let mut h = Vec::new();
+            vm.render_hi(&mut h);
+            (vm.hd_w, vm.hd_h, h)
+        } else {
+            (vm.present_w, vm.present_h, vm.present_hi.clone())
+        };
+        let mut f = std::io::BufWriter::new(std::fs::File::create(path).unwrap());
+        write!(f, "P6\n{} {}\n65535\n", hi.0, hi.1).unwrap();
+        let bytes: Vec<u8> = hi.2.iter().flat_map(|v| v.to_be_bytes()).collect();
+        f.write_all(&bytes).unwrap();
+        return;
+    }
     // capture fiable : photographier le framebuffer tel qu'il était au moment du présent
     let (fb_w, fb_h, rgba) = if vm.present_rgba.is_empty() {
         let (w, h) = vm.fb_dims();

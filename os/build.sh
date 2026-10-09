@@ -16,6 +16,7 @@ cc cc/examples/chiffres.c cc/lib/tgfx.c -Icc/examples -o "$B/chiffres.tas"
 cc cc/examples/editeur.c cc/lib/tgfx.c cc/lib/sys.tas -o "$B/editeur.tas"
 cc cc/examples/ternet.c -Icc/examples -o "$B/ternet.tas"
 cc cc/examples/kleene.c -o "$B/kleene.tas"
+cc cc/examples/hd.c -o "$B/hd.tas" && cp "$B/hd.tas" examples/hd.tas
 $VM mkdisk os/3os.t3d system3="$B/system3.tas" chiffres="$B/chiffres.tas" editeur="$B/editeur.tas" \
   tetris="$B/tetris.tas" ternet="$B/ternet.tas" kleene="$B/kleene.tas" hello="$B/hello.tas" \
-  sieve="$B/sieve.tas" crash="$B/crash.tas" lisez-moi=os/LISEZMOI.txt:2187
+  sieve="$B/sieve.tas" crash="$B/crash.tas" lisez-moi=os/LISEZMOI.txt:2187 hd="$B/hd.tas"

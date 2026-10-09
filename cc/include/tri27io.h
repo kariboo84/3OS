@@ -16,7 +16,11 @@
  * À appeler dans toute boucle d'attente au lieu de tourner à vide. */
 void wfi(void);
 
-#define VMODE       TRI27_MMIO(-9)   /* 0 = TRGB 320x200, 1 = TRIT 576x360 (1 trit/pixel), 2 = TRGB 576x360 */
+#define VMODE       TRI27_MMIO(-9)   /* 0 = TRGB 320x200, 1 = TRIT 576x360 (1 trit/pixel), 2 = TRGB 576x360, 3 = HD 1 mot/pixel */
+#define FB_WIDTH    TRI27_MMIO(-14)  /* mode 3 : largeur (16..3840, défaut 1920) */
+#define FB_HEIGHT   TRI27_MMIO(-15)  /* mode 3 : hauteur (16..2160, défaut 1080) */
+/* Mode 3 : pixel = 1 mot = 3 trytes (B, V, R), chaque canal -9841..+9841 (19 683 niveaux). */
+#define HD_RGB(r, g, b) ((long)(b) + (long)(g) * 19683L + (long)(r) * 387420489L)
 #define MOUSE_X     TRI27_MMIO(-10)
 #define MOUSE_Y     TRI27_MMIO(-11)
 #define MOUSE_BTN   TRI27_MMIO(-12)  /* gauche + 3*droit (chacun 0/1) */

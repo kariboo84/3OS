@@ -26,8 +26,9 @@ async function connect() {
   // capture de l'élément #screen (ou du canvas donné) dans SHOT_DIR/<name>.png
   const shot = async (name, sel = 'screen') => {
     await sleep(150);
-    const r = await ev(`(()=>{const r=document.getElementById('${sel}').getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height}})()`);
-    const s = await cdp('Page.captureScreenshot', { format: 'png', clip: { x: r.x, y: r.y, width: r.w, height: r.h, scale: 1 } });
+    const r = await ev(`(()=>{const r=document.getElementById('${sel}').getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height,sx:scrollX,sy:scrollY}})()`);
+    const scrollX = r.sx, scrollY = r.sy;
+    const s = await cdp('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true, clip: { x: r.x + scrollX, y: r.y + scrollY, width: r.w, height: r.h, scale: 1 } });
     fs.writeFileSync(path.join(shotDir, name + '.png'), Buffer.from(s.data, 'base64'));
     return path.join(shotDir, name + '.png');
   };

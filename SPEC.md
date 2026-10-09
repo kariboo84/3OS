@@ -141,11 +141,13 @@ Si TVEC=0 : ECALL est servi par l'hôte (0 exit(a0), 1 putc(a0), 2 print_int(a0)
 | −6 | FB_PRESENT | écriture : présenter l'image |
 | −7 | KEY | lecture : événement clavier suivant (+code = appui, −code = relâche, 0 = rien) |
 | −8 | TIME_MS | lecture : millisecondes depuis le démarrage |
-| −9 | VMODE | lecture/écriture : mode vidéo, 0 = TRGB 320×200 (défaut), 1 = TRIT 576×360, 2 = TRGB 576×360 |
+| −9 | VMODE | lecture/écriture : mode vidéo, 0 = TRGB 320×200 (défaut), 1 = TRIT 576×360, 2 = TRGB 576×360, **3 = HD, 1 mot par pixel** |
 | −10 | MOUSE_X | lecture : x souris, pixels du mode courant, borné à 0…largeur−1 |
 | −11 | MOUSE_Y | lecture : y souris, borné à 0…hauteur−1 |
 | −12 | MOUSE_BTN | lecture : trit 0 = bouton gauche, trit 1 = bouton droit (chacun 0/1) ; valeur = gauche + 3·droit |
 | −13 | TEXT_IN | 1 = la page envoie aussi les caractères CONSOLE_IN quand l'écran a le focus ; le noyau le remet à 0 à chaque changement de premier plan |
+| −14 | FB_WIDTH | lecture/écriture : largeur du mode 3 (16…3840, défaut 1920) |
+| −15 | FB_HEIGHT | lecture/écriture : hauteur du mode 3 (16…2160, défaut 1080) |
 | −20 | DISK_SECTOR | numéro de secteur |
 | −21 | DISK_ADDR | adresse RAM du transfert |
 | −22 | DISK_CMD | 1 = lire secteur→RAM, 2 = écrire RAM→secteur (synchrone) |
@@ -161,6 +163,10 @@ Framebuffer : 320×200 trytes, ligne par ligne. Couleur **TRGB** : un tryte = 3 
 = 23 040 trytes. Le pixel x d'une ligne est le trit (x mod 9) du tryte (x div 9) ; trit 0 = pixel le plus à gauche.
 Trit −1 = noir (0,0,0), 0 = gris (170,170,170), +1 = blanc (255,255,255). Tryte tout −1 = −9841, tout +1 = +9841.
 **Mode 2** (VMODE = 2) : TRGB 576×360, 1 tryte par pixel (codage TRGB du mode 0), 576 trytes par ligne × 360 = 207 360 trytes.
+**Mode 3 (HD)** (VMODE = 3) : FB_WIDTH × FB_HEIGHT pixels, **1 mot par pixel** = 3 trytes :
+tryte 0 = bleu, 1 = vert, 2 = rouge, chacune −9 841…+9 841 (**19 683 niveaux par canal**, ≈ 14,3 bits : au-delà des
+8 bits des « vraies couleurs »). Pixel (x, y) à `FB_ADDR + 3·(y·FB_WIDTH + x)` ; 1920×1080 = 6 220 800 trytes.
+L'affichage navigateur est en 8 bits par canal ; les captures `--ppm` du mode 3 sont en 16 bits par canal.
 Changer VMODE rebornes la souris aux dimensions du nouveau mode.
 
 Souris : l'hôte fixe la position (pixels du mode courant) et l'état des boutons ; la page web convertit les

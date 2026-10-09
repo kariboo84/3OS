@@ -71,8 +71,10 @@ let focusDone = false;
 function fitCanvas(w, h) {
   if (canvas.width === w && canvas.height === h) return;
   canvas.width = w; canvas.height = h;
-  const k = w === 576 ? 2 : 3;
-  canvas.style.width = (w * k) + 'px'; canvas.style.height = (h * k) + 'px';
+  // 320x200 affiché x3, 576x360 x2, haute définition (mode 3) x1 ramené à la largeur disponible
+  const k = w <= 320 ? 3 : (w <= 640 ? 2 : 1);
+  canvas.style.width = (w * k) + 'px'; canvas.style.height = 'auto';
+  canvas.style.maxWidth = '100%';
   imgData = ctx.createImageData(w, h);
 }
 const enc = new TextEncoder(), dec = new TextDecoder();

@@ -148,6 +148,9 @@ pub extern "C" fn fb_render() -> *const u8 {
     let s = st();
     if !s.vm.present_rgba.is_empty() {
         let n = s.vm.present_rgba.len();
+        if s.rgba.len() < n {
+            s.rgba.resize(n, 0); // mode 3 : jusqu'à 3840×2160
+        }
         s.rgba[..n].copy_from_slice(&s.vm.present_rgba);
     }
     s.vm.frame_ready = false;

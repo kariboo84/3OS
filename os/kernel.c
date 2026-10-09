@@ -31,7 +31,7 @@ struct proc {
   long ioperm;     /* 1 = premier plan : périphériques en accès direct (CSR IOPERM) */
   long state;      /* 0 libre, 1 prêt, 2 attend un enfant */
   long parent;
-  long vmode, fbaddr;
+  long vmode, fbaddr, fbw, fbh;
   char name[16];
 };
 enum { FREE, READY, WAITING };
@@ -103,10 +103,12 @@ static long dir_find(const char *name) {
 static void apply_display(void) {
   if (fg < 0) return;
   struct proc *p = &procs[fg];
+  FB_WIDTH = p->fbw;
+  FB_HEIGHT = p->fbh;
   VMODE = p->vmode;
   long fb = p->fbaddr;
   /* taille du framebuffer selon le mode ; adresse validée dans l'espace du processus */
-  long sz = p->vmode == 1 ? 23040 : (p->vmode == 2 ? 207360 : 64000);
+  long sz = p->vmode == 1 ? 23040 : (p->vmode == 2 ? 207360 : (p->vmode == 3 ? p->fbw * p->fbh * 3 : 64000));
   FB_ADDR = (fb > 0 && uptr(p, fb, sz)) ? p->ubase + fb : 0;
 }
 static void silence(void) {
@@ -119,6 +121,8 @@ static void set_fg(long n) {
   if (fg >= 0 && procs[fg].state != FREE) {
     struct proc *o = &procs[fg];
     o->vmode = VMODE;
+    o->fbw = FB_WIDTH;
+    o->fbh = FB_HEIGHT;
     o->fbaddr = FB_ADDR > 0 ? FB_ADDR - o->ubase : 0;
   }
   silence();
@@ -151,6 +155,8 @@ static struct proc *spawn(const char *name, long parent) {
   p->parent = parent;
   p->vmode = 0;
   p->fbaddr = 0;
+  p->fbw = 1920;
+  p->fbh = 1080;
   p->ioperm = 0;
   for (int k = 0; k < 16; k++) p->name[k] = d[k];
   return p;
@@ -195,6 +201,8 @@ static long dev_read(long a) {
   if (a == -4 || a == -8) return TRI27_MMIO(a);                            /* CYCLES, TIME_MS */
   if (a == -5) return cur->fbaddr;
   if (a == -9) return cur->vmode;
+  if (a == -14) return cur->fbw;
+  if (a == -15) return cur->fbh;
   if (a <= -100 && a >= -202) return TRI27_MMIO(a);                        /* son */
   return 0;
 }
@@ -204,6 +212,8 @@ static void dev_write(long a, long v) {
   if (a == -3) { proc_exit(cur, v); return; }
   if (a == -5) { cur->fbaddr = v; if (f) apply_display(); return; }
   if (a == -9) { cur->vmode = v; if (f) apply_display(); return; }
+  if (a == -14) { cur->fbw = v < 16 ? 16 : (v > 3840 ? 3840 : v); if (f) apply_display(); return; }
+  if (a == -15) { cur->fbh = v < 16 ? 16 : (v > 2160 ? 2160 : v); if (f) apply_display(); return; }
   if (a == -6) { if (f) FB_PRESENT = 0; return; }
   if (a == -13) { if (f) TRI27_MMIO(-13) = v; return; }
   if (a <= -100 && a >= -202) { if (f) TRI27_MMIO(a) = v; return; }

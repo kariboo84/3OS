@@ -28,6 +28,9 @@ pub mod mmio {
     pub const MOUSE_BTN: i64 = -12;
     /// 1 = le programme veut des caractères (saisie de texte) même écran focalisé.
     pub const TEXT_IN: i64 = -13;
+    /// Mode 3 (haute définition) : largeur / hauteur configurées, en pixels.
+    pub const FB_WIDTH: i64 = -14;
+    pub const FB_HEIGHT: i64 = -15;
     pub const DISK_SECTOR: i64 = -20;
     pub const DISK_ADDR: i64 = -21;
     pub const DISK_CMD: i64 = -22;
@@ -43,6 +46,11 @@ pub fn mmio_privileged(a: i64) -> bool {
 }
 pub const TRIT_W: usize = 576;
 pub const TRIT_H: usize = 360;
+/// Mode 3 : 1920×1080 par défaut, jusqu'à 3840×2160.
+pub const HD_W: usize = 1920;
+pub const HD_H: usize = 1080;
+pub const HD_MAX_W: usize = 3840;
+pub const HD_MAX_H: usize = 2160;
 
 pub mod csr {
     pub const MODE: usize = 0;
@@ -89,6 +97,11 @@ pub struct Vm {
     pub keys: VecDeque<i64>,
     pub fb_addr: i64,
     pub vmode: i64,
+    /// Dimensions du mode 3 (1 mot par pixel), réglables par FB_WIDTH / FB_HEIGHT.
+    pub hd_w: usize,
+    pub hd_h: usize,
+    /// Image du dernier FB_PRESENT en mode 3, 16 bits par canal (R, V, B), pour les captures --ppm.
+    pub present_hi: Vec<u16>,
     pub mouse_x: i64,
     pub mouse_y: i64,
     pub mouse_btn: i64,
@@ -146,6 +159,9 @@ impl Vm {
             keys: VecDeque::new(),
             fb_addr: 0,
             vmode: 0,
+            hd_w: HD_W,
+            hd_h: HD_H,
+            present_hi: Vec::new(),
             mouse_x: 0,
             mouse_y: 0,
             mouse_btn: 0,
@@ -213,6 +229,7 @@ impl Vm {
         match self.vmode {
             1 => (TRIT_W / 9 * TRIT_H) as i64,
             2 => (TRIT_W * TRIT_H) as i64,
+            3 => (self.hd_w * self.hd_h * 3) as i64,
             _ => 320 * 200,
         }
     }
@@ -263,6 +280,8 @@ impl Vm {
             mmio::KEY => self.keys.pop_front().unwrap_or(0),
             mmio::TIME_MS => self.time_ms,
             mmio::VMODE => self.vmode,
+            mmio::FB_WIDTH => self.hd_w as i64,
+            mmio::FB_HEIGHT => self.hd_h as i64,
             mmio::MOUSE_X => self.mouse_x,
             mmio::MOUSE_Y => self.mouse_y,
             mmio::MOUSE_BTN => self.mouse_btn,
@@ -304,11 +323,19 @@ impl Vm {
                 }
             }
             mmio::TEXT_IN => self.text_input = v != 0,
+            mmio::FB_WIDTH => {
+                self.hd_w = v.clamp(16, HD_MAX_W as i64) as usize;
+                self.set_mouse(self.mouse_x, self.mouse_y, self.mouse_btn);
+            }
+            mmio::FB_HEIGHT => {
+                self.hd_h = v.clamp(16, HD_MAX_H as i64) as usize;
+                self.set_mouse(self.mouse_x, self.mouse_y, self.mouse_btn);
+            }
             mmio::DISK_SECTOR => self.disk_sector = v,
             mmio::DISK_ADDR => self.disk_addr = v,
             mmio::DISK_CMD => self.disk_cmd(v),
             mmio::VMODE => {
-                self.vmode = if v == 1 || v == 2 { v } else { 0 };
+                self.vmode = if (1..=3).contains(&v) { v } else { 0 };
                 self.set_mouse(self.mouse_x, self.mouse_y, self.mouse_btn);
             }
             mmio::FB_PRESENT => {
@@ -324,6 +351,13 @@ impl Vm {
                 self.present_rgba = tmp;
                 self.present_w = w;
                 self.present_h = h;
+                if self.vmode == 3 {
+                    let mut hi = std::mem::take(&mut self.present_hi);
+                    self.render_hi(&mut hi);
+                    self.present_hi = hi;
+                } else {
+                    self.present_hi.clear();
+                }
             }
             _ => {}
         }
@@ -780,7 +814,11 @@ impl Vm {
 
     /// Dimensions du mode vidéo courant.
     pub fn fb_dims(&self) -> (usize, usize) {
-        if self.vmode >= 1 { (TRIT_W, TRIT_H) } else { (FB_W, FB_H) }
+        match self.vmode {
+            3 => (self.hd_w, self.hd_h),
+            1 | 2 => (TRIT_W, TRIT_H),
+            _ => (FB_W, FB_H),
+        }
     }
 
     /// Fixe la souris (pixels du mode courant, bornés ; btn = gauche + 3·droit).
@@ -817,6 +855,20 @@ impl Vm {
             }
             return;
         }
+        if self.vmode == 3 {
+            // 1 mot par pixel : tryte 0 = B, 1 = V, 2 = R, chacune −9841…+9841 → 0…255
+            let m = |c: i16| (((c as i32 + 9841) * 255 + 9841) / 19682) as u8;
+            for p in 0..w * h {
+                let a = base + 3 * p as i64;
+                let (b, g, r) = if inmem(a + 2) { self.mem.get3(a as usize) } else { (-9841, -9841, -9841) };
+                let o = p * 4;
+                buf[o] = m(r);
+                buf[o + 1] = m(g);
+                buf[o + 2] = m(b);
+                buf[o + 3] = 255;
+            }
+            return;
+        }
         let lut = |c: i64| ((c + 13) * 255 / 26) as u8;
         for p in 0..w * h {
             let a = base + p as i64;
@@ -830,6 +882,21 @@ impl Vm {
             buf[o + 1] = lut(g);
             buf[o + 2] = lut(b);
             buf[o + 3] = 255;
+        }
+    }
+
+    /// Mode 3 en pleine précision : R, V, B sur 16 bits (−9841…+9841 → 0…65535), pour les captures.
+    pub fn render_hi(&self, out: &mut Vec<u16>) {
+        let (w, h) = (self.hd_w, self.hd_h);
+        out.resize(w * h * 3, 0);
+        let base = self.fb_addr;
+        let m = |c: i16| (((c as i64 + 9841) * 65535 + 9841) / 19682) as u16;
+        for p in 0..w * h {
+            let a = base + 3 * p as i64;
+            let (b, g, r) = if base > 0 && a >= 0 && ((a + 2) as usize) < self.mem.len() { self.mem.get3(a as usize) } else { (-9841, -9841, -9841) };
+            out[p * 3] = m(r);
+            out[p * 3 + 1] = m(g);
+            out[p * 3 + 2] = m(b);
         }
     }
 }

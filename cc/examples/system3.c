@@ -129,7 +129,7 @@ static void load_config(void) {
       values[i]=v;
     }
     while(whitespace(b[p]))p++;
-    if(b[p]!=0)valid=0;
+    if(p!=n)valid=0;  /* Rejeter aussi les NUL internes et les suffixes. */
     if(valid) {
       valid=0;
       for(int i=0;i<3;i++)if(values[0]==widths[i]&&values[1]==heights[i]) { display_res=i; valid=1; }

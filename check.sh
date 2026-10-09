@@ -17,6 +17,9 @@ $VM run os/kernel.tas --input 'trits 42\nhalt\n' | grep -q "42 =" && echo "  ok 
 mkdir -p cc/build
 hn=$($VM run examples/hello.tas --stats --trace cc/build/hello.trace 2>&1 | sed -n 's/.*\] \([0-9]*\) instr.*/\1/p')
 [[ -n "$hn" && $(wc -l < cc/build/hello.trace) -eq $hn ]] && tail -1 cc/build/hello.trace | grep -q "HALT exit=0" && echo "  ok  journal --trace ($hn lignes)" || { echo "  ECHEC journal --trace"; exit 1; }
+echo "== Primitives du bureau : neuf formats natifs"
+python cc/tri27cc.py tests/dgfx.c cc/lib/dgfx.c cc/lib/tgfx.c -o cc/build/dgfx-test.tas
+$VM run cc/build/dgfx-test.tas --max 300000000
 echo "== Profondeurs vidéo : captures CLI"; python tests/display_ppm.py
 echo "== Video HD (mode 3, 1 mot/pixel)"
 python cc/tri27cc.py cc/examples/hd.c -o cc/build/hd.tas
@@ -56,7 +59,7 @@ if [[ "${1:-}" == "--web" ]]; then
   prof=$(mktemp -d); "$CH" --headless=new --disable-gpu --no-first-run --remote-debugging-port=$CDP --user-data-dir="$prof" about:blank >/dev/null 2>&1 &
   pid=$!; sleep 3
   fails=0
-  for t in web_smoke desktop_smoke mouse_refresh hd_web; do
+  for t in web_smoke desktop_smoke desktop_display mouse_refresh hd_web; do
     if timeout 300 node tests/$t.cjs </dev/null; then echo "  ok  $t"; else echo "  ÉCHEC $t"; fails=1; break; fi
   done
   kill $pid 2>/dev/null || true

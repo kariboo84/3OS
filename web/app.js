@@ -312,11 +312,25 @@ function sendMouse(e) {
   const y = Math.floor((e.clientY - r.top - (r.height - rh) / 2) * canvas.height / rh);
   const b = e.buttons | 0;
   W.set_mouse(x, y, (b & 1) + 3 * ((b >> 1) & 1));
+  return x >= 0 && y >= 0 && x < canvas.width && y < canvas.height;
 }
 canvas.addEventListener('mousemove', sendMouse);
 canvas.addEventListener('mousedown', sendMouse);
 canvas.addEventListener('mouseup', sendMouse);
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+let wheelRemainder = 0;
+canvas.addEventListener('wheel', (e) => {
+  if (!W || !running || !sendMouse(e)) return;
+  e.preventDefault(); canvas.focus();
+  // WheelEvent : pixels, lignes ou pages. Cumuler les petits deltas du pavé tactile.
+  const unit = e.deltaMode === 1 ? 17 : e.deltaMode === 2 ? canvas.height : 1;
+  wheelRemainder += Math.max(-1080, Math.min(1080, e.deltaY * unit));
+  const steps = Math.trunc(wheelRemainder / 40);
+  if (steps) {
+    wheelRemainder -= steps * 40;
+    W.set_wheel(Math.max(-27, Math.min(27, steps)));
+  }
+}, { passive: false });
 
 $('btnRun').onclick = () => { if (W) assembleAndRun(); };  // async : attend le disque
 if ($('btnDisk')) $('btnDisk').onclick = () => { if (confirm('Revenir au disque d\'origine (vos fichiers modifiés seront perdus) ?')) resetDisk(); };

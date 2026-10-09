@@ -6,7 +6,8 @@ Les sections techniques décrivent aussi des propositions : leur présence ici n
 ## État réel et prochaines étapes
 
 Le bureau et les images sont intégrés dans la branche `master` du dépôt `H:/WORKSPACE/3OS`.
-Le worktree `3OS-wt/desktop` est conservé ; la version principale sert désormais les mêmes fonctionnalités.
+Le worktree `3OS-wt/desktop` est conservé comme branche de travail historique ;
+les évolutions et la validation courantes sont sur `master`.
 
 | Domaine | État réel | Restant |
 |---|---|---|
@@ -14,8 +15,8 @@ Le worktree `3OS-wt/desktop` est conservé ; la version principale sert désorma
 | RAM | Allocation creuse dynamique, taille configurable | **Pas encore de mémoire virtuelle paginée ni de TLB** : les pages d'allocation hôte ne sont pas la pagination guest |
 | Vecteurs v0.5 | Banque 27 × 27 trytes, VL, intrinsèques C, sauvegarde noyau et TerNet | Référence effective : SPEC, pas toutes les idées du §1 ; gain mesuré TerNet contre TDOT |
 | Graphique | GPU 2D MMIO, framebuffer natif, 576×360 / 720p / 1080p, profondeurs 1/9/27 | Pas de pipeline 3D, shaders, textures filtrées ni accélérateur hôte 3D |
-| Bureau | Platinum/System 7–8, polices AA guest, logo de chargement, Finder, réglages 3FS, fenêtres/raccourcis/plein écran ; parcours navigateur validés | Enrichissements d'applications distincts de l'ISA |
-| Images | Bibliothèque C timage : PNG via LodePNG, BMP et PPM ; fichiers binaires 3FS ; visualiseur 1:1 | JPEG/GIF/WebP non implémentés ; vrais malloc/free et fichiers par plages pour grandes images |
+| Bureau | Platinum/System 7–8, polices AA guest, logo de chargement, Finder, réglages 3FS, fenêtres/raccourcis/plein écran, molette dans Finder/documents ; parcours navigateur validés | Enrichissements d'applications distincts de l'ISA |
+| Images | Bibliothèque C timage : PNG via LodePNG, BMP et PPM ; fichiers binaires 3FS ; visualiseur 1:1 au départ, zoom guest 25–400 %, ancrage curseur/déplacement/réinitialisation | JPEG/GIF/WebP non implémentés ; vrais malloc/free et fichiers par plages pour grandes images |
 | Chromium / YouTube | Application 3OS avec composant Chromium hôte déclaré choisie, mais **non implémentée** | Intégration et parcours réel à construire ; pas un navigateur guest autonome |
 | Réels tekum v0.6 | Conception (§2) | Codec logiciel de référence, tests d'arrondi/ulp puis décision ISA |
 | Timing, SPM, DMA v0.7 | Conception (§3, §7) | Modèle de cycles, latences, transferts et preuve de double tampon |

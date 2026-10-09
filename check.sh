@@ -61,7 +61,7 @@ if [[ "${1:-}" == "--web" ]]; then
   prof=$(mktemp -d); "$CH" --headless=new --disable-gpu --no-first-run --remote-debugging-port=$CDP --user-data-dir="$prof" about:blank >/dev/null 2>&1 &
   pid=$!; sleep 3
   fails=0
-  for t in web_smoke desktop_smoke desktop_display desktop_qol desktop_classic desktop_images mouse_refresh hd_web; do
+  for t in web_smoke desktop_smoke desktop_display desktop_qol desktop_classic desktop_images desktop_wheel mouse_refresh hd_web; do
     if timeout 300 node tests/$t.cjs </dev/null; then echo "  ok  $t"; else echo "  ÉCHEC $t"; fails=1; break; fi
   done
   kill $pid 2>/dev/null || true

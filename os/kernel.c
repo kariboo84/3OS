@@ -133,6 +133,7 @@ static void set_fg(long n) {
     o->fbaddr = FB_ADDR > 0 ? FB_ADDR - o->ubase : 0;
   }
   silence();
+  MOUSE_WHEEL = 0;                            /* pas de molette héritée du précédent premier plan */
   TRI27_MMIO(-13) = 0;                        /* saisie de texte : au nouveau premier plan de la redemander */
   for (int i = 0; i < NPROC; i++) procs[i].ioperm = 0;
   fg = n;
@@ -207,7 +208,7 @@ static void kill(struct proc *p, const char *why, long val) {
 static long dev_read(long a) {
   int f = pid(cur) == fg;
   if (a == -2 || a == -7) return f ? TRI27_MMIO(a) : (a == -2 ? -1 : 0);   /* CONSOLE_IN, KEY */
-  if (a == -10 || a == -11 || a == -12 || a == -13) return f ? TRI27_MMIO(a) : 0;  /* souris, saisie */
+  if (a == -10 || a == -11 || a == -12 || a == -13 || a == -17) return f ? TRI27_MMIO(a) : 0;  /* souris, saisie */
   if (a == -4 || a == -8) return TRI27_MMIO(a);                            /* CYCLES, TIME_MS */
   if (a == -5) return cur->fbaddr;
   if (a == -9) return cur->vmode;
@@ -228,6 +229,7 @@ static void dev_write(long a, long v) {
   if (a == -16) { cur->fbdepth = v == 1 || v == 9 ? v : 27; if (f) apply_display(); return; }
   if (a == -6) { if (f) FB_PRESENT = 0; return; }
   if (a == -13) { if (f) TRI27_MMIO(-13) = v; return; }
+  if (a == -17) { if (f && v == 0) MOUSE_WHEEL = 0; return; }
   if (a <= -100 && a >= -202) { if (f) TRI27_MMIO(a) = v; return; }
 }
 

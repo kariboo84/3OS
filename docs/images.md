@@ -77,9 +77,18 @@ un fond RGB8 empaqueté `R*65536+G*256+B`.
 le nom via le fichier 3FS préalloué `image-cible`, puis appelle `sys_exec("images")`.
 Échap revient au bureau. Le mode d’affichage est repris du fichier `config`.
 
-L’image est centrée en pixels 1:1 ; si elle dépasse la zone, une partie est
-recadrée et ce fait est indiqué. Aucun zoom global. L’alpha PNG est mélangé sur
-un damier. Les fichiers de démonstration sont de vrais PNG/BMP/PPM dans `os/assets/`.
+L’image commence centrée en pixels **1:1**. La molette sur la zone image règle
+le zoom **25–400 %**, ancré sur le point sous le curseur tant que les limites du
+cadre le permettent. Glisser avec le bouton gauche déplace l’image, sans pouvoir
+la perdre hors cadre ; les flèches déplacent aussi. **0** revient au centrage 1:1,
+**+ / −** règlent le zoom au clavier. Le titre indique le pourcentage.
+
+Le rééchantillonnage au plus proche voisin et le mélange de l’alpha sur un damier
+sont faits dans le **guest C**, pas par une transformation CSS/Canvas hôte. Le zoom
+ne change ni les dimensions du framebuffer ni la taille des polices. Un cache de
+scanline évite de recalculer la couleur/alpha de chaque copie d’un pixel agrandi ;
+pas de nouvelle allocation ni de décodage à chaque geste.
+Les fichiers de démonstration sont de vrais PNG/BMP/PPM dans `os/assets/`.
 
 ## Vérification reproductible
 
@@ -88,6 +97,7 @@ python3 tests/timage.py
 bash os/build.sh
 python3 tests/timage_io.py
 TRI27_HTTP=8124 TRI27_CDP=9232 node tests/desktop_images.cjs
+TRI27_HTTP=8124 TRI27_CDP=9232 node tests/desktop_wheel.cjs
 TRI27_HTTP=8124 TRI27_CDP=9247 ./check.sh --web
 ```
 
@@ -102,12 +112,20 @@ contrôle des pixels réels et l’alpha puis revient au bureau. Il interdit les
 constructeurs de décodage d’images hôte pendant ce parcours. Captures et rapport
 JSON : `cc/build/shots/images-native-*`.
 
+`desktop_wheel.cjs` envoie de vrais événements molette CDP : défilement Finder et
+document sous le pointeur, limites et absence de défilement de la page hôte ;
+puis zoom, point d’ancrage, déplacement, retour exact à 1:1 et limites 25/400 %.
+Il couvre aussi molette et touche de zoom reçues dans la même itération aux deux limites.
+La largeur mesurée de l’image passe de 384 à 480 pixels à 125 %, avec les pixels
+de l’en-tête inchangés. Les décodeurs hôtes restent interdits.
+Rapport : `cc/build/shots/wheel-native.json`.
+
 `tests/timage_io.py` exerce cinq contrats sous le vrai noyau : taille exacte
 (donnée, programme, fichier vide), fichier/pointeur invalide, décodage d'un PPM
 valide de 700 016 octets avec un seul tampon, limite source vérifiée avant
 allocation, sorties vides pour fichier vide/absent. La grande source contient un
 commentaire légal et un pixel, pour isoler la stratégie de lecture du coût d'une
-image géante. Les trois tests sont inclus dans `check.sh`.
+image géante. Ces tests sont inclus dans `check.sh` et sa suite web.
 
 ## Suite utile
 

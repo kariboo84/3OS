@@ -36,6 +36,8 @@ pub mod mmio {
     pub const FB_HEIGHT: i64 = -15;
     /// Mode 3 : 1 trit, 9 trits (TRGB), ou 27 trits par pixel (défaut).
     pub const FB_DEPTH: i64 = -16;
+    /// Molette en crans logiques signés, lecture qui consomme (positif = bas).
+    pub const MOUSE_WHEEL: i64 = -17;
     pub const DISK_SECTOR: i64 = -20;
     pub const DISK_ADDR: i64 = -21;
     pub const DISK_CMD: i64 = -22;
@@ -115,6 +117,7 @@ pub struct Vm {
     pub mouse_x: i64,
     pub mouse_y: i64,
     pub mouse_btn: i64,
+    pub mouse_wheel: i64,
     pub frames: u64,
     pub frame_ready: bool,
     /// Copie RGBA de l'image au moment du FB_PRESENT (pour captures fiables),
@@ -181,6 +184,7 @@ impl Vm {
             mouse_x: 0,
             mouse_y: 0,
             mouse_btn: 0,
+            mouse_wheel: 0,
             frames: 0,
             frame_ready: false,
             present_rgba: Vec::new(),
@@ -310,6 +314,7 @@ impl Vm {
             mmio::MOUSE_X => self.mouse_x,
             mmio::MOUSE_Y => self.mouse_y,
             mmio::MOUSE_BTN => self.mouse_btn,
+            mmio::MOUSE_WHEEL => std::mem::take(&mut self.mouse_wheel),
             mmio::TEXT_IN => self.text_input as i64,
             mmio::DISK_SECTOR => self.disk_sector,
             mmio::DISK_ADDR => self.disk_addr,
@@ -361,6 +366,7 @@ impl Vm {
                 self.set_mouse(self.mouse_x, self.mouse_y, self.mouse_btn);
             }
             mmio::FB_DEPTH => self.fb_depth = if v == 1 || v == 9 { v } else { 27 },
+            mmio::MOUSE_WHEEL => { if v == 0 { self.mouse_wheel = 0; } },
             mmio::DISK_SECTOR => self.disk_sector = v,
             mmio::DISK_ADDR => self.disk_addr = v,
             mmio::DISK_CMD => self.disk_cmd(v),
@@ -888,6 +894,15 @@ impl Vm {
         self.mouse_btn = btn;
     }
 
+    /// Accumule la molette sans débordement ; borne les rafales, réveille WFI.
+    pub fn set_wheel(&mut self, delta: i64) {
+        let d = delta.clamp(-27, 27);
+        if d != 0 {
+            self.mouse_wheel = (self.mouse_wheel + d).clamp(-27, 27);
+            self.waiting = false;
+        }
+    }
+
     /// Framebuffer → RGBA (largeur×hauteur du mode courant ×4).
     /// Mode 1 (TRIT) : trit −1 noir, 0 gris (170,170,170), +1 blanc.
     pub fn render_rgba(&self, buf: &mut [u8]) {
@@ -962,3 +977,7 @@ impl Vm {
 #[cfg(test)]
 #[path = "display_tests.rs"]
 mod display_tests;
+
+#[cfg(test)]
+#[path = "wheel_tests.rs"]
+mod wheel_tests;

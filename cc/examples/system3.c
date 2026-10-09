@@ -608,6 +608,19 @@ int main(void) {
     if(quit)return 0;
     int mx=MOUSE_X/ui,my=MOUSE_Y/ui,left=MOUSE_BTN%3;
     if(mx<0)mx=0; if(mx>=desk_w)mx=desk_w-1; if(my<0)my=0; if(my>=desk_h)my=desk_h-1;
+    long wheel=MOUSE_WHEEL;
+    if(wheel&&menu<0&&!left) {
+      /* Fenêtre sous le pointeur : ne pas voler le premier plan ni la sélection. */
+      for(int z=NWINS-1;z>=0;z--) {
+        int j=order[z];Win *w=&win[j];
+        if(!w->open||w->minimized||!in(mx,my,w->x,w->y,w->w,w->h))continue;
+        if(j<2&&my>=w->y+20&&my<w->y+w->h-20) {
+          int before=w->scroll;scroll_win(j,(int)wheel);
+          if(before!=w->scroll)dirty=1;
+        }
+        break;
+      }
+    }
     if(menu>=0&&(mx!=cx||my!=cy))dirty=1;
     if(left&&!prev_left) {
       int handled=0;

@@ -186,6 +186,12 @@ pub extern "C" fn set_mouse(x: i32, y: i32, btn: i32) {
     st().vm.set_mouse(x as i64, y as i64, btn as i64);
 }
 
+/// Molette : crans logiques signés, accumulation bornée dans la VM.
+#[no_mangle]
+pub extern "C" fn set_wheel(delta: i32) {
+    st().vm.set_wheel(delta as i64);
+}
+
 /// Événement clavier : +code = appui, −code = relâche.
 #[no_mangle]
 pub extern "C" fn push_key(code: i32) {

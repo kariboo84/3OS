@@ -177,11 +177,18 @@ Si TVEC=0 : ECALL est servi par l'hôte (0 exit(a0), 1 putc(a0), 2 print_int(a0)
 | −14 | FB_WIDTH | lecture/écriture : largeur du mode 3 (16…3840, défaut 1920) |
 | −15 | FB_HEIGHT | lecture/écriture : hauteur du mode 3 (16…2160, défaut 1080) |
 | −16 | FB_DEPTH | mode 3 : 1 = trit/pixel, 9 = TRGB tryte/pixel, 27 = mot/pixel (défaut) ; toute autre valeur → 27 |
+| −17 | MOUSE_WHEEL | crans logiques signés (positif = vers le bas), accumulés et bornés à −27…+27 ; lecture consomme, écrire 0 efface, autres écritures ignorées |
 | −20 | DISK_SECTOR | numéro de secteur |
 | −21 | DISK_ADDR | adresse RAM du transfert |
 | −22 | DISK_CMD | 1 = lire secteur→RAM, 2 = écrire RAM→secteur (synchrone) |
 | −23 | DISK_STATUS | 0 ok, −1 erreur |
 | −24 | DISK_COUNT | nombre de secteurs du disque |
+
+La page web convertit les unités `WheelEvent` (pixel/ligne/page) en crans : 40 pixels
+équivalents par cran, reliquat conservé pour les pavés tactiles, rafales bornées.
+Le noyau réserve les événements souris au processus de premier plan et efface
+la molette lors d'un changement de premier plan. Le bureau défile la fenêtre
+éligible sous le pointeur ; le visualiseur interprète ces crans comme du zoom.
 
 Un secteur = 729 trytes.
 

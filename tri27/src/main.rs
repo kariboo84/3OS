@@ -26,8 +26,8 @@ fn load(path: &str) -> asm::Image {
 }
 
 fn save_ppm(vm: &Vm, path: &std::path::Path) {
-    // mode 3 : capture 16 bits par canal (PPM maxval 65535, grand-boutiste) — la profondeur réelle du mode
-    if vm.vmode == 3 || !vm.present_hi.is_empty() {
+    // Seule la profondeur 27 produit du 16 bits ; le dernier PRESENT prime sur les registres actuels.
+    if !vm.present_hi.is_empty() || (vm.present_rgba.is_empty() && vm.vmode == 3 && vm.fb_depth == 27) {
         let hi = if vm.present_hi.is_empty() {
             let mut h = Vec::new();
             vm.render_hi(&mut h);

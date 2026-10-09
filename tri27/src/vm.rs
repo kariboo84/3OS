@@ -34,6 +34,8 @@ pub mod mmio {
     /// Mode 3 (haute définition) : largeur / hauteur configurées, en pixels.
     pub const FB_WIDTH: i64 = -14;
     pub const FB_HEIGHT: i64 = -15;
+    /// Mode 3 : 1 trit, 9 trits (TRGB), ou 27 trits par pixel (défaut).
+    pub const FB_DEPTH: i64 = -16;
     pub const DISK_SECTOR: i64 = -20;
     pub const DISK_ADDR: i64 = -21;
     pub const DISK_CMD: i64 = -22;
@@ -100,9 +102,10 @@ pub struct Vm {
     pub keys: VecDeque<i64>,
     pub fb_addr: i64,
     pub vmode: i64,
-    /// Dimensions du mode 3 (1 mot par pixel), réglables par FB_WIDTH / FB_HEIGHT.
+    /// Dimensions et profondeur du mode 3, réglables par FB_WIDTH / FB_HEIGHT / FB_DEPTH.
     pub hd_w: usize,
     pub hd_h: usize,
+    pub fb_depth: i64,
     /// Image du dernier FB_PRESENT en mode 3, 16 bits par canal (R, V, B), pour les captures --ppm.
     pub present_hi: Vec<u16>,
     /// Carte graphique 2D (registres −60…−76).
@@ -166,6 +169,7 @@ impl Vm {
             vmode: 0,
             hd_w: HD_W,
             hd_h: HD_H,
+            fb_depth: 27,
             present_hi: Vec::new(),
             gpu: gpu::Gpu::default(),
             mouse_x: 0,
@@ -235,7 +239,11 @@ impl Vm {
         match self.vmode {
             1 => (TRIT_W / 9 * TRIT_H) as i64,
             2 => (TRIT_W * TRIT_H) as i64,
-            3 => (self.hd_w * self.hd_h * 3) as i64,
+            3 => match self.fb_depth {
+                1 => (self.hd_w * self.hd_h).div_ceil(9) as i64,
+                9 => (self.hd_w * self.hd_h) as i64,
+                _ => (self.hd_w * self.hd_h * 3) as i64,
+            },
             _ => 320 * 200,
         }
     }
@@ -291,6 +299,7 @@ impl Vm {
             mmio::VMODE => self.vmode,
             mmio::FB_WIDTH => self.hd_w as i64,
             mmio::FB_HEIGHT => self.hd_h as i64,
+            mmio::FB_DEPTH => self.fb_depth,
             mmio::MOUSE_X => self.mouse_x,
             mmio::MOUSE_Y => self.mouse_y,
             mmio::MOUSE_BTN => self.mouse_btn,
@@ -344,6 +353,7 @@ impl Vm {
                 self.hd_h = v.clamp(16, HD_MAX_H as i64) as usize;
                 self.set_mouse(self.mouse_x, self.mouse_y, self.mouse_btn);
             }
+            mmio::FB_DEPTH => self.fb_depth = if v == 1 || v == 9 { v } else { 27 },
             mmio::DISK_SECTOR => self.disk_sector = v,
             mmio::DISK_ADDR => self.disk_addr = v,
             mmio::DISK_CMD => self.disk_cmd(v),
@@ -364,7 +374,7 @@ impl Vm {
                 self.present_rgba = tmp;
                 self.present_w = w;
                 self.present_h = h;
-                if self.vmode == 3 {
+                if self.vmode == 3 && self.fb_depth == 27 {
                     let mut hi = std::mem::take(&mut self.present_hi);
                     self.render_hi(&mut hi);
                     self.present_hi = hi;
@@ -848,27 +858,22 @@ impl Vm {
         let base = self.fb_addr;
         let (w, h) = self.fb_dims();
         let inmem = |a: i64| base > 0 && a >= 0 && (a as usize) < self.mem.len();
-        if self.vmode == 1 {
-            let per = w / 9;
-            for y in 0..h {
-                for tx in 0..per {
-                    let a = base + (y * per + tx) as i64;
-                    let mut t = if inmem(a) { self.mem.get(a as usize) as i64 } else { 0 };
-                    for k in 0..9 {
-                        let b = bal_mod(t, 3);
-                        t = (t - b) / 3;
-                        let v: u8 = match b { -1 => 0, 0 => 170, _ => 255 };
-                        let o = (y * w + tx * 9 + k) * 4;
-                        buf[o] = v;
-                        buf[o + 1] = v;
-                        buf[o + 2] = v;
-                        buf[o + 3] = 255;
-                    }
+        if self.vmode == 1 || (self.vmode == 3 && self.fb_depth == 1) {
+            // Pixels consécutifs, sans padding de ligne ; dernière tryte éventuellement partielle.
+            for tx in 0..(w * h).div_ceil(9) {
+                let a = base + tx as i64;
+                let mut t = if inmem(a) { self.mem.get(a as usize) as i64 } else { 0 };
+                for k in 0..9.min(w * h - tx * 9) {
+                    let b = bal_mod(t, 3);
+                    t = (t - b) / 3;
+                    let v: u8 = match b { -1 => 0, 0 => 170, _ => 255 };
+                    let o = (tx * 9 + k) * 4;
+                    buf[o..o + 4].copy_from_slice(&[v, v, v, 255]);
                 }
             }
             return;
         }
-        if self.vmode == 3 {
+        if self.vmode == 3 && self.fb_depth == 27 {
             // 1 mot par pixel : tryte 0 = B, 1 = V, 2 = R, chacune −9841…+9841 → 0…255
             let m = |c: i16| (((c as i32 + 9841) * 255 + 9841) / 19682) as u8;
             for p in 0..w * h {
@@ -900,6 +905,10 @@ impl Vm {
 
     /// Mode 3 en pleine précision : R, V, B sur 16 bits (−9841…+9841 → 0…65535), pour les captures.
     pub fn render_hi(&self, out: &mut Vec<u16>) {
+        if self.vmode != 3 || self.fb_depth != 27 {
+            out.clear();
+            return;
+        }
         let (w, h) = (self.hd_w, self.hd_h);
         out.resize(w * h * 3, 0);
         let base = self.fb_addr;
@@ -913,3 +922,7 @@ impl Vm {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "display_tests.rs"]
+mod display_tests;

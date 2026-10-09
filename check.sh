@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 VM=tri27/target/release/tri27
-echo "== VM";        (cd tri27 && cargo build --release -q)
+echo "== VM";        (cd tri27 && cargo build --release -q && cargo test --release -q)
 echo "== C : tests chibicc"; (cd cc && python run_tests.py | tail -1)
 echo "== C : banc d'instructions"; python cc/perf.py
 echo "== OS : noyau + disque"; bash os/build.sh >/dev/null 2>&1
@@ -17,6 +17,7 @@ $VM run os/kernel.tas --input 'trits 42\nhalt\n' | grep -q "42 =" && echo "  ok 
 mkdir -p cc/build
 hn=$($VM run examples/hello.tas --stats --trace cc/build/hello.trace 2>&1 | sed -n 's/.*\] \([0-9]*\) instr.*/\1/p')
 [[ -n "$hn" && $(wc -l < cc/build/hello.trace) -eq $hn ]] && tail -1 cc/build/hello.trace | grep -q "HALT exit=0" && echo "  ok  journal --trace ($hn lignes)" || { echo "  ECHEC journal --trace"; exit 1; }
+echo "== Profondeurs vidéo : captures CLI"; python tests/display_ppm.py
 echo "== Video HD (mode 3, 1 mot/pixel)"
 python cc/tri27cc.py cc/examples/hd.c -o cc/build/hd.tas
 rm -rf cc/build/hd_ppm

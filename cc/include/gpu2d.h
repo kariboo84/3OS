@@ -1,5 +1,6 @@
-/* gpu2d.h — carte graphique 2D de TRI-27 (registres MMIO -60..-76, voir SPEC.md).
- * Surfaces au format du mode 3 : 1 mot (long) par pixel. Adresse 0 = l'écran (mode 3).
+/* gpu2d.h — carte graphique 2D de TRI-27 (registres MMIO -60..-77, voir SPEC.md).
+ * Surfaces 9 ou 27 trits/pixel (G_DEPTH, défaut 27). Adresse 0 = écran (FB_DEPTH).
+ * Les trits et les copies entre profondeurs différentes sont refusés (STATUS -1).
  * Une commande = quelques écritures de registres ; le travail pixel par pixel est fait par l'hôte. */
 #ifndef GPU2D_H
 #define GPU2D_H
@@ -22,6 +23,7 @@
 #define G_ALPHA  TRI27_MMIO(-74)
 #define G_STATUS TRI27_MMIO(-75)
 #define G_OPS    TRI27_MMIO(-76)
+#define G_DEPTH  TRI27_MMIO(-77)  /* profondeur des surfaces non écran : 9 ou 27 ; 1 refusé */
 
 #define GPU_FILL 1
 #define GPU_COPY 2

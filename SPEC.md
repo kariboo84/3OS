@@ -141,13 +141,14 @@ Si TVEC=0 : ECALL est servi par l'hôte (0 exit(a0), 1 putc(a0), 2 print_int(a0)
 | −6 | FB_PRESENT | écriture : présenter l'image |
 | −7 | KEY | lecture : événement clavier suivant (+code = appui, −code = relâche, 0 = rien) |
 | −8 | TIME_MS | lecture : millisecondes depuis le démarrage |
-| −9 | VMODE | lecture/écriture : mode vidéo, 0 = TRGB 320×200 (défaut), 1 = TRIT 576×360, 2 = TRGB 576×360, **3 = HD, 1 mot par pixel** |
+| −9 | VMODE | lecture/écriture : mode vidéo, 0 = TRGB 320×200 (défaut), 1 = TRIT 576×360, 2 = TRGB 576×360, **3 = dimensions et profondeur réglables** |
 | −10 | MOUSE_X | lecture : x souris, pixels du mode courant, borné à 0…largeur−1 |
 | −11 | MOUSE_Y | lecture : y souris, borné à 0…hauteur−1 |
 | −12 | MOUSE_BTN | lecture : trit 0 = bouton gauche, trit 1 = bouton droit (chacun 0/1) ; valeur = gauche + 3·droit |
 | −13 | TEXT_IN | 1 = la page envoie aussi les caractères CONSOLE_IN quand l'écran a le focus ; le noyau le remet à 0 à chaque changement de premier plan |
 | −14 | FB_WIDTH | lecture/écriture : largeur du mode 3 (16…3840, défaut 1920) |
 | −15 | FB_HEIGHT | lecture/écriture : hauteur du mode 3 (16…2160, défaut 1080) |
+| −16 | FB_DEPTH | mode 3 : 1 = trit/pixel, 9 = TRGB tryte/pixel, 27 = mot/pixel (défaut) ; toute autre valeur → 27 |
 | −20 | DISK_SECTOR | numéro de secteur |
 | −21 | DISK_ADDR | adresse RAM du transfert |
 | −22 | DISK_CMD | 1 = lire secteur→RAM, 2 = écrire RAM→secteur (synchrone) |
@@ -163,19 +164,32 @@ Framebuffer : 320×200 trytes, ligne par ligne. Couleur **TRGB** : un tryte = 3 
 = 23 040 trytes. Le pixel x d'une ligne est le trit (x mod 9) du tryte (x div 9) ; trit 0 = pixel le plus à gauche.
 Trit −1 = noir (0,0,0), 0 = gris (170,170,170), +1 = blanc (255,255,255). Tryte tout −1 = −9841, tout +1 = +9841.
 **Mode 2** (VMODE = 2) : TRGB 576×360, 1 tryte par pixel (codage TRGB du mode 0), 576 trytes par ligne × 360 = 207 360 trytes.
-**Mode 3 (HD)** (VMODE = 3) : FB_WIDTH × FB_HEIGHT pixels, **1 mot par pixel** = 3 trytes :
-tryte 0 = bleu, 1 = vert, 2 = rouge, chacune −9 841…+9 841 (**19 683 niveaux par canal**, ≈ 14,3 bits : au-delà des
-8 bits des « vraies couleurs »). Pixel (x, y) à `FB_ADDR + 3·(y·FB_WIDTH + x)` ; 1920×1080 = 6 220 800 trytes.
-L'affichage navigateur est en 8 bits par canal ; les captures `--ppm` du mode 3 sont en 16 bits par canal.
+**Mode 3 (HD)** (VMODE = 3) : FB_WIDTH × FB_HEIGHT pixels ; FB_DEPTH choisit le format :
+- **1** : 1 trit/pixel, codage noir/gris/blanc du mode 1. Pixel `p = y·FB_WIDTH + x` = trit `p mod 9`
+  de la tryte `FB_ADDR + p div 9`. Empaquetage continu, sans padding entre lignes ; taille `ceil(W·H/9)` trytes.
+- **9** : 1 tryte/pixel, codage TRGB des modes 0/2 ; taille `W·H` trytes.
+- **27** (défaut) : 1 mot/pixel = 3 trytes, bleu/vert/rouge, chacune −9 841…+9 841
+  (**19 683 niveaux par canal**, ≈ 14,3 bits). Pixel à `FB_ADDR + 3·p` ; taille `W·H·3` trytes.
+  1920×1080 = 6 220 800 trytes.
+Les modes 0/1/2 ignorent FB_DEPTH. Le noyau sauvegarde/restaure aussi la profondeur par processus,
+virtualise −16 et valide l'adresse selon la taille du format actif. Le navigateur affiche en 8 bits/canal ;
+`--ppm` capture en 16 bits/canal seulement en profondeur 27, sinon en 8 bits. Les captures gardent
+les pixels, dimensions et profondeur du dernier FB_PRESENT même si les registres changent ensuite.
 Changer VMODE rebornes la souris aux dimensions du nouveau mode.
 
 Souris : l'hôte fixe la position (pixels du mode courant) et l'état des boutons ; la page web convertit les
 coordonnées du canvas, le CLI natif propose `--mouse x,y,btn` (position fixe, pour tests).
 
-### Carte graphique 2D (MMIO −60…−76)
+### Carte graphique 2D (MMIO −60…−77)
 
-Commandes exécutées par l'hôte sur des **surfaces** au format du mode 3 (1 mot par pixel). Adresse de surface 0 = l'écran
-(mode 3 obligatoire). En mode utilisateur, les adresses sont virtuelles, traduites et bornées par UBASE/ULIMIT
+Commandes exécutées par l'hôte sur des **surfaces** de profondeur 9 (TRGB) ou 27 (mot/pixel).
+Adresse de surface 0 = écran (mode 3 obligatoire), profondeur FB_DEPTH ; les surfaces non écran
+utilisent G_DEPTH (défaut 27, 9 = TRGB, 1 refusé, toute autre valeur → 27). La profondeur 1 est
+refusée (STATUS = −1), le bureau la dessine au CPU. Les copies entre profondeurs différentes sont
+refusées (STATUS = −1), sans conversion implicite. COLOR suit le format destination : tryte TRGB
+ou mot profond. BLEND/FILL_ALPHA mélangent chaque canal séparément, sur −13…+13 en TRGB,
+ou −9841…+9841 en profond, avec troncature entière vers zéro de `(source−destination)·alpha/729`.
+En mode utilisateur, les adresses sont virtuelles, traduites et bornées par UBASE/ULIMIT
 (surface hors de l'espace du processus → commande refusée, STATUS = −1). Rectangles découpés aux bords des surfaces.
 
 | Adresse | Nom | |
@@ -189,6 +203,7 @@ Commandes exécutées par l'hôte sur des **surfaces** au format du mode 3 (1 mo
 | −74 | G_ALPHA | 0…729 (729 = opaque) |
 | −75 | G_STATUS | lecture : pixels écrits par la dernière commande, −1 = erreur |
 | −76 | G_OPS | lecture : commandes exécutées depuis le démarrage |
+| −77 | G_DEPTH | lecture/écriture : profondeur des surfaces non écran (1, 9, 27 ; défaut 27) |
 
 COPY sur la même surface vers le bas est parcourue de bas en haut (défilement correct). En-tête C : `cc/include/gpu2d.h`.
 

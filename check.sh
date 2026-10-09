@@ -37,6 +37,12 @@ ipf=$(sed -n 's/.*images, \([0-9]*\) instr\/image.*/\1/p' <<<"$go")
 echo "== Reseau ternaire + Kleene"
 (cd cc && python tri27cc.py examples/ternet.c -o build/ternet.tas && python tri27cc.py examples/kleene.c -o build/kleene.tas)
 tn=$($VM run cc/build/ternet.tas 2>&1); grep -q "identique a la reference hote : 450/450" <<<"$tn" && echo "  ok  ternet 450/450" || { echo "  ECHEC ternet"; exit 1; }
+grep -q "cout vecteurs : .* (identique : 450/450)" <<<"$tn" && echo "  ok  ternet vecteurs 450/450 :$(grep -o 'cout TDOT : [0-9]*' <<<"$tn" | sed 's/cout//') ->$(grep -o 'cout vecteurs : [0-9]*' <<<"$tn" | sed 's/cout//') instr/image" || { echo "  ECHEC ternet vecteurs"; exit 1; }
+echo "== Vecteurs sous le noyau (sauvegarde au changement de contexte)"
+python cc/tri27cc.py cc/examples/vectest.c cc/lib/sys.tas -o cc/build/vectest.tas && python cc/tri27cc.py cc/examples/vecb.c -o cc/build/vecb.tas
+$VM mkdisk cc/build/vec.t3d hello=cc/build/vectest.tas vecb=cc/build/vecb.tas >/dev/null
+vt=$(timeout 120 $VM run os/kernel3.tas --disk cc/build/vec.t3d --max 30000000 2>&1)
+grep -q "registres vectoriels du parent intacts" <<<"$vt" && ! grep -q CORROMPUS <<<"$vt" && echo "  ok  vecteurs preserves entre processus" || { echo "  ECHEC vecteurs sous le noyau"; exit 1; }
 kl=$($VM run cc/build/kleene.tas 2>&1); grep -q "0 erreur(s)" <<<"$kl" && echo "  ok  kleene 0 erreur" || { echo "  ECHEC kleene"; exit 1; }
 echo "== Présentation PRESENT (wasm, node seul)"
 pl="${TMPDIR:-/tmp}/present.$$"

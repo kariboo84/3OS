@@ -207,31 +207,43 @@ static const char *builtin_op(Node *n, int *nargs) {
   return NULL;
 }
 
-/* Intrinsèques vectoriels (v0.5). Chaque argument est soit :
- *   - un REGISTRE VECTORIEL constant (bit de vec_mask à 1) : numéro 0..26 (= nom + 13, cf. tri27vec.h) ;
- *   - un SCALAIRE (bit à 0) : évalué dans un registre (scalaires simples, puis a0/a1).
- * Destination : scalaire (résultat en a0) ou vectorielle (premier argument constant, dst_vec=1). */
-static const char *vbuiltin_op(Node *n, int *nargs, int *fixed, int *dst_vec) {
-  static const struct { const char *name, *op; int n; int vec_mask; int dst_is_vec; } V[] = {
-    {"__builtin_vtdot",  "vtdot",   2, 0x3, 0}, /* a0 = Σ va·vb (rd implicite = a0)        */
-    {"__builtin_vtmac",  "vtmac.t", 2, 0x3, 0}, /* a0 = Σ tryte_a·trit_b (rd implicite = a0)*/
-    {"__builtin_vsum",   "vsum.t",  1, 0x1, 0}, /* a0 = Σ trits de va (rd implicite = a0)  */
-    {"__builtin_vadd",   "vadd.t",  2, 0x7, 1}, /* vd, va, vb                              */
-    {"__builtin_vsub",   "vsub.t",  2, 0x7, 1},
-    {"__builtin_vmul",   "vmul.t",  2, 0x7, 1},
-    {"__builtin_vmin",   "vmin",    2, 0x7, 1},
-    {"__builtin_vmax",   "vmax",    2, 0x7, 1},
-    {"__builtin_vtmul",  "vtmul",   2, 0x7, 1},
-    {"__builtin_vcons",  "vcons",   2, 0x7, 1},
-    {"__builtin_vany",   "vany",    2, 0x7, 1},
-    {"__builtin_vneg",   "vneg",    1, 0x3, 1},
+/* Intrinsèques vectoriels (v0.5) : une instruction en ligne par appel.
+ * Arguments : registre vectoriel = ENTIER CONSTANT 0..26 (bit de vmask à 1, indice = nom + 13) ;
+ * au plus UN argument scalaire (bit à 0), évalué dans a0. Résultat scalaire éventuel dans a0.
+ * Gabarit : %0, %1… = arguments dans l'ordre (nom de registre vectoriel ou a0). */
+static const char *vbuiltin_op(Node *n, int *nargs, int *vmask) {
+  static const struct { const char *name; int n; int vmask; const char *fmt; } V[] = {
+    {"__builtin_vsetvl", 1, 0x0, "vsetvl a0, %0"},
+    {"__builtin_vld",    2, 0x1, "vld %0, 0(%1)"},
+    {"__builtin_vst",    2, 0x1, "vst %0, 0(%1)"},
+    {"__builtin_vsplat", 2, 0x1, "vsplat.t %0, %1"},
+    {"__builtin_vsplatw",2, 0x1, "vsplat.w %0, %1"},
+    {"__builtin_vtdot",  2, 0x3, "vtdot a0, %0, %1"},
+    {"__builtin_vtmac",  2, 0x3, "vtmac.t a0, %0, %1"},
+    {"__builtin_vsum",   1, 0x1, "vsum.t a0, %0"},
+    {"__builtin_vsumw",  1, 0x1, "vsum.w a0, %0"},
+    {"__builtin_vadd",   3, 0x7, "vadd.t %0, %1, %2"},
+    {"__builtin_vsub",   3, 0x7, "vsub.t %0, %1, %2"},
+    {"__builtin_vmul",   3, 0x7, "vmul.t %0, %1, %2"},
+    {"__builtin_vaddw",  3, 0x7, "vadd.w %0, %1, %2"},
+    {"__builtin_vsubw",  3, 0x7, "vsub.w %0, %1, %2"},
+    {"__builtin_vmulw",  3, 0x7, "vmul.w %0, %1, %2"},
+    {"__builtin_vmin",   3, 0x7, "vmin %0, %1, %2"},
+    {"__builtin_vmax",   3, 0x7, "vmax %0, %1, %2"},
+    {"__builtin_vtmul",  3, 0x7, "vtmul %0, %1, %2"},
+    {"__builtin_vcons",  3, 0x7, "vcons %0, %1, %2"},
+    {"__builtin_vany",   3, 0x7, "vany %0, %1, %2"},
+    {"__builtin_vcmp",   3, 0x7, "vcmp.t %0, %1, %2"},
+    {"__builtin_vcmpw",  3, 0x7, "vcmp.w %0, %1, %2"},
+    {"__builtin_vneg",   2, 0x3, "vneg %0, %1"},
+    {"__builtin_vsel",   4, 0xf, "vsel %0, %1, %2, %3"},
   };
   if(n->lhs->kind!=ND_VAR || n->ret_buffer) return NULL;
   for(int i=0;i<(int)(sizeof V/sizeof V[0]);i++) if(!strcmp(n->lhs->var->name,V[i].name)) {
     int c=0; for(Node *a=n->args;a;a=a->next) c++;
-    if(c!=V[i].n) return NULL;
-    *nargs=c; *fixed=V[i].vec_mask; *dst_vec=V[i].dst_is_vec;
-    return V[i].op;
+    if(c!=V[i].n) error_tok(n->tok,"TRI27: %s attend %d arguments",V[i].name,V[i].n);
+    *nargs=c; *vmask=V[i].vmask;
+    return V[i].fmt;
   }
   return NULL;
 }
@@ -245,23 +257,26 @@ static void vreg_name(long c, char *buf) {
 
 static void call(Node *n) {
   int bn; const char *bop=builtin_op(n,&bn);
-  int vbn, vfix, vdst; const char *vop=vbuiltin_op(n,&vbn,&vfix,&vdst);
-  if(vop) {
-    /* registre de destination : premier argument si vdst, sinon a0 (scalaire) */
-    char out[96]; out[0]=0;
-    int k=0;
+  int vbn, vmask; const char *vfmt=vbuiltin_op(n,&vbn,&vmask);
+  if(vfmt) {
+    char arg[4][8]; int k=0, scal=0;
     for(Node *a=n->args; a; a=a->next, k++) {
       long c;
-      if(vfix>>k & 1) {
+      if(vmask>>k & 1) {
         if(!const_val(a,&c) || c<0 || c>26) error_tok(a->tok,"TRI27: registre vectoriel constant 0..26 attendu");
-        char name[8]; vreg_name(c,name);
-        strcat(out, out[0]?", ":""); strcat(out,name);
+        vreg_name(c,arg[k]);
       } else {
-        error_tok(a->tok,"TRI27: argument scalaire non supporté dans cet intrinsèque");
+        if(scal++) error_tok(a->tok,"TRI27: un seul argument scalaire par intrinsèque vectoriel");
+        expr(a); strcpy(arg[k],"a0");
       }
     }
-    if(vdst) emit("  %s %s", vop, out);
-    else emit("  %s a0, %s", vop, out);
+    char line[96]; int o=0;
+    for(const char *f=vfmt; *f; f++) {
+      if(*f=='%' && f[1]>='0' && f[1]<='3') { o+=sprintf(line+o,"%s",arg[f[1]-'0']); f++; }
+      else line[o++]=*f;
+    }
+    line[o]=0;
+    emit("  %s", line);
     return;
   }
 

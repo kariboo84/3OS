@@ -147,7 +147,7 @@ pub struct Vm {
     pub snd: crate::sound::Tsg,
     /// Banque vectorielle : 27 registres × 27 trytes (v0.5, voir vector.rs). En fin de struct
     /// pour ne pas décaler les champs chauds (regs, pc, mem, cache) du chemin scalaire.
-    pub vregs: [crate::vector::VReg; 27],
+    pub vregs: Box<[crate::vector::VReg; 27]>,
 }
 
 impl Vm {
@@ -155,7 +155,7 @@ impl Vm {
         let ram = ram_trytes - ram_trytes % 3;
         let mut vm = Vm {
             regs: [0; 27],
-            vregs: [[0; 27]; 27],
+            vregs: Box::new([[0; 27]; 27]),
             pc: 0,
             mem: Ram::new(ram),
             cache: ICache::new(ram / 3),
@@ -217,7 +217,7 @@ impl Vm {
 
     pub fn reset_cpu(&mut self, entry: i64) {
         self.regs = [0; 27];
-        self.vregs = [[0; 27]; 27];
+        *self.vregs = [[0; 27]; 27];
         self.regs[SP] = self.mem.len() as i64;
         self.pc = entry;
         self.mode = -1;
@@ -572,7 +572,7 @@ impl Vm {
     fn step_traced(&mut self) {
         use std::fmt::Write;
         let (pc, mode, regs0, tc0) = (self.pc, self.mode, self.regs, self.trap_count);
-        let vregs0 = self.vregs;
+        let vregs0 = *self.vregs;
         let vl0 = self.csr[csr::VL];
         let user = mode > 0 && self.csr[csr::ULIMIT] > 0;
         let ppc = pc + if user { self.csr[csr::UBASE] } else { 0 };

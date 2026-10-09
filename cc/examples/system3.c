@@ -12,11 +12,12 @@
 #include <string.h>
 #include <tri27io.h>
 #include <tgfx.h>
+#include <dgfx.h>
 #include <3os.h>
 
-static char fb[23040];          /* mode 1 : 64 trytes x 360 lignes */
-static char fbc[207360];        /* mode 2 : 576 x 360 trytes */
 static int mode = 2;
+static int display_res=0,display_depth=27,color_depth=27,display_saved;
+static const int widths[3]={576,1280,1920},heights[3]={360,720,1080},depths[3]={1,9,27};
 
 /* ---------- couleurs logiques ---------- */
 #define K_BLACK 0
@@ -29,58 +30,33 @@ static int mode = 2;
 #define K_DARK 7
 #define K_BLUE 8
 #define K_GREEN 9
-static int col(int k) {
-  if (mode == 1) {
+static long rgb(int r,int g,int b) {
+  if(display_depth==27)return HD_RGB(r*757L,g*757L,b*757L);
+  return TRGB(r,g,b);
+}
+static long col(int k) {
+  if (display_depth == 1) {
     if (k == K_BLACK || k == K_DARK || k == K_BLUE) return TG_BLACK;
     if (k == K_WHITE || k == K_LIGHT) return TG_WHITE;
     return TG_GRAY;
   }
-  if (k == K_BLACK) return TRGB(-11,-11,-10);
-  if (k == K_GRAY) return TRGB(6,6,6);
-  if (k == K_WHITE) return TRGB(13,13,12);
-  if (k == K_LIGHT) return TRGB(10,10,10);
-  if (k == K_DARK) return TRGB(-3,-3,-2);
-  if (k == K_TITLE) return TRGB(8,8,8);
-  if (k == K_DESK) return TRGB(-1,2,3);
-  if (k == K_BLUE) return TRGB(-7,-2,7);
-  if (k == K_GREEN) return TRGB(-7,3,0);
-  return TRGB(10,5,-5);
+  if (k == K_BLACK) return rgb(-11,-11,-10);
+  if (k == K_GRAY) return rgb(6,6,6);
+  if (k == K_WHITE) return rgb(13,13,12);
+  if (k == K_LIGHT) return rgb(10,10,10);
+  if (k == K_DARK) return rgb(-3,-3,-2);
+  if (k == K_TITLE) return rgb(8,8,8);
+  if (k == K_DESK) return rgb(-1,2,3);
+  if (k == K_BLUE) return rgb(-7,-2,7);
+  if (k == K_GREEN) return rgb(-7,3,0);
+  return rgb(10,5,-5);
 }
 
-/* ---------- primitives selon le mode ---------- */
-static void pset(int x, int y, int k) {
-  if (x < 0 || x >= 576 || y < 0 || y >= 360) return;
-  if (mode == 1) tg_pixel(x, y, col(k)); else fbc[y * 576 + x] = col(k);
-}
-static void fill(int x, int y, int w, int h, int k) {
-  if (mode == 1) { tg_fillrect(x, y, w, h, col(k)); return; }
-  int x1 = x + w, y1 = y + h;
-  if (x < 0) x = 0;
-  if (y < 0) y = 0;
-  if (x1 > 576) x1 = 576;
-  if (y1 > 360) y1 = 360;
-  if (x >= x1) return;
-  int c = col(k);
-  for (int r = y; r < y1; r++) {
-    char *p = fbc + r * 576 + x, *e = fbc + r * 576 + x1;
-    while (p < e) *p++ = c;
-  }
-}
-static void frame(int x, int y, int w, int h, int k) {
-  fill(x, y, w, 1, k); fill(x, y + h - 1, w, 1, k);
-  fill(x, y, 1, h, k); fill(x + w - 1, y, 1, h, k);
-}
-static void text(int x, int y, const char *s, int k) {
-  if (mode == 1) { tg_text(x, y, s, col(k)); return; }
-  for (; *s; s++, x += 6) {
-    int c = *s;
-    if (c < 32 || c > 126) continue;
-    const short *g = TG_FONT + (c - 32) * 5;
-    for (int cx = 0; cx < 5; cx++)
-      for (int b = g[cx], r = 0; b; b /= 2, r++)
-        if (b % 2) pset(x + cx, y + r, k);
-  }
-}
+/* ---------- primitives en coordonnées logiques ---------- */
+static void pset(int x,int y,int k) { dg_pixel(x,y,col(k)); }
+static void fill(int x,int y,int w,int h,int k) { dg_fill(x,y,w,h,col(k)); }
+static void frame(int x,int y,int w,int h,int k) { dg_frame(x,y,w,h,col(k)); }
+static void text(int x,int y,const char *s,int k) { dg_text(x,y,s,k); }
 static void bevel(int x,int y,int w,int h) {
   frame(x,y,w,h,K_BLACK); fill(x+1,y+1,w-2,h-2,K_LIGHT);
   fill(x+1,y+1,w-2,1,K_WHITE); fill(x+1,y+1,1,h-2,K_WHITE);
@@ -104,25 +80,16 @@ static const char *ARROW[12] = {
   "XoooooX.", "XooooXXX", "XoXooX..", "XX.XooX.", "X..XooX.", "....XX..",
 };
 static int cx = 288, cy = 180, shown = 0, sx, sy;
-static char bg_t[12 * 2];       /* mode 1 : 2 trytes x 12 lignes */
-static char bg_c[12 * 8];       /* mode 2 : 8 x 12 pixels */
+static long cursor_bg[8*12*3*3];
 
 static void cur_hide(void) {
   if (!shown) return;
-  if (mode == 1) tg_restore(sx / 9, sy, 2, 12, bg_t);
-  else
-    for (int r = 0; r < 12; r++)
-      for (int q = 0; q < 8; q++)
-        if (sy + r < 360 && sx + q < 576) fbc[(sy + r) * 576 + sx + q] = bg_c[r * 8 + q];
+  dg_cursor_restore(sx,sy,cursor_bg);
   shown = 0;
 }
 static void cur_show(void) {
   sx = cx; sy = cy;
-  if (mode == 1) tg_save(sx / 9, sy, 2, 12, bg_t);
-  else
-    for (int r = 0; r < 12; r++)
-      for (int q = 0; q < 8; q++)
-        if (sy + r < 360 && sx + q < 576) bg_c[r * 8 + q] = fbc[(sy + r) * 576 + sx + q];
+  dg_cursor_save(sx,sy,cursor_bg);
   for (int r = 0; r < 12; r++)
     for (int q = 0; q < 8; q++) {
       char c = ARROW[r][q];
@@ -134,15 +101,50 @@ static void cur_show(void) {
 
 /* Real disk content, not painted application names. */
 typedef struct { int x,y,w,h,open,scroll; const char *title; } Win;
-static Win win[3]={
+#define NWINS 4
+static Win win[NWINS]={
   {24,38,304,258,1,0,"Disque 3OS"},
   {344,110,200,190,1,0,"Lisez-moi"},
-  {143,90,290,184,0,0,"A propos de 3OS"}};
-static int order[3]={1,2,0},selected=0,menu=-1;
+  {143,90,290,184,0,0,"A propos de 3OS"},
+  {143,80,290,208,0,0,"Affichage"}};
+static int order[NWINS]={1,2,3,0},selected=0,menu=-1;
 static char names[24][16],readme[2188];
 static long kinds[24],nfiles;
 static char status[96]="Double-clic ou Entree pour ouvrir.";
 static int read_lines,quit;
+static int whitespace(int c) { return c==' '||c==10||c==13||c==9; }
+static void load_config(void) {
+  char b[64]; long n=sys_readfile("config",b,63);
+  int values[3],p=0,valid=n>0&&n<63;
+  display_res=0; display_depth=27; display_saved=0;
+  if(valid) {
+    b[n]=0;
+    for(int i=0;i<3&&valid;i++) {
+      while(whitespace(b[p]))p++;
+      int v=0,start=p;
+      while(b[p]>='0'&&b[p]<='9') {
+        v=v*10+b[p++]-'0'; if(v>10000) { valid=0; break; }
+      }
+      if(p==start||(!whitespace(b[p])&&b[p]!=0))valid=0;
+      values[i]=v;
+    }
+    while(whitespace(b[p]))p++;
+    if(b[p]!=0)valid=0;
+    if(valid) {
+      valid=0;
+      for(int i=0;i<3;i++)if(values[0]==widths[i]&&values[1]==heights[i]) { display_res=i; valid=1; }
+      if(values[2]!=1&&values[2]!=9&&values[2]!=27)valid=0;
+    }
+    if(valid) { display_depth=values[2]; display_saved=1; }
+    else display_res=0;
+  }
+  if(display_depth!=1)color_depth=display_depth;
+}
+static int save_config(void) {
+  char b[64]; sprintf(b,"%d %d %d\n",widths[display_res],heights[display_res],display_depth);
+  long n=strlen(b); return sys_writefile("config",b,n)==n;
+}
+
 static int rows(int j) { return j==0?(win[0].h-68)/17:(win[1].h-56)/12; }
 static int row_y(int i) { return win[0].y+43+(i-win[0].scroll)*17; }
 static void load_disk(void) {
@@ -156,12 +158,12 @@ static void load_disk(void) {
   win[1].scroll=0;
 }
 static int active(void) {
-  for(int i=2;i>=0;i--)if(win[order[i]].open)return order[i];
+  for(int i=NWINS-1;i>=0;i--)if(win[order[i]].open)return order[i];
   return -1;
 }
 static void front(int j) {
-  int p=0; while(p<3&&order[p]!=j)p++;
-  for(;p<2;p++)order[p]=order[p+1]; order[2]=j; win[j].open=1;
+  int p=0; while(p<NWINS&&order[p]!=j)p++;
+  for(;p<NWINS-1;p++)order[p]=order[p+1]; order[NWINS-1]=j; win[j].open=1;
 }
 static void ensure_selection(void) {
   int *s=&win[0].scroll,n=rows(0);
@@ -229,6 +231,27 @@ static void draw_window(int j) {
   fill(w->x+5,w->y+3,14,13,K_LIGHT); bevel(w->x+7,w->y+5,10,10);
   fill(w->x,w->y+19,w->w,1,K_BLACK);
   fill(w->x+2,w->y+20,w->w-4,w->h-22,K_WHITE);
+  if(j==3) {
+    static const char *resolution[3]={"576 x 360","1280 x 720","1920 x 1080"};
+    static const char *depth[3]={"1 trit / gris","9 trits / TRGB","27 trits / RGB"};
+    text(w->x+16,w->y+38,"Resolution",K_BLACK);
+    text(w->x+164,w->y+38,"Profondeur",K_BLACK);
+    for(int i=0;i<3;i++) {
+      int y=w->y+58+i*24;
+      bevel(w->x+16,y,126,20); bevel(w->x+164,y,110,20);
+      if(display_res==i)frame(w->x+17,y+1,124,18,K_BLUE);
+      if(display_depth==depths[i])frame(w->x+165,y+1,108,18,K_BLUE);
+      text(w->x+22,y+6,display_res==i?"*":" ",K_BLUE);
+      text(w->x+34,y+6,resolution[i],K_BLACK);
+      text(w->x+170,y+6,display_depth==depths[i]?"*":" ",K_BLUE);
+      text(w->x+182,y+6,depth[i],K_BLACK);
+    }
+    char b[64]; sprintf(b,"%dx%d @ %d trits / %dx",widths[display_res],heights[display_res],display_depth,dg_scale);
+    text(w->x+16,w->y+134,b,K_DARK);
+    text(w->x+16,w->y+151,display_saved?"Applique et sauvegarde sur 3FS.":"Configuration non sauvegardee.",K_DARK);
+    bevel(w->x+w->w-68,w->y+w->h-30,54,19); text(w->x+w->w-47,w->y+w->h-24,"OK",K_BLACK);
+    return;
+  }
   if(j==2) {
     fill(w->x+14,w->y+36,48,44,K_BLUE);
     text(w->x+20,w->y+47,"- 0 +",K_WHITE); text(w->x+29,w->y+62,"3OS",K_WHITE);
@@ -264,21 +287,24 @@ static void draw_window(int j) {
   fittext(w->x+8,w->y+w->h-12,j==0?status:"F2 : ouvrir dans l'editeur",w->w-28,K_DARK);
   for(int d=0;d<3;d++)fill(w->x+w->w-12+d*3,w->y+w->h-4-d*3,9-d*3,1,K_DARK);
 }
-static int menu_x[4]={5,44,110,182},menu_w[4]={32,60,66,48};
-static int menu_count[4]={1,4,4,2};
-static const char *menu_label[4][4]={
+#define NMENUS 5
+static int menu_x[NMENUS]={5,44,110,182,236},menu_w[NMENUS]={32,60,66,48,78};
+static int menu_count[NMENUS]={1,4,4,2,1};
+static const char *menu_label[NMENUS][4]={
   {"A propos de 3OS",0,0,0},
   {"Ouvrir          Entree","Lire le document","Fermer la fenetre","Quitter le bureau   Q"},
   {"Couleur TRGB        C","Gris : 3 niveaux   C","Ranger les fenetres","Actualiser le disque"},
-  {"Lisez-moi","Modifier le texte  F2",0,0}};
+  {"Lisez-moi","Modifier le texte  F2",0,0},
+  {"Affichage...",0,0,0}};
 static void menubar(void) {
-  fill(0,0,576,20,K_LIGHT); fill(0,20,576,1,K_BLACK); fill(0,0,576,1,K_WHITE);
-  for(int i=0;i<4;i++)if(menu==i)fill(menu_x[i],1,menu_w[i],19,K_BLUE);
+  fill(0,0,dg_w,20,K_LIGHT); fill(0,20,dg_w,1,K_BLACK); fill(0,0,dg_w,1,K_WHITE);
+  for(int i=0;i<NMENUS;i++)if(menu==i)fill(menu_x[i],1,menu_w[i],19,K_BLUE);
   text(10,7,"3OS",menu==0?K_WHITE:K_BLACK);
   text(48,7,"Fichier",menu==1?K_WHITE:K_BLACK);
   text(114,7,"Bureau",menu==2?K_WHITE:K_BLACK);
   text(186,7,"Aide",menu==3?K_WHITE:K_BLACK);
-  text(477,7,mode==2?"Couleur / TRGB":"Gris / 3 trits",K_DARK);
+  text(240,7,"Preferences",menu==4?K_WHITE:K_BLACK);
+  text(dg_w-99,7,mode==2?(display_depth==27?"Couleur / RGB":"Couleur / TRGB"):"Gris / 3 trits",K_DARK);
 }
 static void draw_menu(void) {
   if(menu<0)return;
@@ -292,17 +318,33 @@ static void draw_menu(void) {
   }
 }
 static void draw_all(void) {
-  fill(0,21,576,339,K_DESK);
-  if(mode==1)for(int y=21;y<360;y+=2)tg_fillrect(0,y,576,1,TG_DITHER(TG_GRAY,TG_WHITE));
-  desktop_icon(518,38,0); desktop_icon(518,285,1);
-  text(16,330,"3OS",mode==2?K_WHITE:K_BLACK);
-  text(16,344,"TRI-27 / -1 0 +1",mode==2?K_LIGHT:K_BLACK);
-  for(int i=0;i<3;i++)draw_window(order[i]); menubar(); draw_menu();
+  fill(0,21,dg_w,dg_h-21,K_DESK);
+  if(mode==1)for(int y=21;y<dg_h;y+=2)fill(0,y,dg_w,1,K_WHITE);
+  desktop_icon(dg_w-58,38,0); desktop_icon(dg_w-58,dg_h-75,1);
+  text(16,dg_h-30,"3OS",mode==2?K_WHITE:K_BLACK);
+  text(16,dg_h-16,"TRI-27 / -1 0 +1",mode==2?K_LIGHT:K_BLACK);
+  for(int i=0;i<NWINS;i++)draw_window(order[i]); menubar(); draw_menu();
+}
+static void apply_display(void) {
+  shown=0;
+  dg_config(widths[display_res],heights[display_res],display_depth);
+  mode=display_depth==1?1:2;
+  long colors[10]; for(int k=0;k<10;k++)colors[k]=col(k); dg_palette(colors);
+  for(int j=0;j<NWINS;j++) {
+    Win *w=&win[j];
+    if(w->w>dg_w-4)w->w=dg_w-4; if(w->h>dg_h-26)w->h=dg_h-26;
+    if(w->x>dg_w-w->w-2)w->x=dg_w-w->w-2;
+    if(w->y>dg_h-w->h-3)w->y=dg_h-w->h-3;
+  }
+  win[3].x=(dg_w-win[3].w)/2;
+  if(cx>=dg_w)cx=dg_w-1; if(cy>=dg_h)cy=dg_h-1;
+}
+static void persist_display(void) {
+  apply_display(); display_saved=save_config();
+  strcpy(status,display_saved?"Affichage sauvegarde dans config.":"Erreur : config non sauvegardee.");
 }
 static void set_mode(int m) {
-  mode=m; shown=0;
-  if(m==1)tg_init(fb); else { VMODE=2; FB_ADDR=(long)fbc; }
-  draw_all(); cur_show(); present();
+  cur_hide(); display_depth=m==1?1:color_depth; persist_display();
 }
 static void launch_name(const char *name) {
   if(strcmp(name,"system3")==0) {
@@ -311,7 +353,7 @@ static void launch_name(const char *name) {
   char app[16]; strcpy(app,name); menu=-1; cur_hide();
   while(KEY_EVENT!=0) {} /* Keep console scripts: native input arrives as a batch. */
   long code=sys_exec(app); load_disk();
-  sprintf(status,"%s : retour %ld",app,code); set_mode(mode);
+  sprintf(status,"%s : retour %ld",app,code); load_config(); apply_display();
 }
 static void open_selected(void) {
   if(selected<0||selected>=nfiles)return;
@@ -320,7 +362,7 @@ static void open_selected(void) {
 }
 static void reset_layout(void) {
   win[0].x=24; win[0].y=38; win[0].w=304; win[0].h=258;
-  win[1].x=344; win[1].y=110; win[1].w=200; win[1].h=190;
+  win[1].x=dg_w-232; win[1].y=110; win[1].w=200; win[1].h=190;
   win[0].scroll=0; win[1].scroll=0; front(1); front(0); ensure_selection();
 }
 static void menu_action(int m,int i) {
@@ -337,6 +379,7 @@ static void menu_action(int m,int i) {
     if(i==3) { load_disk(); strcpy(status,"Disque actualise."); ensure_selection(); }
   }
   if(m==3) { if(i==0)front(1); else launch_name("editeur"); }
+  if(m==4) { win[3].x=(dg_w-win[3].w)/2; front(3); }
 }
 static void scroll_win(int j,int delta) {
   Win *w=&win[j]; int max=(j==0?nfiles:read_lines)-rows(j);
@@ -344,7 +387,8 @@ static void scroll_win(int j,int delta) {
   if(w->scroll<0)w->scroll=0; if(w->scroll>max)w->scroll=max;
 }
 int main(void) {
-  load_disk(); set_mode(2);
+  long stack_anchor; dg_reserve((char *)&stack_anchor-32768);
+  load_config(); load_disk(); apply_display(); draw_all(); cur_show(); present();
   int drag=-1,resize=-1,scroll_drag=-1,scroll_dy=0,dx=0,dy=0,prev_left=0,last_item=-1;
   long last_click=-1000;
   for(;;) {
@@ -353,9 +397,9 @@ int main(void) {
       if(k<0)continue;
       if(k==67) { menu=-1; cur_hide(); set_mode(mode==2?1:2); dirty=1; }
       else if(k==81)quit=1;
-      else if(k==27) { if(menu>=0)menu=-1; else if(active()==2)win[2].open=0; else quit=1; dirty=1; }
+      else if(k==27) { if(menu>=0)menu=-1; else if(active()>=2)win[active()].open=0; else quit=1; dirty=1; }
       else if(k==113) { launch_name("editeur"); dirty=1; }
-      else if(k==13) { if(active()==2)win[2].open=0; else open_selected(); dirty=1; }
+      else if(k==13) { if(active()>=2)win[active()].open=0; else open_selected(); dirty=1; }
       else if(k>=49&&k<=57&&k-49<nfiles) { selected=k-49; ensure_selection(); open_selected(); dirty=1; }
       else if((k==38||k==40)&&active()==0&&nfiles>0) {
         selected+=k==40?1:-1; if(selected<0)selected=0; if(selected>=nfiles)selected=nfiles-1;
@@ -367,26 +411,34 @@ int main(void) {
     ch=CONSOLE_IN;
     if(ch>='1'&&ch<='9'&&ch-'1'<nfiles) { selected=ch-'1'; ensure_selection(); open_selected(); dirty=1; }
     if(quit)return 0;
-    int mx=MOUSE_X,my=MOUSE_Y,left=MOUSE_BTN%3;
-    if(mx<0)mx=0; if(mx>575)mx=575; if(my<0)my=0; if(my>359)my=359;
+    int mx=MOUSE_X/dg_scale,my=MOUSE_Y/dg_scale,left=MOUSE_BTN%3;
+    if(mx<0)mx=0; if(mx>=dg_w)mx=dg_w-1; if(my<0)my=0; if(my>=dg_h)my=dg_h-1;
     if(menu>=0&&(mx!=cx||my!=cy))dirty=1;
     if(left&&!prev_left) {
       int handled=0;
       if(my<21) {
-        int hit=-1; for(int i=0;i<4;i++)if(in(mx,my,menu_x[i],0,menu_w[i],21))hit=i;
+        int hit=-1; for(int i=0;i<NMENUS;i++)if(in(mx,my,menu_x[i],0,menu_w[i],21))hit=i;
         menu=menu==hit?-1:hit; dirty=1; handled=1;
       } else if(menu>=0) {
         int m=menu; menu=-1;
         for(int i=0;i<menu_count[m];i++)if(in(mx,my,menu_x[m],24+i*20,158,20))menu_action(m,i);
         handled=1; dirty=1;
       }
-      for(int z=2;z>=0&&!handled;z--) {
+      for(int z=NWINS-1;z>=0&&!handled;z--) {
         int j=order[z]; Win *w=&win[j];
         if(!w->open||!in(mx,my,w->x,w->y,w->w,w->h))continue;
         front(j); handled=1; dirty=1;
         if(in(mx,my,w->x+5,w->y+3,14,13))w->open=0;
         else if(my<w->y+20) { drag=j; dx=mx-w->x; dy=my-w->y; }
-        else if(j==2) { if(in(mx,my,w->x+w->w-68,w->y+w->h-30,54,19))w->open=0; }
+        else if(j>=2) {
+          if(in(mx,my,w->x+w->w-68,w->y+w->h-30,54,19))w->open=0;
+          else if(j==3)for(int i=0;i<3;i++) {
+            if(in(mx,my,w->x+16,w->y+58+i*24,126,20)) { cur_hide(); display_res=i; persist_display(); }
+            else if(in(mx,my,w->x+164,w->y+58+i*24,110,20)) {
+              cur_hide(); display_depth=depths[i]; if(display_depth!=1)color_depth=display_depth; persist_display();
+            }
+          }
+        }
         else if(in(mx,my,w->x+w->w-16,w->y+w->h-16,16,16)) { resize=j; dx=w->w-mx; dy=w->h-my; }
         else if(in(mx,my,w->x+w->w-15,w->y+39,14,w->h-57)) {
           int total=j==0?nfiles:read_lines,count=rows(j),track=w->h-85;
@@ -409,8 +461,8 @@ int main(void) {
         }
       }
       if(!handled) {
-        if(in(mx,my,513,34,48,52)) { front(0); dirty=1; }
-        if(in(mx,my,513,281,48,52)) { front(1); dirty=1; }
+        if(in(mx,my,dg_w-63,34,48,52)) { front(0); dirty=1; }
+        if(in(mx,my,dg_w-63,dg_h-79,48,52)) { front(1); dirty=1; }
         last_item=-1;
       }
     }
@@ -418,13 +470,13 @@ int main(void) {
     if(drag>=0) {
       Win *w=&win[drag]; int nx=mx-dx,ny=my-dy;
       if(nx<2)nx=2; if(ny<23)ny=23;
-      if(nx>574-w->w)nx=574-w->w; if(ny>357-w->h)ny=357-w->h;
+      if(nx>dg_w-2-w->w)nx=dg_w-2-w->w; if(ny>dg_h-3-w->h)ny=dg_h-3-w->h;
       if(nx!=w->x||ny!=w->y) { w->x=nx; w->y=ny; dirty=1; }
     }
     if(resize>=0) {
       Win *w=&win[resize]; int nw=mx+dx,nh=my+dy;
       if(nw<(resize==0?250:180))nw=resize==0?250:180; if(nh<140)nh=140;
-      if(nw>574-w->x)nw=574-w->x; if(nh>357-w->y)nh=357-w->y;
+      if(nw>dg_w-2-w->x)nw=dg_w-2-w->x; if(nh>dg_h-3-w->y)nh=dg_h-3-w->y;
       if(nw!=w->w||nh!=w->h) { w->w=nw; w->h=nh; w->scroll=0; dirty=1; }
     }
     if(scroll_drag>=0) {
